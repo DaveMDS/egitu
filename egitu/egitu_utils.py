@@ -36,6 +36,7 @@ class Options(object):
         self.date_relative = True
         self.gravatar_default = 'identicon' # or: mm, identicon, monsterid, wavatar, retro
         self.show_message_in_dag = False
+        self.show_remotes_in_dag = True
 
 
 script_path = os.path.dirname(__file__)

@@ -133,6 +133,13 @@ class DagGraph(Table):
                 l.part_text_set('ref.text', head)
                 l.show()
                 p.part_box_append('refs.box', l)
+
+        if options.show_remotes_in_dag:
+            for head in commit.remotes:
+                l = Layout(self, file=(self.themef, 'egitu/graph/ref'))
+                l.part_text_set('ref.text', head)
+                l.show()
+                p.part_box_append('refs.box', l)
                 
         for tag in commit.tags:
             l = Layout(self, file=(self.themef, 'egitu/graph/tag'))
