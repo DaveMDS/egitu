@@ -1,8 +1,6 @@
 
-Egitu
-=====
-
- Git user interface
+Git user interface
+==================
 
  TODO #1: find a better name
 
