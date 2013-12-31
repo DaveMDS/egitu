@@ -1,0 +1,311 @@
+images {
+   image: "graph_tag_bg.png" COMP;
+   image: "graph_label_bg.png" COMP;
+   image: "graph_point.png" COMP;
+   image: "graph_head.png" COMP;
+   image: "graph_conn_vert.png" COMP;
+   image: "graph_conn_vert_fork.png" COMP;
+   image: "graph_conn_vert_merge.png" COMP;
+}
+collections {
+
+   group { name: "egitu/graph/item";
+      parts {
+         part { name: "base"; type: RECT; // also used from c as event catcher
+            description { state: "default" 0.0;
+               min: 20 20;
+               max: 20 20;
+               color: 80 0 0 0;
+            }
+         }
+         part { name: "point"; type: IMAGE;
+            mouse_events: 0;
+            description { state: "default" 0.0;
+               rel1 {
+                  to: "base";
+                  relative: 0.25 0.25;
+               }
+               rel2 {
+                  to: "base";
+                  relative: 0.75 0.75;
+               }
+               image.normal: "graph_point.png";
+            }
+            description { state: "hover" 0.0;
+               inherit: "default" 0.0;
+               rel1.relative: 0.0 0.0;
+               rel2.relative: 1.0 1.0;
+            }
+         }
+         part { name: "head"; type: IMAGE;
+            mouse_events: 0;
+            description { state: "default" 0.0;
+               visible: 0;
+               image.normal: "graph_head.png";
+            }
+            description { state: "visible" 0.0;
+               inherit: "default" 0.0;
+               visible: 1;
+               
+            }
+         }
+         program { source: "base"; signal: "mouse,in";
+            action: STATE_SET "hover" 0.0;
+            transition: BOUNCE 0.5 0.5 3;
+            target: "point";
+         }
+         program { source: "base"; signal: "mouse,out";
+            action: STATE_SET "default" 0.0;
+            transition: BOUNCE 0.5 0.5 3;
+            target: "point";
+         }
+         program { source: "egitu"; signal: "head,show";
+            action: STATE_SET "visible" 0.0;
+            target: "head";
+         }
+         program { source: "egitu"; signal: "head,hide";
+            action: STATE_SET "default" 0.0;
+            target: "head";
+         }
+         
+         part { name: "label_bg"; type: IMAGE;
+            description { state: "default" 0.0;
+               visible: 0;
+               image {
+                  normal: "graph_label_bg.png";
+                  border: 20 7 2 2;
+               }
+            }
+            description { state: "visible" 0.0;
+               inherit: "default" 0.0;
+               visible: 1;
+               rel1 {
+                  to: "label.text";
+                  offset: -15 -2;
+               }
+               rel2 {
+                  to: "label.text";
+                  offset: 6 1;
+               }
+            }
+         }
+         part { name: "label.text"; type: TEXT;
+            description { state: "default" 0.0;
+               visible: 0;
+               rel1 {
+                  to: "base";
+                  relative: 1.0 0.0;
+                  offset: 15 0;
+               }
+               rel2 {
+                  to: "base";
+                  relative: 1.0 1.0;
+               }
+               align: 0.0 0.5;
+               text {
+                  font: "Sans";
+                  size: 10;
+                  min: 1 1;
+               }
+            }
+            description { state: "visible" 0.0;
+               inherit: "default" 0.0;
+               visible: 1;
+            }
+         }
+         program { source: "egitu"; signal: "label,hide";
+            action: STATE_SET "default" 0.0;
+            target: "label.text";
+            target: "label_bg";
+         }
+         program { source: "egitu"; signal: "label,show";
+            action: STATE_SET "visible" 0.0;
+            target: "label.text";
+            target: "label_bg";
+         }
+
+         part { name: "tag.box"; type: BOX;
+            description { state: "default" 0.0;
+               rel1 {
+                  to: "label_bg";
+                  relative: 1.0 0.0;
+                  offset: 9 0;
+               }
+               rel2 {
+                  to: "label_bg";
+                  relative: 1.0 1.0;
+               }
+               box {
+                  align: 0.0 0.0;
+                  padding: 12 0;
+               }
+            }
+         }
+      }
+
+   }
+
+   group { name: "egitu/graph/tag";
+      parts {
+         part { name: "bg"; type: IMAGE;
+            description { state: "default" 0.0;
+               rel1 {
+                  to: "tag.text";
+                  offset: -6 -3;
+               }
+               rel2 {
+                  to: "tag.text";
+                  offset: 6 3;
+               }
+               image {
+                  normal: "graph_tag_bg.png";
+                  border:7 7 4 4;
+               }
+               // color: 0 0 0 200;
+            }
+         }
+         part { name: "tag.text"; type: TEXT;
+            description { state: "default" 0.0;
+               color: 0 0 0 255;
+               text {
+                  font: "Sans";
+                  size: 10;
+                  min: 1 1;
+               }
+               
+            }
+         }
+      }
+   }
+
+   group { name: "egitu/graph/connection/vert";
+      parts {
+         part { name: "bg"; type: IMAGE;
+            description { state: "default" 0.0;
+               min: 20 40;
+               image {
+                  normal: "graph_conn_vert.png";
+                  border: 0 0 10 10;
+               }
+            }
+         }
+      }
+   }
+   
+   group { name: "egitu/graph/connection/vert_fork";
+      parts {
+         part { name: "curve"; type: IMAGE;
+            description { state: "default" 0.0;
+               min: 40 40;
+               max: 40 40;
+               align: 0.0 1.0;
+               image {
+                  normal: "graph_conn_vert_fork.png";
+                  border: 19 19 19 19; // ???
+               }
+            }
+         }
+         part { name: "extension"; type: IMAGE;
+            description { state: "default" 0.0;
+               min: 20 20;
+               max: 20 9999;
+               align: 1.0 0.0;
+               rel2.offset: 0 -21;
+               image {
+                  normal: "graph_conn_vert.png";
+                  border: 0 0 10 10;
+               }
+            }
+         }
+      }
+   }
+   group { name: "egitu/graph/connection/vert_merge";
+      parts {
+         part { name: "bg"; type: IMAGE;
+            description { state: "default" 0.0;
+               min: 40 40;
+               max: 40 40;
+               align: 0.0 0.0;
+               image {
+                  normal: "graph_conn_vert_merge.png";
+                  border: 19 19 19 19; // ???
+               }
+            }
+         }
+         part { name: "extension"; type: IMAGE;
+            description { state: "default" 0.0;
+               min: 20 20;
+               max: 20 9999;
+               align: 1.0 0.0;
+               rel1.offset: 0 20;
+               image {
+                  normal: "graph_conn_vert.png";
+                  border: 0 0 10 10;
+               }
+            }
+         }
+      }
+   }
+
+   group { name: "egitu/graph/popup";
+      parts {
+         part { name: "base"; type: RECT;
+            description { state: "default" 0.0;
+               min: 20 20;
+               color: 0 0 80 255;
+               rel1.to: "sha.text";
+               rel2.to: "title.text";
+            }
+         }
+         part { name: "image"; type: RECT;
+            description { state: "default" 0.0;
+               min: 50 50;
+               max: 50 50;
+               align: 0.0 0.0;
+               color: 255 0 80 255;
+               
+            }
+         }
+         part { name: "sha.text"; type: TEXT;
+            description { state: "default" 0.0;
+               text {
+                  font: "Sans";
+                  size: 10;
+                  min: 1 1;
+               }
+               
+            }
+         }
+         part { name: "author.text"; type: TEXT;
+            description { state: "default" 0.0;
+               rel1.to: "sha.text";
+               rel2.to: "sha.text";
+               rel1.relative: 0.0 1.0;
+               rel2.relative: 1.0 2.0;
+               text {
+                  font: "Sans";
+                  size: 10;
+                  min: 1 1;
+               }
+               
+            }
+         }
+         part { name: "title.text"; type: TEXT;
+            description { state: "default" 0.0;
+               rel1.to: "author.text";
+               rel2.to: "author.text";
+               rel1.relative: 0.0 1.0;
+               rel2.relative: 1.0 2.0;
+               text {
+                  font: "Sans";
+                  size: 10;
+                  min: 1 1;
+               }
+               
+            }
+         }
+      }
+   }
+
+}
+

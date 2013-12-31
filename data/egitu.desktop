@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Egitu
+GenericName=Git user interface
+GenericName[it]=Interfaccia a Git
+Exec=egitu
+Icon=egitu
+Type=Application
+Terminal=false
+Categories=Development;
+StartupNotify=true
