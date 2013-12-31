@@ -28,7 +28,7 @@ from efl.elementary.table import Table
 from efl.elementary.frame import Frame
 from efl.elementary.layout import Layout
 
-from egitu_utils import theme_resource_get, FILL_BOTH
+from egitu_utils import options, theme_resource_get, FILL_BOTH
 from egitu_gui_commitbox import CommitInfoBox
 from egitu_vcs import Commit
 
@@ -70,8 +70,9 @@ class DagGraph(Table):
             c = Commit()
             c.title = "Local changes"
             self.point_add(c, self._col, self._row)
-            self.connection_add(1, 1, 1, 2)
+            # self.connection_add(1, 1, 1, 2)
             self._row += 1
+            self._col -= 1
             self._first_commit = c
 
         self.repo.request_commits(self._populate_done_cb, self._populate_prog_cb, 100)
@@ -87,6 +88,8 @@ class DagGraph(Table):
             self._col = min_col
             for child_col, child_row, new_col in R:
                 self.connection_add(child_col, child_row, self._col, self._row)
+        else:
+            self._col += 1
 
         # 2. add an open_connection, one for each parent
         i = 0
@@ -118,19 +121,24 @@ class DagGraph(Table):
         p.signal_callback_add("mouse,down,*", "base", self.point_mouse_down_cb, commit)
         p.show()
 
-        p.part_text_set('label.text', commit.title)
-        p.signal_emit('label,show', 'egitu')
-        for ref in commit.refs:
-            if ref == 'HEAD':
+        if options.show_message_in_dag is True:
+            p.part_text_set('label.text', commit.title)
+            p.signal_emit('label,show', 'egitu')
+
+        for head in commit.heads:
+            if head == 'HEAD':
                 p.signal_emit('head,show', 'egitu')
-            elif ref in self.repo.branches:
-                p.part_text_set('label.text', ref)
-                p.signal_emit('label,show', 'egitu')
             else:
-                l = Layout(self, file=(self.themef, 'egitu/graph/tag'))
-                l.part_text_set('tag.text', ref)
+                l = Layout(self, file=(self.themef, 'egitu/graph/ref'))
+                l.part_text_set('ref.text', head)
                 l.show()
-                p.part_box_append('tag.box', l)
+                p.part_box_append('refs.box', l)
+                
+        for tag in commit.tags:
+            l = Layout(self, file=(self.themef, 'egitu/graph/tag'))
+            l.part_text_set('tag.text', tag)
+            l.show()
+            p.part_box_append('refs.box', l)
 
         self.pack(p, col, row, 1, 1)
 
@@ -171,3 +179,4 @@ class DagGraph(Table):
 
     def point_mouse_down_cb(self, obj, signal, source, commit):
         self.win.show_commit(commit)
+        print(commit)

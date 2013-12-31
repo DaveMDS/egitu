@@ -1,6 +1,7 @@
 images {
    image: "graph_tag_bg.png" COMP;
    image: "graph_label_bg.png" COMP;
+   image: "graph_text_bg.png" COMP;
    image: "graph_point.png" COMP;
    image: "graph_head.png" COMP;
    image: "graph_conn_vert.png" COMP;
@@ -72,20 +73,21 @@ collections {
             description { state: "default" 0.0;
                visible: 0;
                image {
-                  normal: "graph_label_bg.png";
-                  border: 20 7 2 2;
+                  normal: "graph_text_bg.png";
+                  border:7 7 4 4;
                }
             }
             description { state: "visible" 0.0;
                inherit: "default" 0.0;
                visible: 1;
+               // visible: 0;
                rel1 {
                   to: "label.text";
-                  offset: -15 -2;
+                  offset: -6 0;
                }
                rel2 {
                   to: "label.text";
-                  offset: 6 1;
+                  offset: 6 0;
                }
             }
          }
@@ -95,7 +97,7 @@ collections {
                rel1 {
                   to: "base";
                   relative: 1.0 0.0;
-                  offset: 15 0;
+                  offset: 10 0;
                }
                rel2 {
                   to: "base";
@@ -124,7 +126,7 @@ collections {
             target: "label_bg";
          }
 
-         part { name: "tag.box"; type: BOX;
+         part { name: "refs.box"; type: BOX;
             description { state: "default" 0.0;
                rel1 {
                   to: "label_bg";
@@ -161,7 +163,6 @@ collections {
                   normal: "graph_tag_bg.png";
                   border:7 7 4 4;
                }
-               // color: 0 0 0 200;
             }
          }
          part { name: "tag.text"; type: TEXT;
@@ -173,6 +174,43 @@ collections {
                   min: 1 1;
                }
                
+            }
+         }
+      }
+   }
+
+   group { name: "egitu/graph/ref";
+      parts {
+         part { name: "bg"; type: IMAGE;
+            description { state: "default" 0.0;
+               rel1 {
+                  to: "ref.text";
+                  offset: -15 -4;
+               }
+               rel2 {
+                  to: "ref.text";
+                  offset: 6 3;
+               }
+               image {
+                  normal: "graph_label_bg.png";
+                  border: 20 7 2 2;
+               }
+            }
+         }
+         part { name: "ref.text"; type: TEXT;
+            description { state: "default" 0.0;
+               rel1 {
+                  offset: 6 0;
+               }
+               text {
+                  font: "Sans";
+                  size: 10;
+                  min: 1 1;
+               }
+            }
+            description { state: "visible" 0.0;
+               inherit: "default" 0.0;
+               visible: 1;
             }
          }
       }

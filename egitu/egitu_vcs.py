@@ -51,13 +51,16 @@ class Commit(object):
         self.message = ""
         self.commit_date = None
         self.parents = []
-        self.refs = []
+        self.heads = []
+        self.remotes = []
+        self.tags = []
 
     def __str__(self):
-        return '<Commit:%s parents:%s refs:%s "%s">' % (
+        return '<Commit:%s parents:%s heads:%s tags:%s "%s">' % (
                     self.sha[:7],
                     [p[:7] for p in self.parents],
-                    self.refs,
+                    self.heads,
+                    self.tags,
                     self.title[:20])
 
     def is_a_merge(self):
@@ -117,10 +120,13 @@ class Repository(object):
     def branches(self):
         raise NotImplementedError("branches not implemented in backend")
 
+    @property
+    def tags(self):
+        raise NotImplementedError("tags not implemented in backend")
+
 
     def request_commits(self, done_cb, prog_cb, max_count=100):
         raise NotImplementedError("request_commits() not implemented in backend")
-
 
     def request_diff(self, done_cb, prog_cb, max_count=0, commit1=None, commit2=None):
         raise NotImplementedError("request_diff() not implemented in backend")
@@ -139,13 +145,12 @@ class GitCmd(Exe):
         real_cmd = 'git --git-dir="%s" --work-tree="%s" %s' % \
                    (git_dir, local_path, cmd)
 
-        print("CMD", real_cmd)
+        print("GITCMD: %s" % cmd)
         Exe.__init__(self, real_cmd, ECORE_EXE_PIPE_READ | ECORE_EXE_PIPE_READ_LINE_BUFFERED)
         self.on_data_event_add(self.event_data_cb)
         self.on_del_event_add(self.event_del_cb)
 
     def event_data_cb(self, exe, event):
-        print("Received %d lines" % len(event.lines))
         if callable(self.line_cb):
             for line in event.lines:
                 self.line_cb(line)
@@ -164,6 +169,7 @@ class GitBackend(Repository):
         self._status = None
         self._current_branch = ""
         self._branches = []
+        self._tags = []
 
     def check_url(self, url):
         return True if os.path.isdir(os.path.join(url, '.git')) else False
@@ -185,9 +191,10 @@ class GitBackend(Repository):
             self._op_count -= 1
             if self._op_count == 0:
                 done_cb(True, *args)
-        self._op_count = 2
+        self._op_count = 3
         self._fetch_status(_multi_done_cb, *args)
         self._fetch_branches(_multi_done_cb, *args)
+        self._fetch_tags(_multi_done_cb, *args)
 
     def _fetch_status(self, done_cb, *args):
         def _cmd_done_cb(lines):
@@ -220,6 +227,12 @@ class GitBackend(Repository):
             self._branches = L
             done_cb(True, *args)
         GitCmd(self._url, 'branch', _cmd_done_cb)
+
+    def _fetch_tags(self, done_cb, *args):
+        def _cmd_done_cb(lines):
+            self._tags = lines
+            done_cb(True, *args)
+        GitCmd(self._url, 'tag', _cmd_done_cb)
 
     @property
     def name(self):
@@ -259,26 +272,38 @@ class GitBackend(Repository):
     def branches(self):
         return self._branches
 
-    def request_commits(self, done_cb, prog_cb, max_count=100):
+    @property
+    def tags(self):
+        return self._tags
 
+    def request_commits(self, done_cb, prog_cb, max_count=100):
         def _cmd_done_cb(lines):
             done_cb()
-
         def _cmd_line_cb(line):
             c = Commit()
             (c.sha, c.parents, c.author, c.author_email, c.commit_date,
-                c.title, c.refs) = line.split(chr(0x00))
+                c.title, refs) = line.split(chr(0x00))
             if c.parents:
                 c.parents = c.parents.split(' ')
             if c.commit_date:
                 c.commit_date = datetime.fromtimestamp(int(c.commit_date))
-            if c.refs:
-                c.refs = c.refs.strip().strip(')(').split(', ')
+            if refs:
+                refs = refs.strip().strip(')(').split(', ')
+                for ref in refs:
+                    if ref.startswith('refs/tags/'):
+                        c.tags.append(ref[10:])
+                    elif ref.startswith('refs/heads/'):
+                        c.heads.append(ref[11:])
+                    elif ref.startswith('refs/remotes/'):
+                        c.remotes.append(ref[13:])
+                    else:
+                        c.heads.append(ref) # TODO REMOVE ME
+                        LOG("UNKNOWN REF: %s" % ref)
             prog_cb(c)
         
         # fmt = 'format:{"sha":"%H", "parents":"%P", "author":"%an", "author_email":"%ae", "commit_ts":%ct, "title":"%s", "refs":"%d"}'
         fmt = '%x00'.join(('%H','%P','%an','%ae','%ct','%s','%d'))
-        cmd = "log --pretty='format:%s' --all -n %d" % (fmt, max_count)
+        cmd = "log --pretty='format:%s' --decorate=full --all -n %d" % (fmt, max_count)
         GitCmd(self._url, cmd, _cmd_done_cb, _cmd_line_cb)
 
     def request_diff(self, done_cb, prog_cb, max_count=100, commit1=None, commit2=None):

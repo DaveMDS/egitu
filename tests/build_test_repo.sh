@@ -46,6 +46,12 @@ git checkout master
 git merge branch1
 $PAUSE
 
+git tag -a v1.0 -m 'tagging v1.0'
+$PAUSE
+
+git tag -a v1.0bis -m 'tagging v1.0 another time'
+$PAUSE
+
 
 # TEST: branch2 - three commit and a real merge
 git checkout -b branch2
@@ -70,6 +76,10 @@ $PAUSE
 git merge branch2 -m 'Merge branch2 in master'
 $PAUSE
 
+git tag -a v1.1 -m 'tagging v1.1'
+$PAUSE
 
 
-egitu .
+
+
+egitu
