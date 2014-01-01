@@ -20,16 +20,28 @@
 
 import os
 import hashlib
+import pickle
 from datetime import datetime
-from xdg.BaseDirectory import xdg_cache_home
+from xdg.BaseDirectory import xdg_config_home, xdg_cache_home
 
 from efl.evas import EVAS_HINT_EXPAND, EVAS_HINT_FILL
 from efl.ecore import FileDownload
 from efl.elementary.image import Image
 
 
+EXPAND_BOTH = EVAS_HINT_EXPAND, EVAS_HINT_EXPAND
+EXPAND_HORIZ = EVAS_HINT_EXPAND, 0.0
+FILL_BOTH = EVAS_HINT_FILL, EVAS_HINT_FILL
+FILL_HORIZ = EVAS_HINT_FILL, 0.5
+
+
+script_path = os.path.dirname(__file__)
+config_path = os.path.join(xdg_config_home, 'egitu')
+config_file = os.path.join(config_path, 'config.pickle')
+
+
 class Options(object):
-    """class to contain application options"""
+    """ Class to contain application settings """
     def __init__(self):
         self.theme_name = 'default'
         self.date_format = '%d %b %Y %H:%M'
@@ -38,14 +50,23 @@ class Options(object):
         self.show_message_in_dag = False
         self.show_remotes_in_dag = True
 
+    def load(self):
+        try:
+            # load only attributes (not methods) from the instance saved to disk
+            saved = pickle.load(open(config_file, 'rb'))
+            for attr in dir(self):
+                if attr[0] != '_' and not callable(getattr(self, attr)):
+                    if hasattr(saved, attr):
+                        setattr(self, attr, getattr(saved, attr))
+        except:
+            pass
 
-script_path = os.path.dirname(__file__)
+    def save(self):
+        # save this whole class instance to file
+        with open(config_file, 'wb') as f:
+            pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
+
 options = Options()
-
-EXPAND_BOTH = EVAS_HINT_EXPAND, EVAS_HINT_EXPAND
-EXPAND_HORIZ = EVAS_HINT_EXPAND, 0.0
-FILL_BOTH = EVAS_HINT_FILL, EVAS_HINT_FILL
-FILL_HORIZ = EVAS_HINT_FILL, 0.5
 
 
 def file_get_contents(path):

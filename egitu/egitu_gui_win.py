@@ -60,7 +60,7 @@ class RepoSelector(Popup):
         # content: recent list
         li = List(self, size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
         for i in range(1):
-            li.item_append('no recent repo')
+            li.item_append('no recent repo (TODO)')
         li.show()
 
         # table+rect to respect min size :/
@@ -84,7 +84,8 @@ class RepoSelector(Popup):
         bt.callback_clicked_add(self.load_btn_cb)
         self.part_content_set('button1', bt)
 
-        bt = Button(self, text='Create')
+        bt = Button(self, text='Create (TODO)')
+        bt.disabled = True
         self.part_content_set('button2', bt)
 
         bt = Button(self, text='Exit')
@@ -102,7 +103,6 @@ class RepoSelector(Popup):
         if path and os.path.isdir(path):
             self.done_cb(self, path, *self.done_cb_args)
 
-        
 
 class FolderSelector(Fileselector):
     def __init__(self, parent):
@@ -126,6 +126,7 @@ class FolderSelector(Fileselector):
 
     def delete(self):
         self.popup.delete()
+
 
 class EgituWin(StandardWindow):
     def __init__(self):

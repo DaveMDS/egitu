@@ -23,6 +23,7 @@ import sys
 import argparse
 
 from efl import elementary as elm
+from egitu_utils import options, config_path
 from egitu_vcs import repo_factory
 from egitu_gui_win import EgituWin, RepoSelector
 
@@ -51,9 +52,9 @@ def path_selected_cb(selector, path, win):
         RepoSelector(win, path_selected_cb, win)
 
 
-
 def main():
 
+    # parse command line arguments
     parser = argparse.ArgumentParser(description='Efl GIT GUI')
     parser.add_argument('--repo', default=None)
     # parser.add_argument('integers', metavar='N', type=int, nargs='+',
@@ -63,15 +64,26 @@ def main():
                    # help='sum the integers (default: find the max)')
     args = parser.parse_args()
 
+    # load config and create necessary folders
+    options.load()
+    if not os.path.exists(config_path):
+        os.makedirs(config_path)
 
+    # create the main window
     elm.init()
     win = EgituWin()
 
-    url = args.repo if args.repo else os.getcwd()
-    path_selected_cb(None, url, win)
+    # try to load a repo, from command-line or cwd (else show the RepoSelector)
+    # url = args.repo if args.repo else os.getcwd()
+    path_selected_cb(None, args.repo or os.getcwd(), win)
 
+    # enter the main loop
     elm.run()
+
+    # shutdown
     elm.shutdown()
+    options.save()
+
     return 0
 
 
