@@ -32,6 +32,7 @@ def LOG(text):
 
 
 def repo_factory(url):
+    url = os.path.abspath(url) # TODO is this right for real url ??
     LOG("Trying to load a repo from: %s" % url)
     for cls in Repository.__subclasses__():
         backend = cls()
@@ -181,7 +182,6 @@ class GitBackend(Repository):
         return False
         
     def load_from_url(self, url, done_cb, *args):
-        url = os.path.abspath(url) # TODO is this right for real url ??
         if url.endswith(os.sep):
             url = url[:-len(os.sep)]
 

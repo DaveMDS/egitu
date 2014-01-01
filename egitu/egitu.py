@@ -24,39 +24,7 @@ import argparse
 
 from efl import elementary as elm
 from egitu_utils import options, config_path
-from egitu_vcs import repo_factory
 from egitu_gui_win import EgituWin, RepoSelector
-
-
-def load_done_cb(success, win, repo):
-    print("==="*9)
-    print("url: %s" % repo.url)
-    print("name: %s" % repo.name)
-    print("desc: %s" % repo.description)
-    print("current_branch: %s" % repo.current_branch)
-    print("branches: %s" % repo.branches)
-    print("status_is_clean: %s" % repo.status.is_clean)
-    print("status_mods: %s" % repo.status.mods)
-    print("status_mods_staged: %s" % repo.status.mods_staged)
-    print("status_untr: %s" % repo.status.untr)
-    # show the new loaded repo
-    win.repo_set(repo)
-
-    # save to recent history (popping to the top if necessary)
-    if repo.url in options.recent_repos:
-        options.recent_repos.remove(repo.url)
-    options.recent_repos.insert(0, repo.url)
-
-def path_selected_cb(selector, path, win):
-    if selector:
-        selector.delete()
-
-    repo = repo_factory(path)
-    if repo:
-        repo.load_from_url(path, load_done_cb, win, repo)
-    else:
-        # TODO alert about the error
-        RepoSelector(win, path_selected_cb, win)
 
 
 def main():
@@ -81,13 +49,12 @@ def main():
     win = EgituWin()
 
     # try to load a repo, from command-line or cwd (else show the RepoSelector)
-    # url = args.repo if args.repo else os.getcwd()
-    path_selected_cb(None, args.repo or os.getcwd(), win)
+    RepoSelector(win, args.repo or os.getcwd())
 
-    # enter the main loop
+    # enter the mainloop
     elm.run()
 
-    # shutdown
+    # mainloop done, shutdown
     elm.shutdown()
     options.save()
 

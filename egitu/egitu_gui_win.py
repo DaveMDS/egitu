@@ -31,6 +31,7 @@ from efl.elementary.hoversel import Hoversel
 from efl.elementary.icon import Icon, ELM_ICON_STANDARD
 from efl.elementary.label import Label
 from efl.elementary.list import List
+from efl.elementary.menu import Menu
 from efl.elementary.panes import Panes
 from efl.elementary.popup import Popup
 from efl.elementary.scroller import Scroller
@@ -41,6 +42,7 @@ from egitu_utils import options, theme_resource_get, \
     EXPAND_BOTH, EXPAND_HORIZ, FILL_BOTH, FILL_HORIZ
 from egitu_gui_dag import DagGraph
 from egitu_gui_commitbox import CommitInfoBox
+from egitu_vcs import repo_factory
 
 
 def LOG(text):
@@ -48,10 +50,9 @@ def LOG(text):
     # pass
 
 class RepoSelector(Popup):
-    def __init__(self, parent, done_cb, *args):
-        Popup.__init__(self, parent)
-        self.done_cb = done_cb
-        self.done_cb_args = args
+    def __init__(self, win, url=None):
+        Popup.__init__(self, win)
+        self.win = win
 
         # title
         self.part_text_set('title,text', 'Recent Repositories')
@@ -65,10 +66,10 @@ class RepoSelector(Popup):
             item = li.item_append('no recent repository')
             item.disabled = True
         else:
-            for url in options.recent_repos:
-                path, name = os.path.split(url)
+            for recent_url in options.recent_repos:
+                path, name = os.path.split(recent_url)
                 item = li.item_append(name)
-                item.data['url'] = url
+                item.data['url'] = recent_url
         li.show()
 
         # table+rect to respect min size :/
@@ -100,7 +101,11 @@ class RepoSelector(Popup):
         bt.disabled = True
         self.part_content_set('button3', bt)
 
-        self.show()
+        if url is not None:
+            self.try_to_load(url)
+        else:
+            self.callback_block_clicked_add(lambda p: p.delete())
+            self.show()
 
     def load_btn_cb(self, bt):
         fs = FolderSelector(self)
@@ -109,10 +114,30 @@ class RepoSelector(Popup):
     def fs_done_cb(self, fs, path):
         fs.delete()
         if path and os.path.isdir(path):
-            self.done_cb(self, path, *self.done_cb_args)
+            self.try_to_load(path)
 
     def recent_selected_cb(self, li, item):
-        self.done_cb(self, item.data['url'], *self.done_cb_args)
+        self.try_to_load(item.data['url'])
+
+    def try_to_load(self, path):
+        repo = repo_factory(path)
+        if repo:
+            repo.load_from_url(path, self.load_done_cb, repo)
+        else:
+            self.show()
+
+    def load_done_cb(self, success, repo):
+        if success is True:
+            # save to recent history (popping to the top if necessary)
+            if repo.url in options.recent_repos:
+                options.recent_repos.remove(repo.url)
+            options.recent_repos.insert(0, repo.url)
+
+            # show the new loaded repo
+            self.win.repo_set(repo)
+            self.delete()
+        else:
+            self.show()
 
 
 class FolderSelector(Fileselector):
@@ -137,6 +162,26 @@ class FolderSelector(Fileselector):
 
     def delete(self):
         self.popup.delete()
+
+
+class EgituMenu(Menu):
+    def __init__(self, win, parent):
+        Menu.__init__(self, win)
+        self.win = win
+        self.item_add(None, "Refresh", "refresh", self._item_refresh_cb)
+        self.item_add(None, "Open", "open", self._item_open_cb)
+        x, y, w, h = parent.geometry
+        self.move(x + w, y + 10)
+        self.show()
+
+    def _item_refresh_cb(self, menu, item):
+        def _refresh_done_cb(success):
+            self.win.update_header()
+            self.win.graph.update()
+        self.win.repo.refresh(_refresh_done_cb)
+
+    def _item_open_cb(self, menu, item):
+        RepoSelector(self.win)
 
 
 class EgituWin(StandardWindow):
@@ -177,8 +222,7 @@ class EgituWin(StandardWindow):
             self.graph.update()
         bt = Button(self)
         bt.content = Icon(self, standard='refresh', size_hint_min=(17,17))
-        bt.tooltip_text_set('Refresh the current repo status')
-        bt.callback_clicked_add(lambda b: self.repo.refresh(_refresh_done_cb))
+        bt.callback_clicked_add(lambda b: EgituMenu(self, b))
         tb.pack(bt, 0, 0, 1, 1)
         bt.show()
         
