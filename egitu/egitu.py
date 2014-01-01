@@ -30,6 +30,7 @@ from egitu_gui_win import EgituWin, RepoSelector
 
 def load_done_cb(success, win, repo):
     print("==="*9)
+    print("url: %s" % repo.url)
     print("name: %s" % repo.name)
     print("desc: %s" % repo.description)
     print("current_branch: %s" % repo.current_branch)
@@ -38,7 +39,13 @@ def load_done_cb(success, win, repo):
     print("status_mods: %s" % repo.status.mods)
     print("status_mods_staged: %s" % repo.status.mods_staged)
     print("status_untr: %s" % repo.status.untr)
+    # show the new loaded repo
     win.repo_set(repo)
+
+    # save to recent history (popping to the top if necessary)
+    if repo.url in options.recent_repos:
+        options.recent_repos.remove(repo.url)
+    options.recent_repos.insert(0, repo.url)
 
 def path_selected_cb(selector, path, win):
     if selector:

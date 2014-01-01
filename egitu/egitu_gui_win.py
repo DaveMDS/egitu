@@ -37,7 +37,8 @@ from efl.elementary.scroller import Scroller
 from efl.elementary.table import Table
 from efl.elementary.frame import Frame
 
-from egitu_utils import theme_resource_get, EXPAND_BOTH, EXPAND_HORIZ, FILL_BOTH, FILL_HORIZ
+from egitu_utils import options, theme_resource_get, \
+    EXPAND_BOTH, EXPAND_HORIZ, FILL_BOTH, FILL_HORIZ
 from egitu_gui_dag import DagGraph
 from egitu_gui_commitbox import CommitInfoBox
 
@@ -53,14 +54,21 @@ class RepoSelector(Popup):
         self.done_cb_args = args
 
         # title
-        self.part_text_set('title,text', 'Load repository')
+        self.part_text_set('title,text', 'Recent Repositories')
         ic = Icon(self, file=theme_resource_get('egitu.png'))
         self.part_content_set('title,icon', ic)
 
         # content: recent list
         li = List(self, size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
-        for i in range(1):
-            li.item_append('no recent repo (TODO)')
+        li.callback_activated_add(self.recent_selected_cb)
+        if len(options.recent_repos) < 1:
+            item = li.item_append('no recent repository')
+            item.disabled = True
+        else:
+            for url in options.recent_repos:
+                path, name = os.path.split(url)
+                item = li.item_append(name)
+                item.data['url'] = url
         li.show()
 
         # table+rect to respect min size :/
@@ -80,16 +88,16 @@ class RepoSelector(Popup):
         # self.item_append('asd2', None)
 
         # buttons
-        bt = Button(self, text='Load')
+        bt = Button(self, text='Open')
         bt.callback_clicked_add(self.load_btn_cb)
         self.part_content_set('button1', bt)
 
-        bt = Button(self, text='Create (TODO)')
+        bt = Button(self, text='Clone (TODO)')
         bt.disabled = True
         self.part_content_set('button2', bt)
 
-        bt = Button(self, text='Exit')
-        bt.callback_clicked_add(lambda b: elm.exit())
+        bt = Button(self, text='Create (TODO)')
+        bt.disabled = True
         self.part_content_set('button3', bt)
 
         self.show()
@@ -103,6 +111,9 @@ class RepoSelector(Popup):
         if path and os.path.isdir(path):
             self.done_cb(self, path, *self.done_cb_args)
 
+    def recent_selected_cb(self, li, item):
+        self.done_cb(self, item.data['url'], *self.done_cb_args)
+
 
 class FolderSelector(Fileselector):
     def __init__(self, parent):
@@ -112,7 +123,7 @@ class FolderSelector(Fileselector):
 
         # table+rect to respect min size :/
         tb = Table(self, size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
-        r = Rectangle(self.evas, color=(0,0,0,0), size_hint_min=(250,250),
+        r = Rectangle(self.evas, color=(0,0,0,0), size_hint_min=(300,300),
                       size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
         tb.pack(r, 0, 0, 1, 1)
         tb.pack(self, 0, 0, 1, 1)
@@ -216,10 +227,12 @@ class EgituWin(StandardWindow):
         tb.pack(lb, 4, 0, 1, 1)
         lb.show()
 
-        self.stage_button = bt = Button(self, text="stage")
+        self.stage_button = bt = Button(self, text="stage (TODO)")
+        bt.disabled = True
         tb.pack(bt, 5, 0, 1, 1)
 
-        self.commit_button = bt = Button(self, text="commit!")
+        self.commit_button = bt = Button(self, text="commit! (TODO)")
+        bt.disabled = True
         tb.pack(bt, 6, 0, 1, 1)
 
         ### Main content (left + right panes)

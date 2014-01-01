@@ -92,6 +92,10 @@ class Repository(object):
         raise NotImplementedError("refresh not implemented in backend")
 
     @property
+    def url(self):
+        raise NotImplementedError("name not implemented in backend")
+
+    @property
     def name(self):
         raise NotImplementedError("name not implemented in backend")
 
@@ -235,6 +239,10 @@ class GitBackend(Repository):
             self._tags = lines
             done_cb(True, *args)
         GitCmd(self._url, 'tag', _cmd_done_cb)
+
+    @property
+    def url(self):
+        return self._url
 
     @property
     def name(self):
