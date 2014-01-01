@@ -24,10 +24,10 @@ import argparse
 
 from efl import elementary as elm
 from egitu_vcs import repo_factory
-from egitu_gui_win import EgituWin
+from egitu_gui_win import EgituWin, RepoSelector
 
 
-def load_done_cb(success, repo):
+def load_done_cb(success, win, repo):
     print("==="*9)
     print("name: %s" % repo.name)
     print("desc: %s" % repo.description)
@@ -37,7 +37,19 @@ def load_done_cb(success, repo):
     print("status_mods: %s" % repo.status.mods)
     print("status_mods_staged: %s" % repo.status.mods_staged)
     print("status_untr: %s" % repo.status.untr)
-    win = EgituWin(repo)
+    win.repo_set(repo)
+
+def path_selected_cb(selector, path, win):
+    if selector:
+        selector.delete()
+
+    repo = repo_factory(path)
+    if repo:
+        repo.load_from_url(path, load_done_cb, win, repo)
+    else:
+        # TODO alert about the error
+        RepoSelector(win, path_selected_cb, win)
+
 
 
 def main():
@@ -50,16 +62,14 @@ def main():
                    # const=sum, default=max,
                    # help='sum the integers (default: find the max)')
     args = parser.parse_args()
-    
+
+
+    elm.init()
+    win = EgituWin()
 
     url = args.repo if args.repo else os.getcwd()
-    repo = repo_factory(url)
-    if not repo:
-        # TODO ask with the gui
-        return 1
+    path_selected_cb(None, url, win)
 
-    repo.load_from_url(url, load_done_cb, repo)
-    elm.init()
     elm.run()
     elm.shutdown()
     return 0

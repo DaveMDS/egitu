@@ -172,7 +172,9 @@ class GitBackend(Repository):
         self._tags = []
 
     def check_url(self, url):
-        return True if os.path.isdir(os.path.join(url, '.git')) else False
+        if url and os.path.isdir(os.path.join(url, '.git')):
+            return True
+        return False
         
     def load_from_url(self, url, done_cb, *args):
         url = os.path.abspath(url) # TODO is this right for real url ??

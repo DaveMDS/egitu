@@ -66,7 +66,7 @@ class CommitInfoBox(Frame):
             tb.pack(self.diff, 0, 1, 2, 1)
 
         if commit:
-            self.commit_set(commit)
+            self.commit_set(repo, commit)
 
     def diff_show_cb(self, en):
         def _diff_done_cb():
@@ -79,7 +79,8 @@ class CommitInfoBox(Frame):
         self.repo.request_diff(_diff_done_cb, _diff_line_cb, commit1=self.commit)
 
 
-    def commit_set(self, commit):
+    def commit_set(self, repo, commit):
+        self.repo = repo
         self.commit = commit
         text = ''
         if commit.commit_date:

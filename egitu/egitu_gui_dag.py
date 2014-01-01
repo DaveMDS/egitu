@@ -34,9 +34,9 @@ from egitu_vcs import Commit
 
 
 class DagGraph(Table):
-    def __init__(self, parent, repo, *args, **kargs):
+    def __init__(self, parent, *args, **kargs):
+        self.repo = None
         self.win = parent
-        self.repo = repo
         self.themef = theme_resource_get('main.edj')
         # self.points = []
         # self.lines = []
@@ -45,7 +45,8 @@ class DagGraph(Table):
         
         Table.__init__(self, parent, homogeneous=False, padding=(0,0))
 
-    def populate(self):
+    def populate(self, repo):
+        self.repo = repo
         self._col = self._row = 1
         self._open_connections = {}
         self._first_commit = None
@@ -111,7 +112,7 @@ class DagGraph(Table):
 
     def update(self):
         self.clear(True)
-        self.populate()
+        self.populate(self.repo)
 
     def point_add(self, commit, col, row):
         p = Edje(self.evas, file=self.themef, group='egitu/graph/item',
