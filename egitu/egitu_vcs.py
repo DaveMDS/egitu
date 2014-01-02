@@ -189,6 +189,8 @@ class GitBackend(Repository):
         self._name = self._url.split(os.sep)[-1]
         desc_file = os.path.join(self._url, '.git', 'description')
         self._description = file_get_contents(desc_file)
+        if self._description.startswith('Unnamed repository'):
+            self._description = ''
 
         self.refresh(done_cb, *args)
 

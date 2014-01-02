@@ -183,6 +183,37 @@ class EgituMenu(Menu):
     def _item_open_cb(self, menu, item):
         RepoSelector(self.win)
 
+class EditableDescription(Entry):
+    def __init__(self, win):
+        self.win = win
+        Entry.__init__(self, win, editable=True, single_line=True, scale=1.5,
+                       size_hint_weight=EXPAND_HORIZ, size_hint_align=FILL_HORIZ)
+        self.tooltip_text_set("Click to edit description")
+        self.callback_clicked_add(self._click_cb)
+        self.callback_activated_add(self._done_cb, save=True)
+        self.callback_aborted_add(self._done_cb, save=False)
+
+    def _click_cb(self, entry):
+        self.scrollable = True
+        self.tooltip_unset()
+        self.orig_text = self.text
+        ic = Icon(self, standard="close", size_hint_min=(20,20))
+        ic.callback_clicked_add(self._done_cb, False)
+        self.part_content_set("end", ic)
+
+    def _done_cb(self, entry, save):
+        self.scrollable = False
+        self.tooltip_text_set("Click to edit description")
+        self.focus = False
+        if save is True:
+            self.win.repo.description_set(self.text, self._description_set_cb)
+        else:
+            self.text = self.orig_text
+            del self.orig_text
+
+    def _description_set_cb(self, success):
+        # TODO alert if fail
+        self.text = self.win.repo.description
 
 class EgituWin(StandardWindow):
     def __init__(self):
@@ -223,34 +254,9 @@ class EgituWin(StandardWindow):
         bt.show()
        
         # editable description entry
-        def desc_done_cb(obj, en, save):
-            def _set_cb(success):
-                # TODO alert if fail
-                en.text = repo.description
-            if save is True:
-                repo.description_set(en.text, _set_cb)
-            en.scrollable = False
-            en.focus = False
-            en.tooltip_text_set("Click to edit description")
-            
-
-        def desc_click_cb(en):
-            en.scrollable = True
-            en.tooltip_unset()
-            ic = Icon(self, standard="close", size_hint_min=(20,20))
-            ic.callback_clicked_add(desc_done_cb, en, False)
-            en.part_content_set("end", ic)
-
-        en = Entry(self, editable=True, single_line=True, scale=1.5,
-                   size_hint_weight=EXPAND_HORIZ, size_hint_align=FILL_HORIZ)
-        self.caption_label = en
-        en.tooltip_text_set("Click to edit description")
-        en.callback_clicked_add(desc_click_cb)
-        en.callback_activated_add(desc_done_cb, en, True)
-        en.callback_aborted_add(desc_done_cb, en, False)
-        en.callback_unfocused_add(desc_done_cb, en, False)
-        tb.pack(en, 1, 0, 1, 1)
-        en.show()
+        self.caption_label = ed = EditableDescription(self)
+        tb.pack(ed, 1, 0, 1, 1)
+        ed.show()
 
         # branch selector
         lb = Label(self, text='On branch')
@@ -316,10 +322,10 @@ class EgituWin(StandardWindow):
 
         # update window title
         self.title = "%s [%s]" % (self.repo.name, self.repo.current_branch)
-        if self.repo.description and not self.repo.description.startswith('Unnamed repository;'):
-            self.caption_label.text = self.repo.description
-        else:
-            self.caption_label.text = 'Unnamed repository; click to edit.'
+
+        # update repo description
+        self.caption_label.text = self.repo.description or \
+                                  'Unnamed repository; click to edit.'
 
         # update the status
         if self.repo.status.is_clean:
