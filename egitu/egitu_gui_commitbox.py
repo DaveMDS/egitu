@@ -34,28 +34,26 @@ def LOG(text):
     # pass
 
 
-class CommitInfoBox(Frame):
+class CommitInfoBox(Table):
     def __init__(self, parent, repo, commit = None, short_sha=False, show_diff=False):
         self.repo = repo
         self.short_sha = short_sha
         self.show_diff = show_diff
         self.commit = None
 
-        Frame.__init__(self, parent, style='pad_small')
-
-        self.content = tb = Table(self, padding=(5,5))
-        tb.show()
+        Table.__init__(self, parent,  padding=(5,5))
+        self.show()
 
         self.picture = GravatarPict(self)
         self.picture.size_hint_align = 0.0, 0.0
         self.picture.show()
-        tb.pack(self.picture, 0, 0, 1, 1)
+        self.pack(self.picture, 0, 0, 1, 1)
         
         self.entry = Entry(self, text="Unknown")
         self.entry.size_hint_weight = EXPAND_BOTH
         self.entry.size_hint_align = FILL_BOTH
         self.entry.show()
-        tb.pack(self.entry, 1, 0, 1, 1)
+        self.pack(self.entry, 1, 0, 1, 1)
 
         if show_diff is True:
             self.diff = Entry(self, editable=False, scrollable=True,
@@ -63,7 +61,7 @@ class CommitInfoBox(Frame):
             self.diff.part_text_set('guide', 'click to show diff')
             self.diff.callback_clicked_add(self.diff_show_cb)
             self.diff.show()
-            tb.pack(self.diff, 0, 1, 2, 1)
+            self.pack(self.diff, 0, 1, 2, 1)
 
         if commit:
             self.commit_set(repo, commit)
@@ -77,7 +75,6 @@ class CommitInfoBox(Frame):
 
         en.text = ''
         self.repo.request_diff(_diff_done_cb, _diff_line_cb, commit1=self.commit)
-
 
     def commit_set(self, repo, commit):
         self.repo = repo
@@ -95,5 +92,4 @@ class CommitInfoBox(Frame):
         self.picture.email_set(commit.author_email)
         if self.show_diff:
             self.diff.text = ''
-        
 
