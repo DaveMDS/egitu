@@ -70,6 +70,7 @@ class DagGraph(Table):
         if not self.repo.status.is_clean:
             c = Commit()
             c.title = "Local changes"
+            c.tags = ['Local changes']
             self.point_add(c, self._col, self._row)
             # self.connection_add(1, 1, 1, 2)
             self._row += 1

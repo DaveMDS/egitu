@@ -191,8 +191,7 @@ class EgituWin(StandardWindow):
         self.caption_label = None
         self.status_label = None
         self.commit_list = None
-        self.stage_button = None
-        self.commit_button = None
+        # self.commit_button = None
 
         StandardWindow.__init__(self, "egitu", "Efl GIT gUi - Egitu")
         self.autodel_set(True)
@@ -216,26 +215,13 @@ class EgituWin(StandardWindow):
         fr.content = tb
         tb.show()
 
-        # reload button (TODO auto-reload)
-        def _refresh_done_cb(bt):
-            self.update_header()
-            self.graph.update()
-        bt = Button(self)
-        bt.content = Icon(self, standard='refresh', size_hint_min=(17,17))
+        # main menu button
+        bt = Button(self, text='Menu')
+        bt.content = Icon(self, standard='home')
         bt.callback_clicked_add(lambda b: EgituMenu(self, b))
         tb.pack(bt, 0, 0, 1, 1)
         bt.show()
-        
-        # branch selector
-        lb = Label(self, text='On branch')
-        tb.pack(lb, 1, 0, 1, 1)
-        lb.show()
-
-        self.branch_selector = brsel = Hoversel(self, text='none')
-        brsel.callback_selected_add(self.branch_selected_cb)
-        tb.pack(brsel, 2, 0, 1, 1)
-        brsel.show()
-
+       
         # editable description entry
         def desc_done_cb(obj, en, save):
             def _set_cb(success):
@@ -263,21 +249,27 @@ class EgituWin(StandardWindow):
         en.callback_activated_add(desc_done_cb, en, True)
         en.callback_aborted_add(desc_done_cb, en, False)
         en.callback_unfocused_add(desc_done_cb, en, False)
-        tb.pack(en, 3, 0, 1, 1)
+        tb.pack(en, 1, 0, 1, 1)
         en.show()
+
+        # branch selector
+        lb = Label(self, text='On branch')
+        tb.pack(lb, 2, 0, 1, 1)
+        lb.show()
+
+        self.branch_selector = brsel = Hoversel(self, text='none')
+        brsel.callback_selected_add(self.branch_selected_cb)
+        tb.pack(brsel, 3, 0, 1, 1)
+        brsel.show()
 
         # status label + button
         self.status_label = lb = Label(self)
         tb.pack(lb, 4, 0, 1, 1)
         lb.show()
 
-        self.stage_button = bt = Button(self, text="stage (TODO)")
-        bt.disabled = True
-        tb.pack(bt, 5, 0, 1, 1)
-
-        self.commit_button = bt = Button(self, text="commit! (TODO)")
-        bt.disabled = True
-        tb.pack(bt, 6, 0, 1, 1)
+        # self.commit_button = bt = Button(self, text="commit! (TODO)")
+        # bt.disabled = True
+        # tb.pack(bt, 5, 0, 1, 1)
 
         ### Main content (left + right panes)
         panes = Panes(self, content_left_size = 0.5,
@@ -333,13 +325,11 @@ class EgituWin(StandardWindow):
         if self.repo.status.is_clean:
             self.status_label.text = "<hilight>Status is clean!</>"
             self.status_label.tooltip_text_set("# On branch %s <br>nothing to commit (working directory clean)" % self.repo.current_branch)
-            self.stage_button.hide()
-            self.commit_button.hide()
+            # self.commit_button.hide()
         else:
             self.status_label.text = "<hilight>Status is dirty !!!</>"
             # TODO tooltip
-            self.stage_button.show()
-            self.commit_button.show()
+            # self.commit_button.show()
 
     def branch_selected_cb(self, flipselector, item):
         # TODO alert if unstaged changes are present
