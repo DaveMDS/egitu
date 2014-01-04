@@ -38,8 +38,8 @@ from efl.elementary.scroller import Scroller
 from efl.elementary.table import Table
 from efl.elementary.frame import Frame
 
-from egitu_utils import options, theme_resource_get, \
-    EXPAND_BOTH, EXPAND_HORIZ, FILL_BOTH, FILL_HORIZ
+from egitu_utils import options, theme_resource_get, recent_history_get, \
+    recent_history_push, EXPAND_BOTH, EXPAND_HORIZ, FILL_BOTH, FILL_HORIZ
 from egitu_gui_dag import DagGraph
 from egitu_gui_commitbox import CommitInfoBox
 from egitu_vcs import repo_factory
@@ -48,6 +48,7 @@ from egitu_vcs import repo_factory
 def LOG(text):
     print(text)
     # pass
+
 
 class RepoSelector(Popup):
     def __init__(self, win, url=None):
@@ -62,14 +63,16 @@ class RepoSelector(Popup):
         # content: recent list
         li = List(self, size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
         li.callback_activated_add(self.recent_selected_cb)
-        if len(options.recent_repos) < 1:
-            item = li.item_append('no recent repository')
-            item.disabled = True
-        else:
-            for recent_url in options.recent_repos:
+
+        recents = recent_history_get()
+        if recents:
+            for recent_url in recents:
                 path, name = os.path.split(recent_url)
                 item = li.item_append(name)
                 item.data['url'] = recent_url
+        else:
+            item = li.item_append('no recent repository')
+            item.disabled = True
         li.show()
 
         # table+rect to respect min size :/
@@ -128,10 +131,8 @@ class RepoSelector(Popup):
 
     def load_done_cb(self, success, repo):
         if success is True:
-            # save to recent history (popping to the top if necessary)
-            if repo.url in options.recent_repos:
-                options.recent_repos.remove(repo.url)
-            options.recent_repos.insert(0, repo.url)
+            # save to recent history
+            recent_history_push(repo.url)
 
             # show the new loaded repo
             self.win.repo_set(repo)

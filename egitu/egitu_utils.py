@@ -38,6 +38,7 @@ FILL_HORIZ = EVAS_HINT_FILL, 0.5
 script_path = os.path.dirname(__file__)
 config_path = os.path.join(xdg_config_home, 'egitu')
 config_file = os.path.join(config_path, 'config.pickle')
+recent_file = os.path.join(config_path, 'recent.history')
 
 
 class Options(object):
@@ -49,7 +50,6 @@ class Options(object):
         self.gravatar_default = 'identicon' # or: mm, identicon, monsterid, wavatar, retro
         self.show_message_in_dag = False
         self.show_remotes_in_dag = True
-        self.recent_repos = []
 
     def load(self):
         try:
@@ -88,6 +88,17 @@ def file_put_contents(path, contents):
 def theme_resource_get(fname):
     return os.path.join(script_path, 'themes', options.theme_name, fname)
 
+def recent_history_get():
+    c = file_get_contents(recent_file)
+    return filter(None, c.split('\n')) if c else None
+
+def recent_history_push(path):
+    history = recent_history_get() or []
+    if path in history:
+        history.remove(path)
+    history.insert(0, path)
+
+    file_put_contents(recent_file, '\n'.join(history))
 
 def format_date(d):
     if options.date_relative is False:
