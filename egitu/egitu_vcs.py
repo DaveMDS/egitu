@@ -330,7 +330,7 @@ class GitBackend(Repository):
         if commit1 is not None and commit1.sha:
             cmd += ' %s^ %s' % (commit1.sha, commit1.sha)
         if path is not None:
-            cmd += ' %s' % path
+            cmd += ' -- %s' % path
         GitCmd(self._url, cmd, done_cb, prog_cb)
 
     def request_changes(self, done_cb, commit1=None, commit2=None):
