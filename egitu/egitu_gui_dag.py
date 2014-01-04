@@ -51,6 +51,8 @@ class DagGraph(Table):
         self._open_connections = {}
         self._first_commit = None
 
+        self.clear(True)
+
         # first col for the date (TODO)
         from efl.evas import Line, Rectangle
         l = Rectangle(self.evas, color=(0,0,0,100))
@@ -110,10 +112,6 @@ class DagGraph(Table):
     def _populate_done_cb(self):
         if self._first_commit is not None:
             self.win.show_commit(self._first_commit)
-
-    def update(self):
-        self.clear(True)
-        self.populate(self.repo)
 
     def point_add(self, commit, col, row):
         p = Edje(self.evas, file=self.themef, group='egitu/graph/item',

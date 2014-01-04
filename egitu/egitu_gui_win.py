@@ -183,6 +183,7 @@ class EgituMenu(Menu):
     def _item_open_cb(self, menu, item):
         RepoSelector(self.win)
 
+
 class EditableDescription(Entry):
     def __init__(self, win):
         self.win = win
