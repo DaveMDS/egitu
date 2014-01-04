@@ -18,24 +18,19 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Egitu.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 
 from efl.elementary.entry import Entry
 from efl.elementary.image import Image
+from efl.elementary.list import List
+from efl.elementary.panes import Panes
 from efl.elementary.table import Table
-from efl.elementary.frame import Frame
 
 from egitu_utils import theme_resource_get, format_date, GravatarPict, \
     EXPAND_BOTH, FILL_BOTH
 
 
-def LOG(text):
-    print(text)
-    # pass
-
-
 class CommitInfoBox(Table):
-    def __init__(self, parent, repo, commit = None, short_sha=False, show_diff=False):
+    def __init__(self, parent, repo, commit=None, short_sha=False, show_diff=False):
         self.repo = repo
         self.short_sha = short_sha
         self.show_diff = show_diff
@@ -56,25 +51,23 @@ class CommitInfoBox(Table):
         self.pack(self.entry, 1, 0, 1, 1)
 
         if show_diff is True:
-            self.diff = Entry(self, editable=False, scrollable=True,
-                size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
-            self.diff.part_text_set('guide', 'click to show diff')
-            self.diff.callback_clicked_add(self.diff_show_cb)
-            self.diff.show()
-            self.pack(self.diff, 0, 1, 2, 1)
+            panes = Panes(self, content_left_size = 0.3, horizontal=True,
+                          size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
+            self.pack(panes, 0, 1, 2, 1)
+            panes.show()
+
+            self.diff_list = List(self, size_hint_weight=EXPAND_BOTH,
+                                          size_hint_align=FILL_BOTH)
+            self.diff_list.callback_selected_add(self.change_selected_cb)
+            panes.part_content_set("left", self.diff_list)
+            
+
+            self.diff_entry = Entry(self, editable=False, scrollable=True,
+                        size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
+            panes.part_content_set("right", self.diff_entry)
 
         if commit:
             self.commit_set(repo, commit)
-
-    def diff_show_cb(self, en):
-        def _diff_done_cb():
-            pass
-        def _diff_line_cb(line):
-            # TODO COLOR !!!
-            self.diff.entry_append(line + '<br>')
-
-        en.text = ''
-        self.repo.request_diff(_diff_done_cb, _diff_line_cb, commit1=self.commit)
 
     def commit_set(self, repo, commit):
         self.repo = repo
@@ -90,6 +83,27 @@ class CommitInfoBox(Table):
         self.entry.text = text
 
         self.picture.email_set(commit.author_email)
+
         if self.show_diff:
-            self.diff.text = ''
+            self.diff_list.clear()
+            self.diff_entry.text = ''
+            repo.request_changes(self.changes_done_cb, commit1=commit)
+
+    def changes_done_cb(self, success, lines):
+        for mod, name in lines:
+            it = self.diff_list.item_append('[{}] {}'.format(mod, name))
+            it.data['change'] = mod, name
+        self.diff_list.go()
+
+    def change_selected_cb(self, li, item):
+        mod, path = item.data['change']
+        self.repo.request_diff(self.diff_done_cb, None,
+                               commit1=self.commit, path=path)
+        self.diff_entry.text = 'Loading diff, please wait...'
+
+    def diff_done_cb(self, lines):
+        text = ''
+        for line in lines:
+            text += '{}<br>'.format(line)
+        self.diff_entry.text = text
 

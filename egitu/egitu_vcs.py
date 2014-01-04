@@ -136,6 +136,9 @@ class Repository(object):
     def request_diff(self, done_cb, prog_cb, max_count=0, commit1=None, commit2=None):
         raise NotImplementedError("request_diff() not implemented in backend")
 
+    def request_changes(self, done_cb, commit1=None, commit2=None):
+        raise NotImplementedError("request_changes() not implemented in backend")
+
 
 
 
@@ -318,17 +321,38 @@ class GitBackend(Repository):
         cmd = "log --pretty='format:%s' --decorate=full --all -n %d" % (fmt, max_count)
         GitCmd(self._url, cmd, _cmd_done_cb, _cmd_line_cb)
 
-    def request_diff(self, done_cb, prog_cb, max_count=100, commit1=None, commit2=None):
-        def _cmd_done_cb(lines):
-            done_cb()
-        def _cmd_line_cb(line):
-            prog_cb(line)
+    def request_diff(self, done_cb, prog_cb, max_count=100,
+                           commit1=None, commit2=None, path=None):
 
+        cmd = 'diff'
+        if commit2 and commit2.sha and commit1 and commit1.sha:
+            cmd += ' %s %s' % (commit1.sha, commit2.sha)
         if commit1 is not None and commit1.sha:
-            cmd = "diff %s^ %s" % (commit1.sha, commit1.sha)
-        else:
-            cmd = "diff"
-        GitCmd(self._url, cmd, _cmd_done_cb, _cmd_line_cb)
+            cmd += ' %s^ %s' % (commit1.sha, commit1.sha)
+        if path is not None:
+            cmd += ' %s' % path
+        GitCmd(self._url, cmd, done_cb, prog_cb)
 
+    def request_changes(self, done_cb, commit1=None, commit2=None):
+        def _cmd_done_cb(lines):
+            L = [ line.split('\t') for line in lines ]
+            # A: addition of a file
+            # C: copy of a file into a new one
+            # D: deletion of a file
+            # M: modification of the contents or mode of a file
+            # R: renaming of a file
+            # T: change in the type of the file
+            # U: file is unmerged (you must complete the merge before it can be committed)
+            # X: "unknown" change type (most probably a bug, please report it)
 
+            # TODO handle move, rename (unmerged ??)
+            
+            done_cb(True, L)
+
+        cmd = 'diff --name-status'
+        if commit2 and commit2.sha and commit1 and commit1.sha:
+            cmd += ' %s %s' % (commit1.sha, commit2.sha)
+        elif commit1 is not None and commit1.sha:
+            cmd += ' %s^ %s' % (commit1.sha, commit1.sha)
+        GitCmd(self._url, cmd, _cmd_done_cb)
 
