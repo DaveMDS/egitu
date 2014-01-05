@@ -132,6 +132,7 @@ class GravatarPict(Image):
 
     cache_folder = os.path.join(xdg_cache_home, 'gravatar')
     default_file = theme_resource_get('avatar.png')
+    jobs = []
 
     def __init__(self, parent, size=50):
         self.size_min = size
@@ -154,9 +155,14 @@ class GravatarPict(Image):
             return
 
         hash_key = hashlib.md5(email.encode('utf-8').lower()).hexdigest()
+        local_path = os.path.join(self.cache_folder, hash_key + '.jpg')
+
+        # downloading yet ? 
+        if local_path in self.jobs:
+            self.file = self.default_file
+            return
 
         # search in local cache
-        local_path = os.path.join(self.cache_folder, hash_key + '.jpg')
         if os.path.exists(local_path):
             self.file = local_path
             return
@@ -164,10 +170,13 @@ class GravatarPict(Image):
         # or download from gravatar
         gravatar_url = "http://www.gravatar.com/avatar/%s?size=%d&d=%s" % \
                         (hash_key, self.size_min, options.gravatar_default)
-        
+
+        # local_path += '.part'
         FileDownload(gravatar_url, local_path, self._download_done_cb, None)
+        self.jobs.append(local_path)
         self.file = self.default_file
 
     def _download_done_cb(self, path, status):
-        if status == 200:
+        self.jobs.remove(path)
+        if not self.is_deleted and status == 200:
             self.file = path
