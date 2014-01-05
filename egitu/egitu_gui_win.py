@@ -25,6 +25,7 @@ from efl.evas import Rectangle
 from efl.elementary.window import StandardWindow
 from efl.elementary.box import Box
 from efl.elementary.button import Button
+from efl.elementary.check import Check
 from efl.elementary.entry import Entry
 from efl.elementary.fileselector import Fileselector
 from efl.elementary.hoversel import Hoversel
@@ -38,8 +39,9 @@ from efl.elementary.scroller import Scroller
 from efl.elementary.table import Table
 from efl.elementary.frame import Frame
 
-from egitu_utils import options, theme_resource_get, recent_history_get, \
-    recent_history_push, EXPAND_BOTH, EXPAND_HORIZ, FILL_BOTH, FILL_HORIZ
+from egitu_utils import options, theme_resource_get, GravatarPict, \
+    recent_history_get, recent_history_push, \
+    EXPAND_BOTH, EXPAND_HORIZ, FILL_BOTH, FILL_HORIZ
 from egitu_gui_dag import DagGraph
 from egitu_gui_commitbox import CommitInfoBox
 from egitu_vcs import repo_factory
@@ -169,8 +171,42 @@ class EgituMenu(Menu):
     def __init__(self, win, parent):
         Menu.__init__(self, win)
         self.win = win
+
+        # main actions
         self.item_add(None, "Refresh", "refresh", self._item_refresh_cb)
-        self.item_add(None, "Open", "open", self._item_open_cb)
+        self.item_add(None, "Open", "folder", self._item_open_cb)
+        self.item_separator_add()
+
+        # general options
+        it_gen = self.item_add(None, "General", "preference")
+        
+        it = self.item_add(it_gen, "Use relative dates", None,
+                           self._item_check_opts_cb, 'date_relative')
+        it.content = Check(self, state=options.date_relative)
+
+        it_gravatar = self.item_add(it_gen, "Gravatar")
+        for name in ('mm', 'identicon', 'monsterid', 'wavatar', 'retro'):
+            icon = "arrow_right" if name == options.gravatar_default else None
+            self.item_add(it_gravatar, name, icon,  self._item_gravatar_cb)
+        self.item_separator_add(it_gravatar)
+        self.item_add(it_gravatar, 'Clear icons cache', 'delete',
+                      lambda m,i: GravatarPict.clear_icon_cache())
+
+        # dag options
+        it_dag = self.item_add(None, "Dag", "preference")
+
+        it = self.item_add(it_dag, "Show remote refs", None,
+                           self._item_check_opts_cb, 'show_remotes_in_dag')
+        it.content = Check(self, state=options.show_remotes_in_dag)
+
+        it = self.item_add(it_dag, "Show commit messagges", None,
+                           self._item_check_opts_cb, 'show_message_in_dag')
+        it.content = Check(self, state=options.show_message_in_dag)
+
+        # diff options (TODO)
+        it_dif = self.item_add(None, "Diff", "preference")
+        self.item_add(it_dif, "TODO").disabled = True
+        
         x, y, w, h = parent.geometry
         self.move(x + w, y + 10)
         self.show()
@@ -183,6 +219,15 @@ class EgituMenu(Menu):
 
     def _item_open_cb(self, menu, item):
         RepoSelector(self.win)
+
+    def _item_gravatar_cb(self, menu, item):
+        if options.gravatar_default != item.text:
+            options.gravatar_default = item.text
+            GravatarPict.clear_icon_cache()
+
+    def _item_check_opts_cb(self, menu, item, opt):
+        setattr(options, opt, not item.content.state)
+        self.win.graph.populate(self.win.repo)
 
 
 class EditableDescription(Entry):

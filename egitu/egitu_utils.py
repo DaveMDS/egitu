@@ -21,6 +21,7 @@
 import os
 import hashlib
 import pickle
+import glob
 from datetime import datetime
 from xdg.BaseDirectory import xdg_config_home, xdg_cache_home
 
@@ -125,12 +126,13 @@ def format_date(d):
     else:
         return '{} hours ago'.format(int(s/3600))
 
-
 class GravatarPict(Image):
-    def __init__(self, parent):
-        self.size_min = 50
-        self.cache_folder = os.path.join(xdg_cache_home, 'gravatar')
-        self.default_file = theme_resource_get('avatar.png')
+
+    cache_folder = os.path.join(xdg_cache_home, 'gravatar')
+    default_file = theme_resource_get('avatar.png')
+
+    def __init__(self, parent, size=50):
+        self.size_min = size
 
         if not os.path.exists(self.cache_folder):
             os.makedirs(self.cache_folder)
@@ -138,6 +140,12 @@ class GravatarPict(Image):
         Image.__init__(self, parent)
         self.size_hint_min = self.size_min, self.size_min
 
+    @staticmethod
+    def clear_icon_cache():
+        filelist = glob.glob(os.path.join(GravatarPict.cache_folder, '*.jpg'))
+        for f in filelist:
+            os.remove(f)
+        
     def email_set(self, email):
         if not email:
             self.file = self.default_file
@@ -155,9 +163,9 @@ class GravatarPict(Image):
         gravatar_url = "http://www.gravatar.com/avatar/%s?size=%d&d=%s" % \
                         (hash_key, self.size_min, options.gravatar_default)
         
-        FileDownload(gravatar_url, local_path, self.download_done_cb, None)
+        FileDownload(gravatar_url, local_path, self._download_done_cb, None)
         self.file = self.default_file
 
-    def download_done_cb(self, path, status):
+    def _download_done_cb(self, path, status):
         if status == 200:
             self.file = path
