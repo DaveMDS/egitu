@@ -25,7 +25,7 @@ from efl.elementary.list import List
 from efl.elementary.panes import Panes
 from efl.elementary.table import Table
 
-from egitu_utils import theme_resource_get, format_date, GravatarPict, \
+from egitu_utils import options, theme_resource_get, format_date, GravatarPict, \
     EXPAND_BOTH, FILL_BOTH
 
 
@@ -102,7 +102,8 @@ class CommitInfoBox(Table):
         self.diff_entry.text = 'Loading diff, please wait...'
 
     def diff_done_cb(self, lines):
-        base = 'font_size=11'
+        base = 'font={} font_size={}'.format(
+                options.diff_font_face, options.diff_font_size)
         text = ''
         for line in lines:
             if line[0] == '+':

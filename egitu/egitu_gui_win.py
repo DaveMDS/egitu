@@ -203,9 +203,17 @@ class EgituMenu(Menu):
                            self._item_check_opts_cb, 'show_message_in_dag')
         it.content = Check(self, state=options.show_message_in_dag)
 
-        # diff options (TODO)
-        it_dif = self.item_add(None, "Diff", "preference")
-        self.item_add(it_dif, "TODO").disabled = True
+        # diff options
+        it_diff = self.item_add(None, "Diff", "preference")
+        it_font = self.item_add(it_diff, "Font face")
+        for face in ('Sans', 'Mono'):
+            icon = "arrow_right" if face == options.diff_font_face else None
+            self.item_add(it_font, face, icon, self._item_font_face_cb)
+
+        it_font = self.item_add(it_diff, "Font size")
+        for size in (8, 9, 10, 11, 12, 13, 14):
+            icon = "arrow_right" if size == options.diff_font_size else None
+            self.item_add(it_font, str(size), icon, self._item_font_size_cb)
         
         x, y, w, h = parent.geometry
         self.move(x + w, y + 10)
@@ -220,15 +228,20 @@ class EgituMenu(Menu):
     def _item_open_cb(self, menu, item):
         RepoSelector(self.win)
 
+    def _item_check_opts_cb(self, menu, item, opt):
+        setattr(options, opt, not item.content.state)
+        self.win.graph.populate(self.win.repo)
+
     def _item_gravatar_cb(self, menu, item):
         if options.gravatar_default != item.text:
             options.gravatar_default = item.text
             GravatarPict.clear_icon_cache()
 
-    def _item_check_opts_cb(self, menu, item, opt):
-        setattr(options, opt, not item.content.state)
-        self.win.graph.populate(self.win.repo)
+    def _item_font_face_cb(self, menu, item):
+        options.diff_font_face = item.text
 
+    def _item_font_size_cb(self, menu, item):
+        options.diff_font_size = int(item.text)
 
 class EditableDescription(Entry):
     def __init__(self, win):

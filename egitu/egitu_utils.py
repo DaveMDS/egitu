@@ -51,6 +51,8 @@ class Options(object):
         self.gravatar_default = 'identicon' # or: mm, identicon, monsterid, wavatar, retro
         self.show_message_in_dag = False
         self.show_remotes_in_dag = True
+        self.diff_font_face = 'Sans'
+        self.diff_font_size = 10
 
     def load(self):
         try:
