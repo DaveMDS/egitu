@@ -323,7 +323,6 @@ class GitBackend(Repository):
 
     def request_diff(self, done_cb, prog_cb, max_count=100,
                            commit1=None, commit2=None, path=None):
-
         cmd = 'diff'
         if commit2 and commit2.sha and commit1 and commit1.sha:
             cmd += ' %s %s' % (commit1.sha, commit2.sha)
@@ -349,7 +348,7 @@ class GitBackend(Repository):
             
             done_cb(True, L)
 
-        cmd = 'diff --name-status'
+        cmd = 'diff HEAD --name-status'
         if commit2 and commit2.sha and commit1 and commit1.sha:
             cmd += ' %s %s' % (commit1.sha, commit2.sha)
         elif commit1 is not None and commit1.sha:

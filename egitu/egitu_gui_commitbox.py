@@ -20,6 +20,7 @@
 
 
 from efl.elementary.entry import Entry, utf8_to_markup
+from efl.elementary.icon import Icon
 from efl.elementary.image import Image
 from efl.elementary.list import List
 from efl.elementary.panes import Panes
@@ -90,8 +91,14 @@ class CommitInfoBox(Table):
             repo.request_changes(self.changes_done_cb, commit1=commit)
 
     def changes_done_cb(self, success, lines):
+
         for mod, name in lines:
-            it = self.diff_list.item_append('[{}] {}'.format(mod, name))
+            if mod in ('M', 'A', 'D'):
+                icon_name = 'mod_{}.png'.format(mod.lower())
+                icon = Icon(self, file=theme_resource_get(icon_name))
+                it = self.diff_list.item_append(name, icon)
+            else:
+                it = self.diff_list.item_append('[{}] {}'.format(mod, name))
             it.data['change'] = mod, name
         self.diff_list.go()
 
