@@ -348,10 +348,12 @@ class GitBackend(Repository):
             
             done_cb(True, L)
 
-        cmd = 'diff HEAD --name-status'
+        cmd = 'diff --name-status'
         if commit2 and commit2.sha and commit1 and commit1.sha:
             cmd += ' %s %s' % (commit1.sha, commit2.sha)
         elif commit1 is not None and commit1.sha:
             cmd += ' %s^ %s' % (commit1.sha, commit1.sha)
+        else:
+            cmd += ' HEAD'
         GitCmd(self._url, cmd, _cmd_done_cb)
 
