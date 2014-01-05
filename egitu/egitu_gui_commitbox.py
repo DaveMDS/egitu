@@ -19,7 +19,7 @@
 # along with Egitu.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from efl.elementary.entry import Entry, markup_to_utf8
+from efl.elementary.entry import Entry, utf8_to_markup
 from efl.elementary.image import Image
 from efl.elementary.list import List
 from efl.elementary.panes import Panes
@@ -113,6 +113,6 @@ class CommitInfoBox(Table):
                 add = ''
             else:
                 add = 'color=#00F'
-            text += '<font {} {}>{}</font><br>'.format(base, add, markup_to_utf8(line))
+            text += '<font {} {}>{}</font><br>'.format(base, add, utf8_to_markup(line))
         self.diff_entry.text = text
 
