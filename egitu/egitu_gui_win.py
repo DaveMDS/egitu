@@ -178,7 +178,7 @@ class EgituMenu(Menu):
     def _item_refresh_cb(self, menu, item):
         def _refresh_done_cb(success):
             self.win.update_header()
-            self.win.graph.update()
+            self.win.graph.populate(self.win.repo)
         self.win.repo.refresh(_refresh_done_cb)
 
     def _item_open_cb(self, menu, item):
