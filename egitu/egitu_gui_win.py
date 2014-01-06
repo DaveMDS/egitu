@@ -43,7 +43,7 @@ from egitu_utils import options, theme_resource_get, GravatarPict, \
     recent_history_get, recent_history_push, \
     EXPAND_BOTH, EXPAND_HORIZ, FILL_BOTH, FILL_HORIZ
 from egitu_gui_dag import DagGraph
-from egitu_gui_commitbox import DiffViewer
+from egitu_gui_diffview import DiffViewer
 from egitu_vcs import repo_factory
 
 
