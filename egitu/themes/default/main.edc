@@ -80,7 +80,6 @@ collections {
             description { state: "visible" 0.0;
                inherit: "default" 0.0;
                visible: 1;
-               // visible: 0;
                rel1 {
                   to: "label.text";
                   offset: -6 0;
@@ -198,6 +197,43 @@ collections {
             }
          }
          part { name: "ref.text"; type: TEXT;
+            description { state: "default" 0.0;
+               rel1 {
+                  offset: 6 0;
+               }
+               text {
+                  font: "Sans";
+                  size: 10;
+                  min: 1 1;
+               }
+            }
+            description { state: "visible" 0.0;
+               inherit: "default" 0.0;
+               visible: 1;
+            }
+         }
+      }
+   }
+
+   group { name: "egitu/graph/msg";
+      parts {
+         part { name: "bg"; type: IMAGE;
+            description { state: "default" 0.0;
+               rel1 {
+                  to: "msg.text";
+                  offset: -6 -1;
+               }
+               rel2 {
+                  to: "msg.text";
+                  offset: 6 1;
+               }
+               image {
+                  normal: "graph_text_bg.png";
+                  border:7 7 4 4;
+               }
+            }
+         }
+         part { name: "msg.text"; type: TEXT;
             description { state: "default" 0.0;
                rel1 {
                   offset: 6 0;

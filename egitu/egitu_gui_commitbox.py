@@ -19,7 +19,7 @@
 # along with Egitu.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from efl.elementary.entry import Entry, utf8_to_markup
+from efl.elementary.entry import Entry, ELM_WRAP_NONE, utf8_to_markup
 from efl.elementary.icon import Icon
 from efl.elementary.image import Image
 from efl.elementary.list import List
@@ -46,6 +46,7 @@ class CommitInfoBox(Table):
         self.pack(self.picture, 0, 0, 1, 1)
         
         self.entry = Entry(self, text="Unknown")
+        self.entry.line_wrap = ELM_WRAP_NONE
         self.entry.size_hint_weight = EXPAND_BOTH
         self.entry.size_hint_align = FILL_BOTH
         self.entry.show()

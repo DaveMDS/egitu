@@ -28,7 +28,7 @@ from efl.elementary.table import Table
 from efl.elementary.frame import Frame
 from efl.elementary.layout import Layout
 
-from egitu_utils import options, theme_resource_get, FILL_BOTH
+from egitu_utils import options, theme_resource_get, EXPAND_BOTH, FILL_BOTH
 from egitu_gui_commitbox import CommitInfoBox
 from egitu_vcs import Commit
 
@@ -114,40 +114,41 @@ class DagGraph(Table):
             self.win.show_commit(self._first_commit)
 
     def point_add(self, commit, col, row):
-        p = Edje(self.evas, file=self.themef, group='egitu/graph/item',
-                 size_hint_align=FILL_BOTH, size_hint_min = (20,20))
-        p.signal_callback_add("mouse,in", "base", self.point_mouse_in_cb, commit)
-        p.signal_callback_add("mouse,out", "base", self.point_mouse_out_cb, commit)
-        p.signal_callback_add("mouse,down,*", "base", self.point_mouse_down_cb, commit)
-        p.show()
+        p = Layout(self, file=(self.themef,'egitu/graph/item'))
+        p.edje.signal_callback_add("mouse,down,*", "base", self.point_mouse_down_cb, commit)
+        p.tooltip_content_cb_set(lambda o,tt:
+                CommitInfoBox(self, self.repo, commit, short_sha=True))
 
         if options.show_message_in_dag is True:
-            p.part_text_set('label.text', commit.title)
-            p.signal_emit('label,show', 'egitu')
+            l = Layout(self, file=(self.themef, 'egitu/graph/msg'))
+            l.text_set('msg.text', commit.title)
+            p.box_append('refs.box', l)
+            l.show()
 
         for head in commit.heads:
             if head == 'HEAD':
                 p.signal_emit('head,show', 'egitu')
             else:
                 l = Layout(self, file=(self.themef, 'egitu/graph/ref'))
-                l.part_text_set('ref.text', head)
+                l.text_set('ref.text', head)
+                p.box_append('refs.box', l)
                 l.show()
-                p.part_box_append('refs.box', l)
 
         if options.show_remotes_in_dag:
             for head in commit.remotes:
                 l = Layout(self, file=(self.themef, 'egitu/graph/ref'))
-                l.part_text_set('ref.text', head)
+                l.text_set('ref.text', head)
+                p.box_append('refs.box', l)
                 l.show()
-                p.part_box_append('refs.box', l)
                 
         for tag in commit.tags:
             l = Layout(self, file=(self.themef, 'egitu/graph/tag'))
-            l.part_text_set('tag.text', tag)
+            l.text_set('tag.text', tag)
+            p.box_append('refs.box', l)
             l.show()
-            p.part_box_append('refs.box', l)
 
         self.pack(p, col, row, 1, 1)
+        p.show()
 
     def connection_add(self, col1, row1, col2, row2):
         # print ("CONNECTION", col1, row1, col2, row2)
@@ -170,19 +171,6 @@ class DagGraph(Table):
 
         l.lower()
         l.show()
-
-    def point_mouse_in_cb(self, obj, signal, source, commit):
-        if not 'popup_obj' in obj.data:
-            obj.data['popup_obj'] = o = CommitInfoBox(self, self.repo, commit, short_sha=True)
-            x, y = self.evas.pointer_canvas_xy_get()
-            o.pos = x + 10, y + 30
-            o.size = 300, 30
-            o.show()
-
-    def point_mouse_out_cb(self, obj, signal, source, commit):
-        if 'popup_obj' in obj.data:
-            obj.data['popup_obj'].delete()
-            del obj.data['popup_obj']
 
     def point_mouse_down_cb(self, obj, signal, source, commit):
         self.win.show_commit(commit)
