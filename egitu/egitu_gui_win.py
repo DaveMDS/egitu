@@ -43,7 +43,7 @@ from egitu_utils import options, theme_resource_get, GravatarPict, \
     recent_history_get, recent_history_push, \
     EXPAND_BOTH, EXPAND_HORIZ, FILL_BOTH, FILL_HORIZ
 from egitu_gui_dag import DagGraph
-from egitu_gui_commitbox import CommitInfoBox
+from egitu_gui_commitbox import DiffViewer
 from egitu_vcs import repo_factory
 
 
@@ -350,8 +350,8 @@ class EgituWin(StandardWindow):
                        size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
         panes.part_content_set("left", scr)
 
-        # the commit box on the right
-        self.commit_info = CommitInfoBox(self, self.repo, show_diff=True)
+        # the diff viewer on the right
+        self.commit_info = DiffViewer(self, self.repo)
         self.commit_info.size_hint_weight = EXPAND_BOTH
         self.commit_info.size_hint_align = 0.0, 0.0
         panes.part_content_set("right", self.commit_info)

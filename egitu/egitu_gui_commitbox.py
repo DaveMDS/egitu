@@ -19,7 +19,7 @@
 # along with Egitu.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from efl.elementary.entry import Entry, ELM_WRAP_NONE, utf8_to_markup
+from efl.elementary.entry import Entry, utf8_to_markup
 from efl.elementary.icon import Icon
 from efl.elementary.image import Image
 from efl.elementary.list import List
@@ -30,11 +30,9 @@ from egitu_utils import options, theme_resource_get, format_date, GravatarPict, 
     EXPAND_BOTH, FILL_BOTH
 
 
-class CommitInfoBox(Table):
-    def __init__(self, parent, repo, commit=None, short_sha=False, show_diff=False):
+class DiffViewer(Table):
+    def __init__(self, parent, repo, commit=None):
         self.repo = repo
-        self.short_sha = short_sha
-        self.show_diff = show_diff
         self.commit = None
 
         Table.__init__(self, parent,  padding=(5,5))
@@ -46,27 +44,27 @@ class CommitInfoBox(Table):
         self.pack(self.picture, 0, 0, 1, 1)
         
         self.entry = Entry(self, text="Unknown")
-        self.entry.line_wrap = ELM_WRAP_NONE
+        # self.entry.line_wrap = ELM_WRAP_NONE
         self.entry.size_hint_weight = EXPAND_BOTH
         self.entry.size_hint_align = FILL_BOTH
         self.entry.show()
         self.pack(self.entry, 1, 0, 1, 1)
 
-        if show_diff is True:
-            panes = Panes(self, content_left_size = 0.3, horizontal=True,
-                          size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
-            self.pack(panes, 0, 1, 2, 1)
-            panes.show()
 
-            self.diff_list = List(self, size_hint_weight=EXPAND_BOTH,
-                                          size_hint_align=FILL_BOTH)
-            self.diff_list.callback_selected_add(self.change_selected_cb)
-            panes.part_content_set("left", self.diff_list)
-            
+        panes = Panes(self, content_left_size = 0.3, horizontal=True,
+                      size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
+        self.pack(panes, 0, 1, 2, 1)
+        panes.show()
 
-            self.diff_entry = Entry(self, editable=False, scrollable=True,
-                        size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
-            panes.part_content_set("right", self.diff_entry)
+        self.diff_list = List(self, size_hint_weight=EXPAND_BOTH,
+                                      size_hint_align=FILL_BOTH)
+        self.diff_list.callback_selected_add(self.change_selected_cb)
+        panes.part_content_set("left", self.diff_list)
+        
+
+        self.diff_entry = Entry(self, editable=False, scrollable=True,
+                    size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
+        panes.part_content_set("right", self.diff_entry)
 
         if commit:
             self.commit_set(repo, commit)
@@ -81,15 +79,15 @@ class CommitInfoBox(Table):
         if commit.title:
             text += '<b>%s</b><br>' % (commit.title)
         if commit.sha:
-            text += '%s<br>' % (commit.sha[:7] if self.short_sha else commit.sha)
+            text += '%s<br>' % (commit.sha)
         self.entry.text = text
 
         self.picture.email_set(commit.author_email)
 
-        if self.show_diff:
-            self.diff_list.clear()
-            self.diff_entry.text = ''
-            repo.request_changes(self.changes_done_cb, commit1=commit)
+
+        self.diff_list.clear()
+        self.diff_entry.text = ''
+        repo.request_changes(self.changes_done_cb, commit1=commit)
 
     def changes_done_cb(self, success, lines):
 

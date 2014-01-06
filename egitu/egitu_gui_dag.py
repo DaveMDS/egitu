@@ -24,13 +24,44 @@ from datetime import datetime
 
 from efl import elementary
 from efl.edje import Edje
+from efl.elementary.entry import Entry, ELM_WRAP_NONE
 from efl.elementary.table import Table
 from efl.elementary.frame import Frame
 from efl.elementary.layout import Layout
 
-from egitu_utils import options, theme_resource_get, EXPAND_BOTH, FILL_BOTH
-from egitu_gui_commitbox import CommitInfoBox
+from egitu_utils import options, theme_resource_get, format_date, \
+    GravatarPict, EXPAND_BOTH, FILL_BOTH
 from egitu_vcs import Commit
+
+
+
+class CommitPopup(Table):
+    def __init__(self, parent, repo, commit):
+        self.repo = repo
+        self.commit = commit
+
+        Table.__init__(self, parent,  padding=(5,5))
+        self.show()
+
+        pic = GravatarPict(self)
+        pic.email_set(commit.author_email)
+        self.pack(pic, 0, 0, 1, 1)
+        pic.show()
+
+        text = ''
+        if commit.author and commit.commit_date:
+            date = format_date(commit.commit_date)
+            text += '{} @ {}<br>'.format(commit.author, date)
+        if commit.title:
+            text += '<b>{}</b><br>'.format(commit.title)
+        if commit.sha:
+            text += '{}<br>'.format(commit.sha[:7])
+        en = Entry(self, text=text)
+        en.line_wrap = ELM_WRAP_NONE
+        en.size_hint_weight = EXPAND_BOTH
+        en.size_hint_align = FILL_BOTH
+        self.pack(en, 1, 0, 1, 1)
+        en.show()
 
 
 class DagGraph(Table):
@@ -117,7 +148,7 @@ class DagGraph(Table):
         p = Layout(self, file=(self.themef,'egitu/graph/item'))
         p.edje.signal_callback_add("mouse,down,*", "base", self.point_mouse_down_cb, commit)
         p.tooltip_content_cb_set(lambda o,tt:
-                CommitInfoBox(self, self.repo, commit, short_sha=True))
+                CommitPopup(self, self.repo, commit))
 
         if options.show_message_in_dag is True:
             l = Layout(self, file=(self.themef, 'egitu/graph/msg'))
