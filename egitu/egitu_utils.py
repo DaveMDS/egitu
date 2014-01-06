@@ -93,7 +93,7 @@ def theme_resource_get(fname):
 
 def recent_history_get():
     c = file_get_contents(recent_file)
-    return filter(None, c.split('\n')) if c else None
+    return [l for l in c.split('\n') if l.strip()] if c else None
 
 def recent_history_push(path):
     history = recent_history_get() or []
