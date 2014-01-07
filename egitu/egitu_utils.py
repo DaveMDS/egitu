@@ -27,7 +27,7 @@ from xdg.BaseDirectory import xdg_config_home, xdg_cache_home
 
 from efl.evas import EVAS_HINT_EXPAND, EVAS_HINT_FILL
 from efl.ecore import FileDownload
-from efl.elementary.image import Image
+from efl.elementary.photo import Photo
 
 
 EXPAND_BOTH = EVAS_HINT_EXPAND, EVAS_HINT_EXPAND
@@ -128,20 +128,21 @@ def format_date(d):
     else:
         return '{} hours ago'.format(int(s/3600))
 
-class GravatarPict(Image):
+
+class GravatarPict(Photo):
 
     cache_folder = os.path.join(xdg_cache_home, 'gravatar')
     default_file = theme_resource_get('avatar.png')
     jobs = []
 
-    def __init__(self, parent, size=50):
+    def __init__(self, parent, size=60):
         self.size_min = size
 
         if not os.path.exists(self.cache_folder):
             os.makedirs(self.cache_folder)
 
-        Image.__init__(self, parent)
-        self.size_hint_min = self.size_min, self.size_min
+        Photo.__init__(self, parent, style="shadow",
+                       size_hint_min=(size,size))
 
     @staticmethod
     def clear_icon_cache():
@@ -178,5 +179,5 @@ class GravatarPict(Image):
 
     def _download_done_cb(self, path, status):
         self.jobs.remove(path)
-        if not self.is_deleted and status == 200:
+        if not self.is_deleted() and status == 200:
             self.file = path
