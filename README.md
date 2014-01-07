@@ -1,8 +1,14 @@
-
 Git user interface
 ==================
 
  TODO #1: find a better name
+
+Features
+--------
+ * Draw the DAG of the repo
+ * View the diff of each revision
+ * Edit repository description
+ * Switch branch
 
 
 Requirements
@@ -18,10 +24,13 @@ Requirements
 
 Installation
 ------------
+ * Run directly from the repo (without installing):
+
+    python egitu/egitu.py
 
  * For system-wide installation (needs administrator privileges):
 
-    python setup.py install
+    (sudo) python setup.py install
 
  * For user installation:
 
