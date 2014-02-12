@@ -53,6 +53,7 @@ class Options(object):
         self.show_remotes_in_dag = True
         self.diff_font_face = 'Mono'
         self.diff_font_size = 10
+        self.diff_text_wrap = False
 
     def load(self):
         try:

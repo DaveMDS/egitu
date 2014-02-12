@@ -19,7 +19,8 @@
 # along with Egitu.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from efl.elementary.entry import Entry, utf8_to_markup, ELM_WRAP_NONE
+from efl.elementary.entry import Entry, utf8_to_markup, \
+    ELM_WRAP_NONE, ELM_WRAP_MIXED
 from efl.elementary.icon import Icon
 from efl.elementary.image import Image
 from efl.elementary.list import List
@@ -106,6 +107,8 @@ class DiffViewer(Table):
         mod, path = item.data['change']
         self.repo.request_diff(self.diff_done_cb, None,
                                commit1=self.commit, path=path)
+        self.diff_entry.line_wrap = \
+            ELM_WRAP_MIXED if options.diff_text_wrap else ELM_WRAP_NONE
         self.diff_entry.text = '<info>Loading diff, please wait...</info>'
 
     def diff_done_cb(self, lines):

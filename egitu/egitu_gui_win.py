@@ -205,6 +205,11 @@ class EgituMenu(Menu):
 
         # diff options
         it_diff = self.item_add(None, "Diff", "preference")
+
+        it = self.item_add(it_diff, "Wrap long lines", None,
+                           self._item_check_opts_cb, 'diff_text_wrap')
+        it.content = Check(self, state=options.diff_text_wrap)
+
         it_font = self.item_add(it_diff, "Font face")
         for face in ('Sans', 'Mono'):
             icon = "arrow_right" if face == options.diff_font_face else None
@@ -214,7 +219,7 @@ class EgituMenu(Menu):
         for size in (8, 9, 10, 11, 12, 13, 14):
             icon = "arrow_right" if size == options.diff_font_size else None
             self.item_add(it_font, str(size), icon, self._item_font_size_cb)
-        
+
         x, y, w, h = parent.geometry
         self.move(x + w, y + 10)
         self.show()
