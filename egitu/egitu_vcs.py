@@ -217,9 +217,9 @@ class GitBackend(Repository):
             
             branch = lines.pop(0)[3:]
             if '...' in branch:
-                spl = branch.split('...')[0]
+                spl = branch.split('...')
                 branch = spl[0]
-                self._status.ahead = spl[1]
+                self._status.ahead = int(''.join([s for s in spl[1] if s.isdigit()]))
             self._current_branch =  branch
 
             for line in lines:

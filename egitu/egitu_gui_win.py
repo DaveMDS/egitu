@@ -393,10 +393,10 @@ class EgituWin(StandardWindow):
                                   'Unnamed repository; click to edit.'
 
         # update the status
-        if self.repo.status.ahead == 1:
+        if self.repo.status.ahead == 1 and self.repo.status.is_clean:
             self.status_label.text = "<warning>Ahead by 1 commit</warning>"
-        elif self.repo.status.ahead > 1:
-            self.status_label.text = "<warning>Ahead by %d commits</warning>" % (self.repo.status.ahead)
+        elif self.repo.status.ahead > 1 and self.repo.status.is_clean:
+            self.status_label.text = "<warning>Ahead by {} commits</warning>".format(self.repo.status.ahead)
         elif self.repo.status.is_clean:
             self.status_label.text = "<success>Status is clean!</success>"
             self.status_label.tooltip_text_set("# On branch %s <br>nothing to commit (working directory clean)" % self.repo.current_branch)
