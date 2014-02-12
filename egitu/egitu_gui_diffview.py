@@ -19,7 +19,7 @@
 # along with Egitu.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from efl.elementary.entry import Entry, utf8_to_markup
+from efl.elementary.entry import Entry, utf8_to_markup, ELM_WRAP_NONE
 from efl.elementary.icon import Icon
 from efl.elementary.image import Image
 from efl.elementary.list import List
@@ -63,7 +63,8 @@ class DiffViewer(Table):
         
 
         self.diff_entry = Entry(self, editable=False, scrollable=True,
-                    size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
+                    size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH,
+                    line_wrap=ELM_WRAP_NONE)
         panes.part_content_set("right", self.diff_entry)
 
         if commit:
@@ -105,21 +106,28 @@ class DiffViewer(Table):
         mod, path = item.data['change']
         self.repo.request_diff(self.diff_done_cb, None,
                                commit1=self.commit, path=path)
-        self.diff_entry.text = 'Loading diff, please wait...'
+        self.diff_entry.text = '<info>Loading diff, please wait...</info>'
 
     def diff_done_cb(self, lines):
-        base = 'font={} font_size={}'.format(
-                options.diff_font_face, options.diff_font_size)
+        # TODO use a buffer instead of immutable string
         text = ''
         for line in lines:
             if line[0] == '+':
-                add = 'color=#0F0'
+                tag = 'line_added'
             elif line[0] == '-':
-                add = 'color=#F00'
+                tag = 'line_removed'
             elif line[0] == ' ':
-                add = ''
+                tag = None
             else:
-                add = 'color=#00F'
-            text += '<font {} {}>{}</font><br>'.format(base, add, utf8_to_markup(line))
-        self.diff_entry.text = text
+                tag = 'line_changed'
+
+            if tag:
+                text += '<{0}>{1}</{0}><br>'.format(tag, utf8_to_markup(line))
+            else:
+                text += '{0}<br>'.format(utf8_to_markup(line))
+
+        self.diff_entry.text = \
+            '<code><font={0} font_size={1}>{2}</font></code>' \
+            .format(options.diff_font_face, options.diff_font_size, text)
+
 
