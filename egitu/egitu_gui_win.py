@@ -334,7 +334,7 @@ class EgituWin(StandardWindow):
         brsel.show()
 
         # status label + button
-        self.status_label = lb = Label(self)
+        self.status_label = lb = Entry(self, single_line=True, editable=False)
         tb.pack(lb, 4, 0, 1, 1)
         lb.show()
 
@@ -393,12 +393,16 @@ class EgituWin(StandardWindow):
                                   'Unnamed repository; click to edit.'
 
         # update the status
-        if self.repo.status.is_clean:
-            self.status_label.text = "<hilight>Status is clean!</>"
+        if self.repo.status.ahead == 1:
+            self.status_label.text = "<warning>Ahead by 1 commit</warning>"
+        elif self.repo.status.ahead > 1:
+            self.status_label.text = "<warning>Ahead by %d commits</warning>" % (self.repo.status.ahead)
+        elif self.repo.status.is_clean:
+            self.status_label.text = "<success>Status is clean!</success>"
             self.status_label.tooltip_text_set("# On branch %s <br>nothing to commit (working directory clean)" % self.repo.current_branch)
             # self.commit_button.hide()
         else:
-            self.status_label.text = "<hilight>Status is dirty !!!</>"
+            self.status_label.text = "<warning>Status is dirty !!!</warning>"
             # TODO tooltip
             # self.commit_button.show()
 

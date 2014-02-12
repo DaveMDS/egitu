@@ -73,6 +73,7 @@ class Status(object):
         self.mods = []
         self.mods_staged = []
         self.untr = []
+        self.ahead = 0
 
     @property
     def is_clean(self):
@@ -212,9 +213,15 @@ class GitBackend(Repository):
             if len(lines) < 1 and not lines[0].startswith('## '):
                 done_cb(False)
                 return
-            self._current_branch = lines.pop(0)[3:]
-
             self._status = Status()
+            
+            branch = lines.pop(0)[3:]
+            if '...' in branch:
+                spl = branch.split('...')[0]
+                branch = spl[0]
+                self._status.ahead = spl[1]
+            self._current_branch =  branch
+
             for line in lines:
                 fname = line[3:]
                 if line[1] == 'M': # ' M'
