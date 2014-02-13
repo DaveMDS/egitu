@@ -410,7 +410,7 @@ class EgituWin(StandardWindow):
         # TODO alert if unstaged changes are present
         def _switch_done_cb(success):
             self.update_header()
-            self.graph.update()
+            self.graph.populate(self.repo)
 
         self.repo.current_branch_set(item.text, _switch_done_cb)
 
