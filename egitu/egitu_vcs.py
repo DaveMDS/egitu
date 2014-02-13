@@ -74,6 +74,7 @@ class Status(object):
         self.mods_staged = []
         self.untr = []
         self.ahead = 0
+        self.textual = ''
 
     @property
     def is_clean(self):
@@ -184,7 +185,7 @@ class GitBackend(Repository):
         if url and os.path.isdir(os.path.join(url, '.git')):
             return True
         return False
-        
+
     def load_from_url(self, url, done_cb, *args):
         if url.endswith(os.sep):
             url = url[:-len(os.sep)]
@@ -203,8 +204,11 @@ class GitBackend(Repository):
             self._op_count -= 1
             if self._op_count == 0:
                 done_cb(True, *args)
-        self._op_count = 3
+
+        self._status = Status()
+        self._op_count = 4
         self._fetch_status(_multi_done_cb, *args)
+        self._fetch_status_text(_multi_done_cb, *args)
         self._fetch_branches(_multi_done_cb, *args)
         self._fetch_tags(_multi_done_cb, *args)
 
@@ -213,8 +217,7 @@ class GitBackend(Repository):
             if len(lines) < 1 and not lines[0].startswith('## '):
                 done_cb(False)
                 return
-            self._status = Status()
-            
+
             branch = lines.pop(0)[3:]
             if '...' in branch:
                 spl = branch.split('...')
@@ -233,6 +236,12 @@ class GitBackend(Repository):
                 # TODO more status
             done_cb(True, *args)
         GitCmd(self._url, 'status --porcelain -b', done_cb=_cmd_done_cb)
+
+    def _fetch_status_text(self, done_cb, *args):
+        def _cmd_done_cb(lines):
+            self._status.textual = '<br>'.join(lines)
+            done_cb(True, *args)
+        GitCmd(self._url, 'status', done_cb=_cmd_done_cb)
 
     def _fetch_branches(self, done_cb, *args):
         def _cmd_done_cb(lines):

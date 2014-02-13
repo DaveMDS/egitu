@@ -394,17 +394,18 @@ class EgituWin(StandardWindow):
 
         # update the status
         if self.repo.status.ahead == 1 and self.repo.status.is_clean:
-            self.status_label.text = "<warning>Ahead by 1 commit</warning>"
+            text = "<warning>Ahead by 1 commit</warning>"
         elif self.repo.status.ahead > 1 and self.repo.status.is_clean:
-            self.status_label.text = "<warning>Ahead by {} commits</warning>".format(self.repo.status.ahead)
+            text = "<warning>Ahead by {} commits</warning>".format(self.repo.status.ahead)
         elif self.repo.status.is_clean:
-            self.status_label.text = "<success>Status is clean!</success>"
-            self.status_label.tooltip_text_set("# On branch %s <br>nothing to commit (working directory clean)" % self.repo.current_branch)
+            text = "<success>Status is clean!</success>"
             # self.commit_button.hide()
         else:
-            self.status_label.text = "<warning>Status is dirty !!!</warning>"
-            # TODO tooltip
+            text = "<warning>Status is dirty !!!</warning>"
             # self.commit_button.show()
+
+        self.status_label.text = text
+        self.status_label.tooltip_text_set(self.repo.status.textual)
 
     def branch_selected_cb(self, flipselector, item):
         # TODO alert if unstaged changes are present
