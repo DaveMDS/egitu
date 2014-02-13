@@ -40,17 +40,15 @@ class DiffViewer(Table):
         self.show()
 
         self.picture = GravatarPict(self)
-        self.picture.size_hint_align = 0.0, 0.0
         self.picture.show()
         self.pack(self.picture, 0, 0, 1, 1)
-        
+
         self.entry = Entry(self, text="Unknown")
         # self.entry.line_wrap = ELM_WRAP_NONE
         self.entry.size_hint_weight = EXPAND_BOTH
         self.entry.size_hint_align = FILL_BOTH
-        self.entry.show()
         self.pack(self.entry, 1, 0, 1, 1)
-
+        self.entry.show()
 
         panes = Panes(self, content_left_size = 0.3, horizontal=True,
                       size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
@@ -58,10 +56,9 @@ class DiffViewer(Table):
         panes.show()
 
         self.diff_list = List(self, size_hint_weight=EXPAND_BOTH,
-                                      size_hint_align=FILL_BOTH)
+                                    size_hint_align=FILL_BOTH)
         self.diff_list.callback_selected_add(self.change_selected_cb)
         panes.part_content_set("left", self.diff_list)
-        
 
         self.diff_entry = Entry(self, editable=False, scrollable=True,
                     size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH,
@@ -92,7 +89,6 @@ class DiffViewer(Table):
         repo.request_changes(self.changes_done_cb, commit1=commit)
 
     def changes_done_cb(self, success, lines):
-
         for mod, name in lines:
             if mod in ('M', 'A', 'D'):
                 icon_name = 'mod_{}.png'.format(mod.lower())
