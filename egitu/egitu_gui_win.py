@@ -251,8 +251,9 @@ class EgituMenu(Menu):
 class EditableDescription(Entry):
     def __init__(self, win):
         self.win = win
-        Entry.__init__(self, win, editable=True, single_line=True, scale=1.5,
+        Entry.__init__(self, win, editable=True, single_line=True,
                        size_hint_weight=EXPAND_HORIZ, size_hint_align=FILL_HORIZ)
+        self.text_style_user_push("DEFAULT='font_size=18'")
         self.tooltip_text_set("Click to edit description")
         self.callback_clicked_add(self._click_cb)
         self.callback_activated_add(self._done_cb, save=True)
