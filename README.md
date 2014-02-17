@@ -1,54 +1,52 @@
-Git user interface
+
+EFL Git user interface
 ==================
 
  TODO #1: find a better name
 
-Features
---------
- * Draw the DAG of the repo
- * View the diff of each revision
- * Edit repository description
- * Switch branch
+
+## Features ##
+
+* Draw the DAG of the repo
+* View the diff of each revision
+* Edit repository description
+* Switch branch
 
 
-Requirements
-------------
+## Requirements ##
 
- * Python 2.7 or higher
-
- * Python-EFL 1.8 or higher
-
- * python modules: efl, xdg
+* Python 2.7 or higher
+* Python-EFL 1.8 or higher
+* python modules: efl, xdg
 
 
+## Installation ##
 
-Installation
-------------
- * Run directly from the repo (without installing):
+* Run directly from the repo (without installing):
 
-    python egitu/egitu.py
+ `python egitu/egitu.py`
 
- * For system-wide installation (needs administrator privileges):
+* For system-wide installation (needs administrator privileges):
 
-    (sudo) python setup.py install
+ `(sudo) python setup.py install`
 
- * For user installation:
+* For user installation:
 
-    python setup.py install --user
+ `python setup.py install --user`
 
- * To install for different version of python:
+* To install for different version of python:
 
-    pythonX setup.py install
+ `pythonX setup.py install`
 
- * Install with a custom prefix:
+* Install with a custom prefix:
 
-    python setup.py install --prefix=/MY_PREFIX
+ `python setup.py install --prefix=/MY_PREFIX`
 
- * To create distribution packages:
+* To create distribution packages:
 
-    python setup.py sdist
+ `python setup.py sdist`
 
 
-License
--------
+## License ##
+
 GNU General Public License v3 - see COPYING
