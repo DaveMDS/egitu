@@ -142,7 +142,10 @@ class GravatarPict(Photo):
         if not os.path.exists(self.cache_folder):
             os.makedirs(self.cache_folder)
 
-        Photo.__init__(self, parent, style="shadow",
+        # Photo.__init__(self, parent, style="shadow",
+                       # size_hint_min=(size,size))
+        # WORKAROUND FOR A WEIRD SEGFAULT :(
+        Photo.__init__(self, parent, style="default",
                        size_hint_min=(size,size))
 
     @staticmethod
@@ -150,7 +153,7 @@ class GravatarPict(Photo):
         filelist = glob.glob(os.path.join(GravatarPict.cache_folder, '*.jpg'))
         for f in filelist:
             os.remove(f)
-        
+
     def email_set(self, email):
         if not email:
             self.file = self.default_file
