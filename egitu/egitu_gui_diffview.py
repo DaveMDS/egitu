@@ -114,14 +114,16 @@ class DiffViewer(Table):
         # TODO use a buffer instead of immutable string
         text = ''
         for line in lines:
-            if line[0] == '+':
+            if line.startswith(('---', '+++', 'diff', 'index')):
+                continue
+            elif line[0] == '+':
                 tag = 'line_added'
             elif line[0] == '-':
                 tag = 'line_removed'
             elif line[0] == ' ':
                 tag = None
             else:
-                tag = 'line_changed'
+                tag = 'hilight'
 
             if tag:
                 text += '<{0}>{1}</{0}><br>'.format(tag, utf8_to_markup(line))
