@@ -163,7 +163,7 @@ class GitCmd(Exe):
     def event_data_cb(self, exe, event):
         if callable(self.line_cb):
             for line in event.lines:
-                self.line_cb(line)
+                self.line_cb(line, *self.args)
         else:
             self.lines += event.lines
 
@@ -308,16 +308,15 @@ class GitBackend(Repository):
         return self._tags
 
     def request_commits(self, done_cb, prog_cb, max_count=100):
-        self._buf = ''
 
-        def _cmd_done_cb(lines):
+        def _cmd_done_cb(lines, lines_buf):
             done_cb()
 
-        def _cmd_line_cb(line):
-            self._buf += line + '\n'
-            if self._buf[-2] == chr(0x03):
-                _parse_commit(self._buf[:-2])
-                self._buf = ''
+        def _cmd_line_cb(line, lines_buf):
+            lines_buf.append(line)
+            if line and line[-1] == chr(0x03):
+                _parse_commit('\n'.join(lines_buf)[:-1])
+                del lines_buf[:]
 
         def _parse_commit(buf):
             c = Commit()
@@ -347,7 +346,7 @@ class GitBackend(Repository):
         # Use ascii char 00 as field separator and char 03 as commits separator
         fmt = '%x00'.join(('%H','%P','%an','%ae','%ct','%s','%b','%d')) + '%x03'
         cmd = "log --pretty='format:%s' --decorate=full --all -n %d" % (fmt, max_count)
-        GitCmd(self._url, cmd, _cmd_done_cb, _cmd_line_cb)
+        GitCmd(self._url, cmd, _cmd_done_cb, _cmd_line_cb, list())
 
     def request_diff(self, done_cb, prog_cb, max_count=100,
                            commit1=None, commit2=None, path=None):
