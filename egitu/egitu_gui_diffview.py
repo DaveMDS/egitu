@@ -79,6 +79,9 @@ class DiffViewer(Table):
             text += '<b>%s</b><br>' % (commit.title)
         if commit.sha:
             text += '%s<br>' % (commit.sha)
+        if commit.message:
+            text += '%s' % (commit.message.replace('\n', '<br>'))
+        
         self.entry.text = text
 
         self.picture.email_set(commit.author_email)

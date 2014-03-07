@@ -308,12 +308,21 @@ class GitBackend(Repository):
         return self._tags
 
     def request_commits(self, done_cb, prog_cb, max_count=100):
+        self._buf = ''
+
         def _cmd_done_cb(lines):
             done_cb()
+
         def _cmd_line_cb(line):
+            self._buf += line + '\n'
+            if self._buf[-2] == chr(0x03):
+                _parse_commit(self._buf[:-2])
+                self._buf = ''
+
+        def _parse_commit(buf):
             c = Commit()
             (c.sha, c.parents, c.author, c.author_email, c.commit_date,
-                c.title, refs) = line.split(chr(0x00))
+                c.title, c.message, refs) = buf.split(chr(0x00))
             if c.parents:
                 c.parents = c.parents.split(' ')
             if c.commit_date:
@@ -332,8 +341,11 @@ class GitBackend(Repository):
                         LOG("UNKNOWN REF: %s" % ref)
             prog_cb(c)
         
-        # fmt = 'format:{"sha":"%H", "parents":"%P", "author":"%an", "author_email":"%ae", "commit_ts":%ct, "title":"%s", "refs":"%d"}'
-        fmt = '%x00'.join(('%H','%P','%an','%ae','%ct','%s','%d'))
+        # fmt = 'format:{"sha":"%H", "parents":"%P", "author":"%an",
+        #                "author_email":"%ae", "commit_ts":%ct, "title":"%s",
+        #                "body": "%b", "refs":"%d"}'
+        # Use ascii char 00 as field separator and char 03 as commits separator
+        fmt = '%x00'.join(('%H','%P','%an','%ae','%ct','%s','%b','%d')) + '%x03'
         cmd = "log --pretty='format:%s' --decorate=full --all -n %d" % (fmt, max_count)
         GitCmd(self._url, cmd, _cmd_done_cb, _cmd_line_cb)
 

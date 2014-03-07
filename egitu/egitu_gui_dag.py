@@ -146,7 +146,8 @@ class DagGraph(Table):
 
     def point_add(self, commit, col, row):
         p = Layout(self, file=(self.themef,'egitu/graph/item'))
-        p.edje.signal_callback_add("mouse,down,*", "base", self.point_mouse_down_cb, commit)
+        p.edje.signal_callback_add("mouse,down,*", "base",
+                                   self.point_mouse_down_cb, commit)
         p.tooltip_content_cb_set(lambda o,tt:
                 CommitPopup(self, self.repo, commit))
 
