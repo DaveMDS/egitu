@@ -363,7 +363,7 @@ class EgituWin(StandardWindow):
         panes.part_content_set("right", self.commit_info)
 
 
-        self.resize(700, 500)
+        self.resize(800, 600)
         
         self.show()
 

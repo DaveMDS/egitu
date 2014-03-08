@@ -40,13 +40,13 @@ class DiffViewer(Table):
         self.show()
 
         self.picture = GravatarPict(self)
+        self.picture.size_hint_align = 0.0, 0.0
         self.picture.show()
         self.pack(self.picture, 0, 0, 1, 1)
 
-        self.entry = Entry(self, text="Unknown")
-        # self.entry.line_wrap = ELM_WRAP_NONE
-        self.entry.size_hint_weight = EXPAND_BOTH
-        self.entry.size_hint_align = FILL_BOTH
+        self.entry = Entry(self, text="Unknown", line_wrap=ELM_WRAP_MIXED,
+                           size_hint_weight=EXPAND_BOTH,
+                           size_hint_align=FILL_BOTH)
         self.pack(self.entry, 1, 0, 1, 1)
         self.entry.show()
 
@@ -71,16 +71,11 @@ class DiffViewer(Table):
     def commit_set(self, repo, commit):
         self.repo = repo
         self.commit = commit
-        text = ''
-        if commit.commit_date:
-            date = format_date(commit.commit_date)
-            text += '%s @ %s<br>' % (commit.author, date)
-        if commit.title:
-            text += '<b>%s</b><br>' % (commit.title)
-        if commit.sha:
-            text += '%s<br>' % (commit.sha)
+        text = '<name>{0}</name>  <b>{1}</b>  {2}<br>' \
+               '<bigger><b>{3}</b></bigger><br><br>'.format(commit.sha[:9],
+               commit.author, format_date(commit.commit_date), commit.title)
         if commit.message:
-            text += '%s' % (commit.message.replace('\n', '<br>'))
+            text += commit.message.replace('\n', '<br>')
         
         self.entry.text = text
 

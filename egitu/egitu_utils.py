@@ -105,6 +105,8 @@ def recent_history_push(path):
     file_put_contents(recent_file, '\n'.join(history))
 
 def format_date(d):
+    if d is None:
+        return ''
     if options.date_relative is False:
         return d.strftime(options.date_format)
 
