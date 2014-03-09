@@ -248,6 +248,7 @@ class EgituMenu(Menu):
     def _item_font_size_cb(self, menu, item):
         options.diff_font_size = int(item.text)
 
+
 class EditableDescription(Entry):
     def __init__(self, win):
         self.win = win
@@ -280,6 +281,7 @@ class EditableDescription(Entry):
     def _description_set_cb(self, success):
         # TODO alert if fail
         self.text = self.win.repo.description
+
 
 class EgituWin(StandardWindow):
     def __init__(self):
@@ -378,11 +380,11 @@ class EgituWin(StandardWindow):
             self.branch_selector.clear()
             for branch in self.repo.branches:
                 if branch == self.repo.current_branch:
-                    self.branch_selector.item_add(branch, 'home', ELM_ICON_STANDARD)
+                    self.branch_selector.item_add(branch, 'arrow_right', ELM_ICON_STANDARD)
                 else:
                     self.branch_selector.item_add(branch)
             self.branch_selector.text = self.repo.current_branch
-            self.branch_selector.content = Icon(self, standard='home')
+            self.branch_selector.content = Icon(self, standard='arrow_right')
         except:
             self.branch_selector.text = "Unknown"
 
