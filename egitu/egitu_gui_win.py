@@ -207,7 +207,7 @@ class EgituMenu(Menu):
         it_diff = self.item_add(None, "Diff", "preference")
 
         it = self.item_add(it_diff, "Wrap long lines", None,
-                           self._item_check_opts_cb, 'diff_text_wrap')
+                           self._item_wrap_line_cb)
         it.content = Check(self, state=options.diff_text_wrap)
 
         it_font = self.item_add(it_diff, "Font face")
@@ -242,11 +242,17 @@ class EgituMenu(Menu):
             options.gravatar_default = item.text
             GravatarPict.clear_icon_cache()
 
+    def _item_wrap_line_cb(self, menu, item):
+        options.diff_text_wrap = not item.content.state
+        self.win.diff_view.refresh_diff()
+
     def _item_font_face_cb(self, menu, item):
         options.diff_font_face = item.text
+        self.win.diff_view.refresh_diff()
 
     def _item_font_size_cb(self, menu, item):
         options.diff_font_size = int(item.text)
+        self.win.diff_view.refresh_diff()
 
 
 class EditableDescription(Entry):
@@ -289,8 +295,8 @@ class EgituWin(StandardWindow):
         self.branch_selector = None
         self.caption_label = None
         self.status_label = None
-        self.commit_list = None
-        # self.commit_button = None
+        self.graph = None
+        self.diff_view = None
 
         StandardWindow.__init__(self, "egitu", "Efl GIT gUi - Egitu")
         self.autodel_set(True)
@@ -359,10 +365,10 @@ class EgituWin(StandardWindow):
         panes.part_content_set("left", scr)
 
         # the diff viewer on the right
-        self.commit_info = DiffViewer(self, self.repo)
-        self.commit_info.size_hint_weight = EXPAND_BOTH
-        self.commit_info.size_hint_align = 0.0, 0.0
-        panes.part_content_set("right", self.commit_info)
+        self.diff_view = DiffViewer(self, self.repo)
+        self.diff_view.size_hint_weight = EXPAND_BOTH
+        self.diff_view.size_hint_align = 0.0, 0.0
+        panes.part_content_set("right", self.diff_view)
 
 
         self.resize(800, 600)
@@ -419,6 +425,6 @@ class EgituWin(StandardWindow):
         self.repo.current_branch_set(item.text, _switch_done_cb)
 
     def show_commit(self, commit):
-        self.commit_info.commit_set(self.repo, commit)
+        self.diff_view.commit_set(self.repo, commit)
 
 

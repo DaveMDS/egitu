@@ -86,6 +86,10 @@ class DiffViewer(Table):
         self.diff_entry.text = ''
         repo.request_changes(self.changes_done_cb, commit1=commit)
 
+    def refresh_diff(self):
+        if self.diff_list.selected_item:
+            self.change_selected_cb(self.diff_list, self.diff_list.selected_item)
+        
     def changes_done_cb(self, success, lines):
         for mod, name in lines:
             if mod in ('M', 'A', 'D'):
