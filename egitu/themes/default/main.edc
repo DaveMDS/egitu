@@ -271,11 +271,11 @@ collections {
          part { name: "curve"; type: IMAGE;
             description { state: "default" 0.0;
                min: 40 40;
-               max: 40 40;
+               max: 9999 40;
                align: 0.0 1.0;
                image {
                   normal: "graph_conn_vert_fork.png";
-                  border: 19 19 19 19; // ???
+                  border: 19 19 19 19;
                }
             }
          }
@@ -284,7 +284,7 @@ collections {
                min: 20 20;
                max: 20 9999;
                align: 1.0 0.0;
-               rel2.offset: 0 -21;
+               rel2.offset: -1 -21;
                image {
                   normal: "graph_conn_vert.png";
                   border: 0 0 10 10;
@@ -293,12 +293,13 @@ collections {
          }
       }
    }
+
    group { name: "egitu/graph/connection/vert_merge";
       parts {
          part { name: "bg"; type: IMAGE;
             description { state: "default" 0.0;
                min: 40 40;
-               max: 40 40;
+               max: 9999 40;
                align: 0.0 0.0;
                image {
                   normal: "graph_conn_vert_merge.png";

@@ -22,11 +22,10 @@ import os
 import sys
 from datetime import datetime
 
-from efl import elementary
+from efl.evas import Rectangle
 from efl.edje import Edje
 from efl.elementary.entry import Entry, ELM_WRAP_NONE
 from efl.elementary.table import Table
-from efl.elementary.frame import Frame
 from efl.elementary.layout import Layout
 
 from egitu_utils import options, theme_resource_get, format_date, \
@@ -69,27 +68,26 @@ class DagGraph(Table):
         self.repo = None
         self.win = parent
         self.themef = theme_resource_get('main.edj')
-        # self.points = []
-        # self.lines = []
-        self._cols = [(), (100,0,0,100), (0,100,0,100), (0,0,100,100),
-                          (100,0,0,100), (0,100,0,100), (0,0,100,100)]
-        
+        self.colors = [(0,100,0,100), (0,0,100,100), (100,0,0,100),
+                      (100,100,0,100), (0,100,100,100), (100,0,100,100)]
+
         Table.__init__(self, parent, homogeneous=False, padding=(0,0))
 
     def populate(self, repo):
         self.repo = repo
-        self._col = self._row = 1
-        self._open_connections = {}
+        self._current_row = 1
+        self._used_columns = set()
+        self._open_connections = dict()
         self._first_commit = None
 
         self.clear(True)
 
+        num_commits = 1000 # TODO make configurable
+
         # first col for the date (TODO)
-        from efl.evas import Line, Rectangle
-        l = Rectangle(self.evas, color=(0,0,0,100))
-        l.size_hint_min = 20, 20
-        l.size_hint_align = FILL_BOTH
-        self.pack(l, 0, 0, 1, 100)
+        l = Rectangle(self.evas, color=(0,0,0,100), size_hint_min=(20, 20),
+                      size_hint_align=FILL_BOTH)
+        self.pack(l, 0, 0, 1, num_commits)
         l.show()
 
         # first row for something else (branch names?) (TODO)
@@ -104,41 +102,68 @@ class DagGraph(Table):
             c = Commit()
             c.title = "Local changes"
             c.tags = ['Local changes']
-            self.point_add(c, self._col, self._row)
+            self.point_add(c, 1, 1)
             # self.connection_add(1, 1, 1, 2)
-            self._row += 1
-            self._col -= 1
+            self._current_row += 1
             self._first_commit = c
 
-        self.repo.request_commits(self._populate_done_cb, self._populate_prog_cb, 100)
+        self.repo.request_commits(self._populate_done_cb,
+                                  self._populate_prog_cb,
+                                  num_commits)
+
+    def _find_a_free_column(self):
+        # set is empty, add and return "1"
+        if len(self._used_columns) == 0:
+            self._used_columns.add(1)
+            return 1
+
+        # search the lowest not-present number (a hole)
+        max_num = max(self._used_columns)
+        for x in range(1, max_num):
+            if not x in self._used_columns:
+                self._used_columns.add(x)
+                return x
+
+        # or append and return a new number
+        x = max_num + 1
+        self._used_columns.add(x)
+        return x
 
     def _populate_prog_cb(self, commit):
-        if self._row == 1:
+        if self._current_row == 1:
             self._first_commit = commit
 
         # 1. draw the connection if there are 'open-to' this one
         if commit.sha in self._open_connections:
             R = self._open_connections.pop(commit.sha)
-            min_col = min([c[2] for c in R])
-            self._col = min_col
+            point_col = min([c[2] for c in R])
             for child_col, child_row, new_col in R:
-                self.connection_add(child_col, child_row, self._col, self._row)
+                self.connection_add(child_col, child_row,
+                                    point_col, self._current_row)
+            # if is a fork we can release the columns
+            if len(R) > 1:
+                for c in R:
+                    if c[2] != point_col:
+                        self._used_columns.remove(c[2])
         else:
-            self._col += 1
+            # point need a new free column
+            point_col = self._find_a_free_column()
 
         # 2. add an open_connection, one for each parent
         i = 0
         for parent in commit.parents:
-            r = (self._col, self._row, self._col + i)
+            r = (point_col,
+                 self._current_row,
+                 self._find_a_free_column() if i > 0 else point_col)
             if parent in self._open_connections:
                 self._open_connections[parent].append(r)
             else:
                 self._open_connections[parent] = [r]
             i += 1
 
-        # 3. add the commit point
-        self.point_add(commit, self._col, self._row)
-        self._row += 1
+        # 3. add the commit point to the graph
+        self.point_add(commit, point_col, self._current_row)
+        self._current_row += 1
 
     def _populate_done_cb(self):
         if self._first_commit is not None:
@@ -182,23 +207,29 @@ class DagGraph(Table):
         self.pack(p, col, row, 1, 1)
         p.show()
 
+    def color_for_column(self, column):
+        return self.colors[(column - 1) % len(self.colors)]
+
     def connection_add(self, col1, row1, col2, row2):
         # print ("CONNECTION", col1, row1, col2, row2)
         if col1 == col2:
             # a stright line
             l = Edje(self.evas, file=self.themef, size_hint_align=FILL_BOTH,
-                    group='egitu/graph/connection/vert', color=self._cols[col1])
+                    group='egitu/graph/connection/vert',
+                    color=self.color_for_column(col1))
             self.pack(l, col1, row1, col2 - col1 + 1, row2 - row1 + 1)
             
         elif col1 > col2:
             # a "fork"
             l = Edje(self.evas, file=self.themef, size_hint_align=FILL_BOTH,
-                    group='egitu/graph/connection/vert_fork', color=self._cols[col2])
+                    group='egitu/graph/connection/vert_fork',
+                    color=self.color_for_column(col1))
             self.pack(l, col2, row1, col1 - col2 + 1, row2 - row1 + 1)
         else:
             # a "merge"
             l = Edje(self.evas, file=self.themef, size_hint_align=FILL_BOTH,
-                    group='egitu/graph/connection/vert_merge', color=self._cols[col2])
+                    group='egitu/graph/connection/vert_merge',
+                    color=self.color_for_column(col2))
             self.pack(l, col1, row1, col2 - col1 + 1, row2 - row1 + 1)
 
         l.lower()

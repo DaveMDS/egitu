@@ -57,10 +57,11 @@ class Commit(object):
         self.tags = []
 
     def __str__(self):
-        return '<Commit:%s parents:%s heads:%s tags:%s "%s">' % (
+        return '<Commit:%s parents:%s heads:%s remotes:%s tags:%s "%s">' % (
                     self.sha[:7],
                     [p[:7] for p in self.parents],
                     self.heads,
+                    self.remotes,
                     self.tags,
                     self.title[:20])
 
@@ -331,7 +332,9 @@ class GitBackend(Repository):
                 for ref in refs:
                     if ref.startswith('refs/tags/'):
                         c.tags.append(ref[10:])
-                    elif ref.startswith('refs/heads/'):
+                    elif ref == 'HEAD':
+                        c.heads.append(ref)
+                    elif ref.startswith(('refs/heads/')):
                         c.heads.append(ref[11:])
                     elif ref.startswith('refs/remotes/'):
                         c.remotes.append(ref[13:])
