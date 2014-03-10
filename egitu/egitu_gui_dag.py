@@ -46,14 +46,8 @@ class CommitPopup(Table):
         self.pack(pic, 0, 0, 1, 1)
         pic.show()
 
-        text = ''
-        if commit.author and commit.commit_date:
-            date = format_date(commit.commit_date)
-            text += '{} @ {}<br>'.format(commit.author, date)
-        if commit.title:
-            text += '<b>{}</b><br>'.format(commit.title)
-        if commit.sha:
-            text += '{}<br>'.format(commit.sha[:7])
+        text = u'<name>{}</name>  <b>{}</b>  {}<br><br>{}'.format(commit.sha[:9],
+                commit.author, format_date(commit.commit_date), commit.title)
         en = Entry(self, text=text)
         en.line_wrap = ELM_WRAP_NONE
         en.size_hint_weight = EXPAND_BOTH
