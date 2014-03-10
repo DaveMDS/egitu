@@ -71,9 +71,10 @@ class DiffViewer(Table):
     def commit_set(self, repo, commit):
         self.repo = repo
         self.commit = commit
-        text = '<name>{0}</name>  <b>{1}</b>  {2}<br>' \
-               '<bigger><b>{3}</b></bigger><br><br>'.format(commit.sha[:9],
-               commit.author, format_date(commit.commit_date), commit.title)
+        print(commit.author)
+        text = u'<name>{0}</name>  <b>{1}</b>  {2}<br>' \
+                '<bigger><b>{3}</b></bigger><br><br>'.format(commit.sha[:9],
+                commit.author, format_date(commit.commit_date), commit.title)
         if commit.message:
             text += commit.message.replace('\n', '<br>')
         
