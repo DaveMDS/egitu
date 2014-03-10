@@ -22,7 +22,6 @@ import os
 import sys
 from datetime import datetime
 
-from efl.evas import Rectangle
 from efl.edje import Edje
 from efl.elementary.entry import Entry, ELM_WRAP_NONE
 from efl.elementary.table import Table
@@ -79,16 +78,12 @@ class DagGraph(Table):
         self._used_columns = set()
         self._open_connections = dict()
         self._first_commit = None
+        self._last_date = None
+        self._last_date_row = 1
 
         self.clear(True)
 
-        num_commits = 1000 # TODO make configurable
-
-        # first col for the date (TODO)
-        l = Rectangle(self.evas, color=(0,0,0,100), size_hint_min=(20, 20),
-                      size_hint_align=FILL_BOTH)
-        self.pack(l, 0, 0, 1, num_commits)
-        l.show()
+        num_commits = 500 # TODO make configurable
 
         # first row for something else (branch names?) (TODO)
         # l = Rectangle(self.evas, color=(0,0,0,100))
@@ -108,7 +103,7 @@ class DagGraph(Table):
             self._first_commit = c
 
         self.repo.request_commits(self._populate_done_cb,
-                                  self._populate_prog_cb,
+                                  self._populate_progress_cb,
                                   num_commits)
 
     def _find_a_free_column(self):
@@ -129,7 +124,7 @@ class DagGraph(Table):
         self._used_columns.add(x)
         return x
 
-    def _populate_prog_cb(self, commit):
+    def _populate_progress_cb(self, commit):
         if self._current_row == 1:
             self._first_commit = commit
 
@@ -161,13 +156,32 @@ class DagGraph(Table):
                 self._open_connections[parent] = [r]
             i += 1
 
-        # 3. add the commit point to the graph
+        # 3. draw the date on column 0 (if the day is changed)
+        if self._last_date is None:
+            self._last_date = commit.commit_date
+            self._last_date_row = self._current_row
+
+        d1, d2 = self._last_date, commit.commit_date
+        if d1.month != d2.month or d1.day != d2.day or d1.year != d2.year:
+            self.date_add(d1, self._last_date_row, self._current_row)
+            self._last_date = commit.commit_date
+            self._last_date_row = self._current_row
+
+        # 4. add the commit point to the graph
         self.point_add(commit, point_col, self._current_row)
         self._current_row += 1
 
     def _populate_done_cb(self):
         if self._first_commit is not None:
             self.win.show_commit(self._first_commit)
+
+    def date_add(self, date, from_row, to_row):
+        ly = Layout(self, file=(self.themef, 'egitu/graph/date'),
+                    size_hint_align=FILL_BOTH)
+        fmt = '%d %b' if to_row - from_row > 2 else '%d'
+        ly.part_text_set('date.text', date.strftime(fmt))
+        self.pack(ly, 0, from_row, 1, to_row - from_row)
+        ly.show()
 
     def point_add(self, commit, col, row):
         p = Layout(self, file=(self.themef,'egitu/graph/item'))

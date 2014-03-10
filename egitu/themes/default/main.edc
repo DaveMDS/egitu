@@ -322,6 +322,50 @@ collections {
       }
    }
 
+   group { name: "egitu/graph/date";
+      parts {
+         part { name: "bg"; type: RECT;
+            description { state: "default" 0.0;
+               min: 20 20;
+               color: 0 0 0 100;
+            }
+         }
+         part { name: "sep"; type: RECT;
+            description { state: "default" 0.0;
+               color: 150 150 150 150;
+               rel1.offset: 0 -1;
+               rel2.relative: 1.0 0.0;
+            }
+         }
+         part { name: "rot_center"; type: SPACER;
+            description { state: "default" 0.0;
+               fixed: 1 1;
+               rel1.offset: 0 4;
+               aspect: 1.0 1.0; aspect_preference: NONE;
+            }
+         }
+         part { name: "date.text"; type: TEXT;
+            description { state: "default" 0.0;
+               fixed: 1 1;
+               rel1.to: "rot_center";
+               rel2.to: "rot_center";
+               color: 150 150 150 150;
+               text {
+                  font: "Sans";
+                  size: 11;
+                  align: 0.0 0.5;
+               }
+               map {
+                  on: 1;
+                  smooth: 0;
+                  rotation.center: "rot_center";
+                  rotation.z: 90;
+               }
+            }
+         }
+      }
+   }
+
    group { name: "egitu/graph/popup";
       parts {
          part { name: "base"; type: RECT;
