@@ -172,6 +172,10 @@ class DagGraph(Table):
         self._current_row += 1
 
     def _populate_done_cb(self):
+        # draw the last date piece
+        self.date_add(self._last_date, self._last_date_row, self._current_row)
+
+        # show the first commit in the diff view
         if self._first_commit is not None:
             self.win.show_commit(self._first_commit)
 
