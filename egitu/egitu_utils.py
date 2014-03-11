@@ -144,10 +144,7 @@ class GravatarPict(Photo):
         if not os.path.exists(self.cache_folder):
             os.makedirs(self.cache_folder)
 
-        # Photo.__init__(self, parent, style="shadow",
-                       # size_hint_min=(size,size))
-        # WORKAROUND FOR A WEIRD SEGFAULT :(
-        Photo.__init__(self, parent, style="default",
+        Photo.__init__(self, parent, style="shadow",
                        size_hint_min=(size,size))
 
     @staticmethod
