@@ -348,7 +348,7 @@ class GitBackend(Repository):
         #                "body": "%b", "refs":"%d"}'
         # Use ascii char 00 as field separator and char 03 as commits separator
         fmt = '%x00'.join(('%H','%P','%an','%ae','%ct','%s','%b','%d')) + '%x03'
-        cmd = "log --pretty='format:%s' --decorate=full --all -n %d" % (fmt, max_count)
+        cmd = "log --pretty='tformat:%s' --decorate=full --all -n %d" % (fmt, max_count)
         GitCmd(self._url, cmd, _cmd_done_cb, _cmd_line_cb, list())
 
     def request_diff(self, done_cb, prog_cb, max_count=100,
