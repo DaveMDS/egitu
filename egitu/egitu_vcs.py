@@ -30,7 +30,6 @@ def LOG(text):
     print(text)
     # pass
 
-
 def repo_factory(url):
     url = os.path.abspath(url) # TODO is this right for real url ??
     LOG("Trying to load a repo from: %s" % url)
@@ -39,8 +38,6 @@ def repo_factory(url):
         if backend.check_url(url) is True:
             return backend
     LOG('ERROR: Cannot find a repo at: "%s"' % url)
-
-
 
 class Commit(object):
     def __init__(self):
@@ -68,7 +65,6 @@ class Commit(object):
     def is_a_merge(self):
         return len(self.parents) > 1
 
-
 class Status(object):
     def __init__(self):
         self.mods = []
@@ -81,7 +77,7 @@ class Status(object):
     def is_clean(self):
         return (len(self.mods)+len(self.mods_staged)+len(self.untr) == 0)
 
-
+### Base class for backends ###################################################
 class Repository(object):
 
     def check_url(self, url):
@@ -142,9 +138,7 @@ class Repository(object):
     def request_changes(self, done_cb, commit1=None, commit2=None):
         raise NotImplementedError("request_changes() not implemented in backend")
 
-
-
-
+### Git backend ###############################################################
 class GitCmd(Exe):
     def __init__(self, local_path, cmd, done_cb=None, line_cb=None, *args):
         self.done_cb = done_cb
@@ -296,7 +290,7 @@ class GitBackend(Repository):
         def _cmd_done_cb(lines):
             # TODO check result
             print(lines)
-            self._fetch_status(done_cb, *args)
+            self.refresh(done_cb, *args)
         cmd = "checkout %s" % (branch)
         GitCmd(self._url, cmd, _cmd_done_cb)
 
