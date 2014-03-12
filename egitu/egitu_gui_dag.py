@@ -72,6 +72,7 @@ class DagGraph(Table):
         self._current_row = 0
         self._used_columns = set()
         self._open_connections = dict()
+        self._open_connection_lines = list()
         self._first_commit = None
         self._last_date = None
         self._last_date_row = 1
@@ -164,16 +165,27 @@ class DagGraph(Table):
         # draw the last date piece
         self.date_add(self._last_date, self._last_date_row, self._current_row)
 
+        # draw still-open connections lines (and clear the old ones)
+        while self._open_connection_lines:
+            l = self._open_connection_lines.pop()
+            l.delete()
+        for key in self._open_connections:
+            for child_col, child_row, new_col in self._open_connections[key]:
+                l = self.connection_add(child_col, child_row,
+                                        child_col, self._current_row)
+                self._open_connection_lines.append(l)
+        
         # add the "show more" button if necessary
         if self._open_connections:
             bt = Button(self, text="Show more commits", size_hint_align=(0,0))
             bt.callback_clicked_add(self._show_more_clicked_cb)
-            self.pack(bt, 0, self._current_row, 10, 2)
+            self.pack(bt, 0, self._current_row + 1, 10, 2)
             bt.show()
 
         # show the first commit in the diff view
         if self._first_commit is not None:
             self.win.show_commit(self._first_commit)
+            self._first_commit = None
 
     def _show_more_clicked_cb(self, bt):
         bt.delete()
@@ -257,6 +269,8 @@ class DagGraph(Table):
 
         l.lower()
         l.show()
+
+        return l
 
     def point_mouse_down_cb(self, obj, signal, source, commit):
         self.win.show_commit(commit)
