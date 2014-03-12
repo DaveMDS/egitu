@@ -23,6 +23,7 @@ import sys
 from datetime import datetime
 
 from efl.edje import Edje
+from efl.elementary.button import Button
 from efl.elementary.entry import Entry, ELM_WRAP_NONE
 from efl.elementary.table import Table
 from efl.elementary.layout import Layout
@@ -64,41 +65,34 @@ class DagGraph(Table):
         self.colors = [(0,100,0,100), (0,0,100,100), (100,0,0,100),
                       (100,100,0,100), (0,100,100,100), (100,0,100,100)]
 
-        Table.__init__(self, parent, homogeneous=False, padding=(0,0))
+        Table.__init__(self, parent, homogeneous=True, padding=(0,0))
 
     def populate(self, repo):
         self.repo = repo
-        self._current_row = 1
+        self._current_row = 0
         self._used_columns = set()
         self._open_connections = dict()
         self._first_commit = None
         self._last_date = None
         self._last_date_row = 1
+        self._visible_commits = 0
+        self._commits_to_load = 100  # TODO make configurable
 
         self.clear(True)
-
-        num_commits = 500 # TODO make configurable
-
-        # first row for something else (branch names?) (TODO)
-        # l = Rectangle(self.evas, color=(0,0,0,100))
-        # l.size_hint_min = 20, 20
-        # l.size_hint_align = FILL_BOTH
-        # self.pack(l, 1, 0, 10, 1)
-        # l.show()
 
         # create the first fake commit (local changes)
         if not self.repo.status.is_clean:
             c = Commit()
             c.title = "Local changes"
             c.tags = ['Local changes']
-            self.point_add(c, 1, 1)
+            self.point_add(c, 1, 0)
             # self.connection_add(1, 1, 1, 2)
             self._current_row += 1
             self._first_commit = c
 
         self.repo.request_commits(self._populate_done_cb,
                                   self._populate_progress_cb,
-                                  num_commits)
+                                  max_count=self._commits_to_load)
 
     def _find_a_free_column(self):
         # set is empty, add and return "1"
@@ -163,19 +157,36 @@ class DagGraph(Table):
 
         # 4. add the commit point to the graph
         self.point_add(commit, point_col, self._current_row)
+        self._visible_commits += 1
         self._current_row += 1
 
     def _populate_done_cb(self):
         # draw the last date piece
         self.date_add(self._last_date, self._last_date_row, self._current_row)
 
+        # add the "show more" button if necessary
+        if self._open_connections:
+            bt = Button(self, text="Show more commits", size_hint_align=(0,0))
+            bt.callback_clicked_add(self._show_more_clicked_cb)
+            self.pack(bt, 0, self._current_row, 10, 2)
+            bt.show()
+
         # show the first commit in the diff view
         if self._first_commit is not None:
             self.win.show_commit(self._first_commit)
 
+    def _show_more_clicked_cb(self, bt):
+        bt.delete()
+        self.repo.request_commits(self._populate_done_cb,
+                                  self._populate_progress_cb,
+                                  max_count=self._commits_to_load,
+                                  skip=self._visible_commits)
+
     def date_add(self, date, from_row, to_row):
-        ly = Layout(self, file=(self.themef, 'egitu/graph/date'),
-                    size_hint_align=FILL_BOTH)
+        ly = self.child_get(0, from_row)
+        if ly is None:
+            ly = Layout(self, file=(self.themef, 'egitu/graph/date'),
+                        size_hint_align=FILL_BOTH)
         fmt = '%d %b' if to_row - from_row > 2 else '%d'
         ly.part_text_set('date.text', date.strftime(fmt))
         self.pack(ly, 0, from_row, 1, to_row - from_row)

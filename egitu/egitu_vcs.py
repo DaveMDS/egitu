@@ -133,7 +133,7 @@ class Repository(object):
         raise NotImplementedError("tags not implemented in backend")
 
 
-    def request_commits(self, done_cb, prog_cb, max_count=100):
+    def request_commits(self, done_cb, prog_cb, max_count=100, skip=0):
         raise NotImplementedError("request_commits() not implemented in backend")
 
     def request_diff(self, done_cb, prog_cb, max_count=0, commit1=None, commit2=None):
@@ -308,7 +308,7 @@ class GitBackend(Repository):
     def tags(self):
         return self._tags
 
-    def request_commits(self, done_cb, prog_cb, max_count=100):
+    def request_commits(self, done_cb, prog_cb, max_count=100, skip=0):
 
         def _cmd_done_cb(lines, lines_buf):
             done_cb()
@@ -349,6 +349,7 @@ class GitBackend(Repository):
         # Use ascii char 00 as field separator and char 03 as commits separator
         fmt = '%x00'.join(('%H','%P','%an','%ae','%ct','%s','%b','%d')) + '%x03'
         cmd = "log --pretty='tformat:%s' --decorate=full --all -n %d" % (fmt, max_count)
+        if skip > 0: cmd += ' --skip %d' % skip
         GitCmd(self._url, cmd, _cmd_done_cb, _cmd_line_cb, list())
 
     def request_diff(self, done_cb, prog_cb, max_count=100,
