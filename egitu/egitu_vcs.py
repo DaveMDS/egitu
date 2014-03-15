@@ -138,6 +138,7 @@ class Repository(object):
     def request_changes(self, done_cb, commit1=None, commit2=None):
         raise NotImplementedError("request_changes() not implemented in backend")
 
+
 ### Git backend ###############################################################
 class GitCmd(Exe):
     def __init__(self, local_path, cmd, done_cb=None, line_cb=None, *args):
@@ -165,6 +166,7 @@ class GitCmd(Exe):
     def event_del_cb(self, exe, event):
         if callable(self.done_cb):
             self.done_cb(self.lines, *self.args)
+
 
 class GitBackend(Repository):
     def __init__(self):
@@ -217,7 +219,10 @@ class GitBackend(Repository):
             if '...' in branch:
                 spl = branch.split('...')
                 branch = spl[0]
-                self._status.ahead = int(''.join([s for s in spl[1] if s.isdigit()]))
+                try:
+                    self._status.ahead = int(''.join([s for s in spl[1] if s.isdigit()]))
+                except:
+                    self._status.ahead = 0
             self._current_branch =  branch
 
             for line in lines:
