@@ -220,6 +220,7 @@ class GitBackend(Repository):
                 spl = branch.split('...')
                 branch = spl[0]
                 try:
+                    # hmm, this seems wrong. What if the branch name contain some numbers?
                     self._status.ahead = int(''.join([s for s in spl[1] if s.isdigit()]))
                 except:
                     self._status.ahead = 0
