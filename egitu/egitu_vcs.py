@@ -330,7 +330,9 @@ class GitBackend(Repository):
             if refs:
                 refs = refs.strip().strip(')(').split(', ')
                 for ref in refs:
-                    if ref.startswith('refs/tags/'):
+                    if ref.startswith('tag: refs/tags/'):
+                        c.tags.append(ref[15:])
+                    elif ref.startswith('refs/tags/'):
                         c.tags.append(ref[10:])
                     elif ref == 'HEAD':
                         c.heads.append(ref)
