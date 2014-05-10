@@ -28,7 +28,7 @@ from efl.elementary.list import List
 from efl.elementary.panes import Panes
 from efl.elementary.table import Table
 
-from egitu.egitu_utils import options, theme_resource_get, format_date, \
+from egitu.utils import options, theme_resource_get, format_date, \
     GravatarPict, EXPAND_BOTH, FILL_BOTH
 
 

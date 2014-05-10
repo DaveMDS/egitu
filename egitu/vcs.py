@@ -25,7 +25,7 @@ from datetime import datetime
 
 from efl.ecore import Exe, ECORE_EXE_PIPE_READ, ECORE_EXE_PIPE_READ_LINE_BUFFERED
 
-from egitu.egitu_utils import file_get_contents, file_put_contents
+from egitu.utils import file_get_contents, file_put_contents
 
 
 def LOG(text):

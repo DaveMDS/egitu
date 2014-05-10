@@ -30,9 +30,9 @@ from efl.elementary.entry import Entry, ELM_WRAP_NONE
 from efl.elementary.table import Table
 from efl.elementary.layout import Layout
 
-from egitu.egitu_utils import options, theme_resource_get, format_date, \
+from egitu.utils import options, theme_resource_get, format_date, \
     GravatarPict, EXPAND_BOTH, FILL_BOTH
-from egitu.egitu_vcs import Commit
+from egitu.vcs import Commit
 
 
 

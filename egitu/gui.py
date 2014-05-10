@@ -41,12 +41,12 @@ from efl.elementary.scroller import Scroller
 from efl.elementary.table import Table
 from efl.elementary.frame import Frame
 
-from egitu.egitu_utils import options, theme_resource_get, GravatarPict, \
+from egitu.utils import options, theme_resource_get, GravatarPict, \
     recent_history_get, recent_history_push, \
     EXPAND_BOTH, EXPAND_HORIZ, FILL_BOTH, FILL_HORIZ
-from egitu.egitu_gui_dag import DagGraph
-from egitu.egitu_gui_diffview import DiffViewer
-from egitu.egitu_vcs import repo_factory
+from egitu.dagview import DagGraph
+from egitu.diffview import DiffViewer
+from egitu.vcs import repo_factory
 
 
 def LOG(text):
