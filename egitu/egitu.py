@@ -18,13 +18,15 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Egitu.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import absolute_import
+
 import os
 import sys
 import argparse
 
 from efl import elementary as elm
-from egitu_utils import options, config_path
-from egitu_gui_win import EgituWin, RepoSelector
+from egitu.egitu_utils import options, config_path
+from egitu.egitu_gui_win import EgituWin, RepoSelector
 
 
 def main():

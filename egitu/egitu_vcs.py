@@ -18,12 +18,14 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Egitu.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import absolute_import
+
 import os
 from datetime import datetime
 
 from efl.ecore import Exe, ECORE_EXE_PIPE_READ, ECORE_EXE_PIPE_READ_LINE_BUFFERED
 
-from egitu_utils import file_get_contents, file_put_contents
+from egitu.egitu_utils import file_get_contents, file_put_contents
 
 
 def LOG(text):

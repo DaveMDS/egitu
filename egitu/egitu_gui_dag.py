@@ -18,6 +18,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Egitu.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import absolute_import
+
 import os
 import sys
 from datetime import datetime
@@ -28,9 +30,9 @@ from efl.elementary.entry import Entry, ELM_WRAP_NONE
 from efl.elementary.table import Table
 from efl.elementary.layout import Layout
 
-from egitu_utils import options, theme_resource_get, format_date, \
+from egitu.egitu_utils import options, theme_resource_get, format_date, \
     GravatarPict, EXPAND_BOTH, FILL_BOTH
-from egitu_vcs import Commit
+from egitu.egitu_vcs import Commit
 
 
 

@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Egitu.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import absolute_import
 
 from efl.elementary.entry import Entry, utf8_to_markup, \
     ELM_WRAP_NONE, ELM_WRAP_MIXED
@@ -27,8 +28,8 @@ from efl.elementary.list import List
 from efl.elementary.panes import Panes
 from efl.elementary.table import Table
 
-from egitu_utils import options, theme_resource_get, format_date, GravatarPict, \
-    EXPAND_BOTH, FILL_BOTH
+from egitu.egitu_utils import options, theme_resource_get, format_date, \
+    GravatarPict, EXPAND_BOTH, FILL_BOTH
 
 
 class DiffViewer(Table):
