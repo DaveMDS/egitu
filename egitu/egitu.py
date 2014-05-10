@@ -25,8 +25,8 @@ import sys
 import argparse
 
 from efl import elementary as elm
-from egitu.egitu_utils import options, config_path
-from egitu.egitu_gui_win import EgituWin, RepoSelector
+from egitu.utils import options, config_path
+from egitu.gui import EgituWin, RepoSelector
 
 
 def main():
