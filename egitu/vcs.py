@@ -213,7 +213,7 @@ class GitBackend(Repository):
 
     def _fetch_status(self, done_cb, *args):
         def _cmd_done_cb(lines):
-            if len(lines) < 1 and not lines[0].startswith('## '):
+            if len(lines) < 1 or not lines[0].startswith('## '):
                 done_cb(False)
                 return
 
