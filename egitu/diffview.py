@@ -100,7 +100,7 @@ class DiffViewer(Table):
             else:
                 it = self.diff_list.item_append('[{}] {}'.format(mod, name))
             it.data['change'] = mod, name
-        self.diff_list.first_item_get().selected_set(True)
+        self.diff_list.first_item.selected = True
         self.diff_list.go()
 
     def change_selected_cb(self, li, item):
