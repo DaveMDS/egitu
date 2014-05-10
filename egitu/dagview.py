@@ -116,7 +116,7 @@ class DagGraph(Table):
         return x
 
     def _populate_progress_cb(self, commit):
-        if self._current_row == 1:
+        if self._current_row == 0:
             self._first_commit = commit
 
         # 1. draw the connection if there are 'open-to' this one
