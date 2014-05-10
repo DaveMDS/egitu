@@ -2,8 +2,6 @@
 EFL Git user interface
 ==================
 
- TODO #1: find a better name
-
 
 ## Features ##
 
