@@ -9,6 +9,7 @@ EFL Git user interface
 * View the diff of each revision
 * Edit repository description
 * Switch branch
+* Cool Gravatar integration
 
 
 ## Requirements ##
@@ -19,10 +20,6 @@ EFL Git user interface
 
 
 ## Installation ##
-
-* Run directly from the repo (without installing):
-
- `python egitu/egitu.py`
 
 * For system-wide installation (needs administrator privileges):
 
