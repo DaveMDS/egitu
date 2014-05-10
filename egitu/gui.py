@@ -266,6 +266,7 @@ class EditableDescription(Entry):
         self.tooltip_text_set("Click to edit description")
         self.callback_clicked_add(self._click_cb)
         self.callback_activated_add(self._done_cb, save=True)
+        self.callback_unfocused_add(self._done_cb, save=False)
         self.callback_aborted_add(self._done_cb, save=False)
 
     def _click_cb(self, entry):
