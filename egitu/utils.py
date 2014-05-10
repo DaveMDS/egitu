@@ -51,7 +51,7 @@ class Options(object):
         self.date_format = '%d %b %Y %H:%M'
         self.date_relative = True
         self.gravatar_default = 'identicon' # or: mm, identicon, monsterid, wavatar, retro
-        self.show_message_in_dag = False
+        self.show_message_in_dag = True
         self.show_remotes_in_dag = True
         self.diff_font_face = 'Mono'
         self.diff_font_size = 10
