@@ -369,8 +369,10 @@ class GitBackend(Repository):
         cmd = 'diff'
         if commit2 and commit2.sha and commit1 and commit1.sha:
             cmd += ' %s %s' % (commit1.sha, commit2.sha)
-        if commit1 is not None and commit1.sha:
+        elif commit1 and commit1.sha:
             cmd += ' %s^ %s' % (commit1.sha, commit1.sha)
+        else:
+            cmd += ' HEAD'
         if path is not None:
             cmd += ' -- %s' % path
         GitCmd(self._url, cmd, done_cb, prog_cb)

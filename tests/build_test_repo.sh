@@ -162,5 +162,15 @@ echo "first file content (v7)" >> file1.txt
 git commit -a -m 'eightth commit in master'
 $PAUSE
 
+# TEST local changes (staged)
+echo "Added staged file" >> added_staged.txt
+echo "Staged modification" >> file2.txt
+git add added_staged.txt file2.txt
+$PAUSE
+
+# TEST local changes (NOT staged)
+echo "Added NOT staged file" >> added_not_staged.txt
+echo "NOT Staged modification" >> file1.txt
+
 
 egitu
