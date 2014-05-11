@@ -154,7 +154,9 @@ class GitCmd(Exe):
         real_cmd = 'git --git-dir="%s" --work-tree="%s" %s' % \
                    (git_dir, local_path, cmd)
 
-        print("GITCMD: %s" % cmd)
+        print("\n=== GITCMD " + "=" * 69)
+        print(real_cmd)
+        print("=" * 80)
         Exe.__init__(self, real_cmd, ECORE_EXE_PIPE_READ | ECORE_EXE_PIPE_READ_LINE_BUFFERED)
         self.on_data_event_add(self.event_data_cb)
         self.on_del_event_add(self.event_del_cb)

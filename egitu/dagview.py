@@ -276,4 +276,3 @@ class DagGraph(Table):
 
     def point_mouse_down_cb(self, obj, signal, source, commit):
         self.win.show_commit(commit)
-        print(commit)
