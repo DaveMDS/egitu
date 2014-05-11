@@ -280,12 +280,13 @@ class EditableDescription(Entry):
     def _done_cb(self, entry, save):
         self.scrollable = False
         self.tooltip_text_set("Click to edit description")
-        self.focus = False
         if save is True:
             self.win.repo.description_set(self.text, self._description_set_cb)
+            self.orig_text = self.text
         else:
             self.text = self.orig_text
             del self.orig_text
+        self.focus = False
 
     def _description_set_cb(self, success):
         # TODO alert if fail
