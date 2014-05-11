@@ -27,70 +27,116 @@ from efl.elementary.image import Image
 from efl.elementary.list import List
 from efl.elementary.panes import Panes
 from efl.elementary.table import Table
+from efl.elementary.check import Check
+from efl.elementary.button import Button
+from efl.elementary.box import Box
 
 from egitu.utils import options, theme_resource_get, format_date, \
-    GravatarPict, EXPAND_BOTH, FILL_BOTH
+    GravatarPict, EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ
 
 
 class DiffViewer(Table):
-    def __init__(self, parent, repo, commit=None):
+    def __init__(self, parent, repo):
         self.repo = repo
         self.commit = None
 
         Table.__init__(self, parent,  padding=(5,5))
         self.show()
 
+        # gravatar picture
         self.picture = GravatarPict(self)
         self.picture.size_hint_align = 0.0, 0.0
         self.picture.show()
-        self.pack(self.picture, 0, 0, 1, 1)
+        self.pack(self.picture, 0, 0, 1, 2)
 
+        # description entry
         self.entry = Entry(self, text="Unknown", line_wrap=ELM_WRAP_MIXED,
                            size_hint_weight=EXPAND_BOTH,
                            size_hint_align=FILL_BOTH)
         self.pack(self.entry, 1, 0, 1, 1)
         self.entry.show()
 
+        # action buttons box
+        bx = Box(self, horizontal=True, size_hint_weight=EXPAND_HORIZ,
+                 size_hint_align=(0.98, 0.98))
+        self.pack(bx, 1, 1, 1, 1)
+        bx.show()
+
+        self.act_revert = Button(self, text="Revert", disabled=True)
+        bx.pack_end(self.act_revert)
+        self.act_revert.show()
+
+        self.act_commit = Button(self, text="Commit", disabled=True)
+        bx.pack_end(self.act_commit)
+        self.act_commit.show()
+
+        self.act_discard = Button(self, text="Discard", disabled=True)
+        bx.pack_end(self.act_discard)
+        self.act_discard.show()
+
+        # panes
         panes = Panes(self, content_left_size = 0.3, horizontal=True,
                       size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
-        self.pack(panes, 0, 1, 2, 1)
+        self.pack(panes, 0, 2, 2, 1)
         panes.show()
 
+        # file list
         self.diff_list = List(self, size_hint_weight=EXPAND_BOTH,
                                     size_hint_align=FILL_BOTH)
         self.diff_list.callback_selected_add(self.change_selected_cb)
         panes.part_content_set("left", self.diff_list)
 
+        # diff entry
         self.diff_entry = Entry(self, editable=False, scrollable=True,
                     size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH,
                     line_wrap=ELM_WRAP_NONE)
         panes.part_content_set("right", self.diff_entry)
 
-        if commit:
-            self.commit_set(repo, commit)
-
     def commit_set(self, repo, commit):
         self.repo = repo
         self.commit = commit
-        text = u'<name>{0}</name>  <b>{1}</b>  {2}<br>' \
-                '<bigger><b>{3}</b></bigger><br><br>'.format(commit.sha[:9],
-                commit.author, format_date(commit.commit_date), commit.title)
-        if commit.message:
-            text += commit.message.replace('\n', '<br>')
-        
-        self.entry.text = text
-
-        self.picture.email_set(commit.author_email)
-
 
         self.diff_list.clear()
         self.diff_entry.text = ''
-        repo.request_changes(self.changes_done_cb, commit1=commit)
+
+        if commit.sha:
+            # a real commit
+            text = u'<name>{0}</name>  <b>{1}</b>  {2}<br>' \
+                '<bigger><b>{3}</b></bigger>'.format(commit.sha[:9],
+                commit.author, format_date(commit.commit_date), commit.title)
+            if commit.message:
+                msg = commit.message.strip().replace('\n', '<br>')
+                text += u'<br><br>{}'.format(msg)
+            repo.request_changes(self.changes_done_cb, commit1=commit)
+            self.act_revert.show()
+            self.act_commit.hide()
+            self.act_discard.hide()
+        else:
+            # or the fake 'local changes' commit
+            text = "<bigger><b>Local changes</b></bigger>"
+            self.show_local_status()
+            self.act_revert.hide()
+            self.act_commit.show()
+            self.act_discard.show()
+
+        self.entry.text = text
+        self.picture.email_set(commit.author_email)
+
+    def show_local_status(self):
+        sortd = sorted(self.repo.status.changes, key=lambda c: c[2])
+        for mod, staged, name in sortd:
+            icon_name = 'mod_{}.png'.format(mod.lower())
+            icon = Icon(self, file=theme_resource_get(icon_name))
+            check = Check(self, text="", state=staged)
+            check.disabled_set(True)
+            it = self.diff_list.item_append(name, icon, check)
+            it.data['change'] = mod, name
+        self.diff_list.go()
 
     def refresh_diff(self):
         if self.diff_list.selected_item:
             self.change_selected_cb(self.diff_list, self.diff_list.selected_item)
-        
+
     def changes_done_cb(self, success, lines):
         for mod, name in lines:
             if mod in ('M', 'A', 'D'):

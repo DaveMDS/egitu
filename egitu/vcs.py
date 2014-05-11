@@ -69,15 +69,13 @@ class Commit(object):
 
 class Status(object):
     def __init__(self):
-        self.mods = []
-        self.mods_staged = []
-        self.untr = []
         self.ahead = 0
         self.textual = ''
+        self.changes = [] # list of tuples: (mod, staged, path)
 
     @property
     def is_clean(self):
-        return (len(self.mods)+len(self.mods_staged)+len(self.untr) == 0)
+        return (len(self.changes) == 0)
 
 ### Base class for backends ###################################################
 class Repository(object):
@@ -217,6 +215,7 @@ class GitBackend(Repository):
                 done_cb(False)
                 return
 
+            # parse the first line (current branch + ahead)
             branch = lines.pop(0)[3:]
             if '...' in branch:
                 spl = branch.split('...')
@@ -228,15 +227,19 @@ class GitBackend(Repository):
                     self._status.ahead = 0
             self._current_branch =  branch
 
+            # parse the list of changed files
             for line in lines:
                 fname = line[3:]
-                if line[1] == 'M': # ' M'
-                    self._status.mods.append(fname)
-                if line[0] == 'M': # 'M '
-                    self._status.mods_staged.append(fname)
-                if line.startswith('??'):
-                    self._status.untr.append(fname)
+                if line[0] == '?':   # untracked (added not staged)
+                    self._status.changes.append(('A', False, fname))
+                elif line[0] == 'A': # added and staged
+                    self._status.changes.append(('A', True, fname))
+                elif line[0] == 'M': # modified and staged
+                    self._status.changes.append(('M', True, fname))
+                elif line[1] == 'M': # modified not staged
+                    self._status.changes.append(('M', False, fname))
                 # TODO more status
+
             done_cb(True, *args)
         GitCmd(self._url, 'status --porcelain -b', done_cb=_cmd_done_cb)
 
