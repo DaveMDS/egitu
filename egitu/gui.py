@@ -181,7 +181,7 @@ class EgituMenu(Menu):
 
         # general options
         it_gen = self.item_add(None, "General", "preference")
-        
+
         it = self.item_add(it_gen, "Use relative dates", None,
                            self._item_check_opts_cb, 'date_relative')
         it.content = Check(self, state=options.date_relative)
@@ -324,15 +324,13 @@ class EgituWin(StandardWindow):
         box.show()
 
         # header
-        fr = Frame(self, style="pad_medium")
-        fr.size_hint_weight = EXPAND_HORIZ
-        fr.size_hint_align = FILL_BOTH
+        fr = Frame(self, style="pad_medium", size_hint_weight=EXPAND_HORIZ,
+                   size_hint_align=FILL_BOTH)
         box.pack_end(fr)
         fr.show()
 
-        tb = Table(self)
-        tb.size_hint_weight = EXPAND_HORIZ
-        tb.size_hint_align = FILL_BOTH
+        tb = Table(self, size_hint_weight=EXPAND_HORIZ,
+                  size_hint_align=FILL_BOTH)
         fr.content = tb
         tb.show()
 
@@ -342,30 +340,26 @@ class EgituWin(StandardWindow):
         bt.callback_clicked_add(lambda b: EgituMenu(self, b))
         tb.pack(bt, 0, 0, 1, 1)
         bt.show()
-       
+
         # editable description entry
-        self.caption_label = ed = EditableDescription(self)
-        tb.pack(ed, 1, 0, 1, 1)
-        ed.show()
+        self.caption_label = EditableDescription(self)
+        tb.pack(self.caption_label, 1, 0, 1, 1)
+        self.caption_label.show()
 
         # branch selector
         lb = Label(self, text='On branch')
         tb.pack(lb, 2, 0, 1, 1)
         lb.show()
 
-        self.branch_selector = brsel = Hoversel(self, text='none')
-        brsel.callback_selected_add(self.branch_selected_cb)
-        tb.pack(brsel, 3, 0, 1, 1)
-        brsel.show()
+        self.branch_selector = Hoversel(self, text='none')
+        self.branch_selector.callback_selected_add(self.branch_selected_cb)
+        tb.pack(self.branch_selector, 3, 0, 1, 1)
+        self.branch_selector.show()
 
         # status label + button
         self.status_label = lb = Entry(self, single_line=True, editable=False)
         tb.pack(lb, 4, 0, 1, 1)
         lb.show()
-
-        # self.commit_button = bt = Button(self, text="commit! (TODO)")
-        # bt.disabled = True
-        # tb.pack(bt, 5, 0, 1, 1)
 
         ### Main content (left + right panes)
         panes = Panes(self, content_left_size = 0.5,
@@ -386,16 +380,14 @@ class EgituWin(StandardWindow):
         self.diff_view.size_hint_align = 0.0, 0.0
         panes.part_content_set("right", self.diff_view)
 
-
         self.resize(800, 600)
-        
         self.show()
 
     def repo_set(self, repo):
         self.repo = repo
         self.update_header()
         self.graph.populate(repo)
-        
+
     def update_header(self):
         # update the branch selector
         try:

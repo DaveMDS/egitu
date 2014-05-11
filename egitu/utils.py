@@ -90,7 +90,7 @@ def file_put_contents(path, contents):
         return True
     except:
         return False
-    
+
 def theme_resource_get(fname):
     return os.path.join(script_path, 'themes', options.theme_name, fname)
 
@@ -163,7 +163,7 @@ class GravatarPict(Photo):
         hash_key = hashlib.md5(email.encode('utf-8').lower()).hexdigest()
         local_path = os.path.join(self.cache_folder, hash_key + '.jpg')
 
-        # downloading yet ? 
+        # downloading yet ?
         if local_path in self.jobs:
             self.file = self.default_file
             return

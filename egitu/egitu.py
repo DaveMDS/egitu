@@ -96,13 +96,13 @@ class GitGraph(ClippedSmartObject):
         l = self.Line(geometry=(0, 0, 100, 100), color=(200, 200, 200, 200))
         # self.member_add(l)
         l.show()
-        
-        
+
+
         cols = col = row = 1
         for commit in repo.commits('master', n=30):
             if row == 1:
                 self.point_add(commit, 5, 0)
-                
+
             if commit.sha in reservations:
                 # child_row, child_col = reservations.pop(commit.sha)[-1]
                 # col = child_col
@@ -135,8 +135,8 @@ class GitGraph(ClippedSmartObject):
             l.delete()
         self.lines = []
         self.points = []
-        
-        
+
+
     def update(self):
         # self.clear()
         self.populate()
@@ -146,7 +146,7 @@ class GitGraph(ClippedSmartObject):
         # ClippedSmartObject.move(self, x, y)
         # for l in self.lines + self.points:
             # l.pos = x + l.pos[0], y + l.pos[1]
-        
+
     def resize(self, w, h):
         print("resize", w, h)
         # self.size = (w, h)
@@ -156,7 +156,7 @@ class GitGraph(ClippedSmartObject):
         # pass
 
     def line_add(self, row1, col1, row2, col2):
-        
+
         print ("LINE", row1, col1, row2, col2)
         x = self._colw * col1 - self._lins / 2
         y = self._rowh * row1
@@ -172,19 +172,19 @@ class GitGraph(ClippedSmartObject):
             # self.member_add(l)
             # l.lower()
             l.show()
-        
+
         l = self.Rectangle(geometry=(x, y, w, h), color=self._cols[col1])
         # self.member_add(l)
         self.lines.append(l)
         l.lower()
         l.show()
-        
+
     def point_add(self, commit, row, col):
         print(commit)
         # print(str(commit.refs))
         # self.commits.append(commit)
-        
-        
+
+
         r = Edje(self.evas, file=self.theme, group='egitu/graph/item')
         self.member_add(r)
         self.points.append(r)
@@ -202,11 +202,11 @@ class GitGraph(ClippedSmartObject):
             if 1:
                 print("TAGGG", ref)
                 l = Layout(self.parent_obj, file=(self.theme, 'egitu/graph/tag'))
-                
+
                 l.part_text_set('tag.text', ref)
                 l.show()
                 r.part_box_append('tag.box', l)
-        
+
         r.pos = col * self._colw, row * self._rowh
         r.show()
 

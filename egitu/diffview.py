@@ -180,5 +180,3 @@ class DiffViewer(Table):
         self.diff_entry.text = \
             '<code><font={0} font_size={1}>{2}</font></code>' \
             .format(options.diff_font_face, options.diff_font_size, text)
-
-

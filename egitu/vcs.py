@@ -41,6 +41,7 @@ def repo_factory(url):
             return backend
     LOG('ERROR: Cannot find a repo at: "%s"' % url)
 
+
 class Commit(object):
     def __init__(self):
         self.sha = ""
@@ -67,6 +68,7 @@ class Commit(object):
     def is_a_merge(self):
         return len(self.parents) > 1
 
+
 class Status(object):
     def __init__(self):
         self.ahead = 0
@@ -76,6 +78,7 @@ class Status(object):
     @property
     def is_clean(self):
         return (len(self.changes) == 0)
+
 
 ### Base class for backends ###################################################
 class Repository(object):
@@ -276,7 +279,7 @@ class GitBackend(Repository):
         return self._name
 
     # name_set(self, name, done_cb, *args) not implemented
-    
+
     @property
     def description(self):
         return self._description
@@ -349,7 +352,7 @@ class GitBackend(Repository):
                         c.heads.append(ref) # TODO REMOVE ME
                         LOG("UNKNOWN REF: %s" % ref)
             prog_cb(c)
-        
+
         # fmt = 'format:{"sha":"%H", "parents":"%P", "author":"%an",
         #                "author_email":"%ae", "commit_ts":%ct, "title":"%s",
         #                "body": "%b", "refs":"%d"}'
@@ -383,7 +386,7 @@ class GitBackend(Repository):
             # X: "unknown" change type (most probably a bug, please report it)
 
             # TODO handle move, rename (unmerged ??)
-            
+
             done_cb(True, L)
 
         cmd = 'diff --name-status'

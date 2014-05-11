@@ -176,7 +176,7 @@ class DagGraph(Table):
                 l = self.connection_add(child_col, child_row,
                                         child_col, self._current_row)
                 self._open_connection_lines.append(l)
-        
+
         # add the "show more" button if necessary
         if self._open_connections:
             bt = Button(self, text="Show more commits", size_hint_align=(0,0))
@@ -234,7 +234,7 @@ class DagGraph(Table):
                 l.text_set('ref.text', head)
                 p.box_append('refs.box', l)
                 l.show()
-                
+
         for tag in commit.tags:
             l = Layout(self, file=(self.themef, 'egitu/graph/tag'))
             l.text_set('tag.text', tag)
@@ -255,7 +255,7 @@ class DagGraph(Table):
                     group='egitu/graph/connection/vert',
                     color=self.color_for_column(col1))
             self.pack(l, col1, row1, col2 - col1 + 1, row2 - row1 + 1)
-            
+
         elif col1 > col2:
             # a "fork"
             l = Edje(self.evas, file=self.themef, size_hint_align=FILL_BOTH,
