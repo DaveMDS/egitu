@@ -39,6 +39,7 @@ class DiffViewer(Table):
     def __init__(self, parent, repo):
         self.repo = repo
         self.commit = None
+        self.win = parent
 
         Table.__init__(self, parent,  padding=(5,5))
         self.show()
@@ -95,7 +96,7 @@ class DiffViewer(Table):
             bt = Button(self, text="Discard", disabled=True)
             self.action_box.pack_end(bt)
             bt.show()
-        
+
     def commit_set(self, repo, commit):
         self.repo = repo
         self.commit = commit
@@ -127,11 +128,24 @@ class DiffViewer(Table):
         for mod, staged, name in sortd:
             icon_name = 'mod_{}.png'.format(mod.lower())
             icon = Icon(self, file=theme_resource_get(icon_name))
+
             check = Check(self, text="", state=staged)
-            check.disabled_set(True)
+            check.callback_changed_add(self.stage_unstage_cb)
+            check.data['path'] = name
+
             it = self.diff_list.item_append(name, icon, check)
             it.data['change'] = mod, name
+
         self.diff_list.go()
+
+    def stage_unstage_cb(self, check):
+        def stage_unstage_done_cb(success):
+            self.win.update_header()
+
+        if check.state is True:
+            self.repo.stage_file(stage_unstage_done_cb, check.data['path'])
+        else:
+            self.repo.unstage_file(stage_unstage_done_cb, check.data['path'])
 
     def refresh_diff(self):
         if self.diff_list.selected_item:

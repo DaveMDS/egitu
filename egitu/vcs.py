@@ -135,12 +135,17 @@ class Repository(object):
     def request_commits(self, done_cb, prog_cb, max_count=100, skip=0):
         raise NotImplementedError("request_commits() not implemented in backend")
 
-    def request_diff(self, done_cb, prog_cb, max_count=0, commit1=None, commit2=None):
+    def request_diff(self, done_cb, prog_cb, max_count=0, commit1=None, commit2=None, path=None):
         raise NotImplementedError("request_diff() not implemented in backend")
 
     def request_changes(self, done_cb, commit1=None, commit2=None):
         raise NotImplementedError("request_changes() not implemented in backend")
 
+    def stage_file(self, done_cb, path):
+        raise NotImplementedError("stage_file() not implemented in backend")
+
+    def unstage_file(self, done_cb, path):
+        raise NotImplementedError("unstage_file() not implemented in backend")
 
 ### Git backend ###############################################################
 class GitCmd(Exe):
@@ -402,3 +407,14 @@ class GitBackend(Repository):
             cmd += ' HEAD'
         GitCmd(self._url, cmd, _cmd_done_cb)
 
+    def stage_file(self, done_cb, path):
+        def _cmd_done_cb(lines):
+            self.refresh(done_cb)
+        cmd = 'add ' + path
+        GitCmd(self._url, cmd, _cmd_done_cb)
+
+    def unstage_file(self, done_cb, path):
+        def _cmd_done_cb(lines):
+            self.refresh(done_cb)
+        cmd = 'reset HEAD ' + path
+        GitCmd(self._url, cmd, _cmd_done_cb)
