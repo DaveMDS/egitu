@@ -13,6 +13,8 @@ mkdir $NAME
 cd $NAME
 
 git init
+echo "Testing repository" > .git/description
+
 echo "first file content" >> file1.txt
 git add file1.txt
 git commit -m 'Initial commit'
