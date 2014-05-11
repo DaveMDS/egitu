@@ -260,33 +260,45 @@ class EgituMenu(Menu):
 class EditableDescription(Entry):
     def __init__(self, win):
         self.win = win
-        Entry.__init__(self, win, editable=True, single_line=True,
-                       size_hint_weight=EXPAND_HORIZ, size_hint_align=FILL_HORIZ)
-        self.text_style_user_push("DEFAULT='font_size=18'")
-        self.tooltip_text_set("Click to edit description")
+        Entry.__init__(self, win, single_line=True,
+                       size_hint_weight=EXPAND_HORIZ,
+                       size_hint_align=FILL_HORIZ)
         self.callback_clicked_add(self._click_cb)
         self.callback_activated_add(self._done_cb, save=True)
         self.callback_unfocused_add(self._done_cb, save=False)
         self.callback_aborted_add(self._done_cb, save=False)
+        self.go_passive()
 
     def _click_cb(self, entry):
-        self.scrollable = True
-        self.tooltip_unset()
+        if not self.editable:
+            self.go_active()
+
+    def go_passive(self):
+        if hasattr(self, "orig_text"):
+            del self.orig_text
+        self.editable = False
+        self.scrollable = False
+        self.text_style_user_push("DEFAULT='font_size=18'")
+        self.tooltip_text_set("Click to edit description")
+
+    def go_active(self):
         self.orig_text = self.text
+        self.focus = False
+        self.editable = True
+        self.scrollable = True
+        self.text_style_user_push("DEFAULT='font_size=18'")
+        self.tooltip_unset()
         ic = Icon(self, standard="close", size_hint_min=(20,20))
         ic.callback_clicked_add(self._done_cb, False)
         self.part_content_set("end", ic)
+        self.focus = True
 
     def _done_cb(self, entry, save):
-        self.scrollable = False
-        self.tooltip_text_set("Click to edit description")
         if save is True:
             self.win.repo.description_set(self.text, self._description_set_cb)
-            self.orig_text = self.text
         else:
             self.text = self.orig_text
-            del self.orig_text
-        self.focus = False
+        self.go_passive()
 
     def _description_set_cb(self, success):
         # TODO alert if fail
