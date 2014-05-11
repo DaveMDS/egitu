@@ -57,22 +57,11 @@ class DiffViewer(Table):
         self.entry.show()
 
         # action buttons box
-        bx = Box(self, horizontal=True, size_hint_weight=EXPAND_HORIZ,
-                 size_hint_align=(0.98, 0.98))
-        self.pack(bx, 1, 1, 1, 1)
-        bx.show()
-
-        self.act_revert = Button(self, text="Revert", disabled=True)
-        bx.pack_end(self.act_revert)
-        self.act_revert.show()
-
-        self.act_commit = Button(self, text="Commit", disabled=True)
-        bx.pack_end(self.act_commit)
-        self.act_commit.show()
-
-        self.act_discard = Button(self, text="Discard", disabled=True)
-        bx.pack_end(self.act_discard)
-        self.act_discard.show()
+        self.action_box = Box(self, horizontal=True,
+                              size_hint_weight=EXPAND_HORIZ,
+                              size_hint_align=(0.98, 0.98))
+        self.pack(self.action_box, 1, 1, 1, 1)
+        self.action_box.show()
 
         # panes
         panes = Panes(self, content_left_size = 0.3, horizontal=True,
@@ -92,6 +81,21 @@ class DiffViewer(Table):
                     line_wrap=ELM_WRAP_NONE)
         panes.part_content_set("right", self.diff_entry)
 
+    def update_action_buttons(self, buttons):
+        self.action_box.clear()
+        if 'revert' in buttons:
+            bt = Button(self, text="Revert", disabled=True)
+            self.action_box.pack_end(bt)
+            bt.show()
+        if 'commit' in buttons:
+            bt = Button(self, text="Commit", disabled=True)
+            self.action_box.pack_end(bt)
+            bt.show()
+        if 'discard' in buttons:
+            bt = Button(self, text="Discard", disabled=True)
+            self.action_box.pack_end(bt)
+            bt.show()
+        
     def commit_set(self, repo, commit):
         self.repo = repo
         self.commit = commit
@@ -108,16 +112,12 @@ class DiffViewer(Table):
                 msg = commit.message.strip().replace('\n', '<br>')
                 text += u'<br><br>{}'.format(msg)
             repo.request_changes(self.changes_done_cb, commit1=commit)
-            self.act_revert.show()
-            self.act_commit.hide()
-            self.act_discard.hide()
+            self.update_action_buttons(['revert'])
         else:
             # or the fake 'local changes' commit
             text = "<bigger><b>Local changes</b></bigger>"
             self.show_local_status()
-            self.act_revert.hide()
-            self.act_commit.show()
-            self.act_discard.show()
+            self.update_action_buttons(['commit', 'discard'])
 
         self.entry.text = text
         self.picture.email_set(commit.author_email)
