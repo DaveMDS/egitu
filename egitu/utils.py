@@ -30,6 +30,8 @@ from xdg.BaseDirectory import xdg_config_home, xdg_cache_home
 from efl.evas import EVAS_HINT_EXPAND, EVAS_HINT_FILL
 from efl.ecore import FileDownload
 from efl.elementary.photo import Photo
+from efl.elementary.entry import Entry, utf8_to_markup, \
+    ELM_WRAP_NONE, ELM_WRAP_MIXED
 
 
 EXPAND_BOTH = EVAS_HINT_EXPAND, EVAS_HINT_EXPAND
@@ -186,3 +188,47 @@ class GravatarPict(Photo):
         self.jobs.remove(path)
         if not self.is_deleted() and status == 200:
             self.file = path
+
+
+class DiffedEntry(Entry):
+    """ An entry with highlighted diff content """
+    def __init__(self, parent):
+        wrap = ELM_WRAP_MIXED if options.diff_text_wrap else ELM_WRAP_NONE
+        Entry.__init__(self, parent,
+                       scrollable=True, editable=False, line_wrap=wrap,
+                       text="<info>Loading diff, please wait...</info>",
+                       size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
+
+    def lines_set(self, lines):
+        markup = ''
+        from_fname = to_fname = None
+
+        for line in lines:
+            if from_fname and to_fname:
+                if from_fname == '/dev/null':
+                    action = 'A'
+                elif to_fname == '/dev/null':
+                    action = 'D'
+                else:
+                    action = 'M'
+                markup += '<br><subtitle>' + action + ' ' + to_fname + '</subtitle><br>'
+                from_fname = to_fname = None
+
+            if line.startswith(('diff', 'index', 'new')):
+                pass
+            elif line.startswith('---'):
+                from_fname = line[4:]
+            elif line.startswith('+++'):
+                to_fname = line[4:]
+            elif line.startswith('@@'):
+                markup += '<hilight>'+utf8_to_markup(line)+'</hilight><br>'
+            elif line[0] == '+':
+                markup += '<line_added>'+utf8_to_markup(line)+'</line_added><br>'
+            elif line[0] == '-':
+                markup += '<line_removed>'+utf8_to_markup(line)+'</line_removed><br>'
+            else:
+                markup += utf8_to_markup(line)+'<br>'
+
+        markup = markup[4:] # remove the first "<br>"
+        self.text = '<code><font={0} font_size={1}>{2}</font></code>'.format(
+                     options.diff_font_face, options.diff_font_size, markup)

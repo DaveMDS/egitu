@@ -9,6 +9,7 @@ EFL Git user interface
 * View the diff of each revision
 * Edit repository description
 * Switch branch
+* Stage/Unstage files
 * Cool Gravatar integration
 
 

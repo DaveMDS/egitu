@@ -135,7 +135,7 @@ class Repository(object):
     def request_commits(self, done_cb, prog_cb, max_count=100, skip=0):
         raise NotImplementedError("request_commits() not implemented in backend")
 
-    def request_diff(self, done_cb, prog_cb, max_count=0, commit1=None, commit2=None, path=None):
+    def request_diff(self, done_cb, prog_cb, max_count=0, commit1=None, commit2=None, path=None, only_staged=False):
         raise NotImplementedError("request_diff() not implemented in backend")
 
     def request_changes(self, done_cb, commit1=None, commit2=None):
@@ -370,8 +370,10 @@ class GitBackend(Repository):
         GitCmd(self._url, cmd, _cmd_done_cb, _cmd_line_cb, list())
 
     def request_diff(self, done_cb, prog_cb, max_count=100,
-                           commit1=None, commit2=None, path=None):
-        cmd = 'diff'
+                     commit1=None, commit2=None, path=None, only_staged=False):
+        cmd = 'diff --no-prefix'
+        if only_staged:
+            cmd += ' --staged'
         if commit2 and commit2.sha and commit1 and commit1.sha:
             cmd += ' %s %s' % (commit1.sha, commit2.sha)
         elif commit1 and commit1.sha:

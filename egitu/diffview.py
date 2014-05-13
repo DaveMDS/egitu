@@ -20,8 +20,7 @@
 
 from __future__ import absolute_import
 
-from efl.elementary.entry import Entry, utf8_to_markup, \
-    ELM_WRAP_NONE, ELM_WRAP_MIXED
+from efl.elementary.entry import Entry, ELM_WRAP_NONE, ELM_WRAP_MIXED
 from efl.elementary.icon import Icon
 from efl.elementary.image import Image
 from efl.elementary.list import List
@@ -32,7 +31,8 @@ from efl.elementary.button import Button
 from efl.elementary.box import Box
 
 from egitu.utils import options, theme_resource_get, format_date, \
-    GravatarPict, EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ
+    GravatarPict, DiffedEntry, EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ, FILL_HORIZ
+from egitu.commitdialog import CommitDialog
 
 
 class DiffViewer(Table):
@@ -77,9 +77,7 @@ class DiffViewer(Table):
         panes.part_content_set("left", self.diff_list)
 
         # diff entry
-        self.diff_entry = Entry(self, editable=False, scrollable=True,
-                    size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH,
-                    line_wrap=ELM_WRAP_NONE)
+        self.diff_entry = DiffedEntry(self)
         panes.part_content_set("right", self.diff_entry)
 
     def update_action_buttons(self, buttons):
@@ -89,7 +87,8 @@ class DiffViewer(Table):
             self.action_box.pack_end(bt)
             bt.show()
         if 'commit' in buttons:
-            bt = Button(self, text="Commit", disabled=True)
+            bt = Button(self, text="Commit")
+            bt.callback_clicked_add(lambda b: CommitDialog(self.repo))
             self.action_box.pack_end(bt)
             bt.show()
         if 'discard' in buttons:
@@ -172,25 +171,4 @@ class DiffViewer(Table):
         self.diff_entry.text = '<info>Loading diff, please wait...</info>'
 
     def diff_done_cb(self, lines):
-        # TODO use a buffer instead of immutable string
-        text = ''
-        for line in lines:
-            if line.startswith(('---', '+++', 'diff', 'index')):
-                continue
-            elif line[0] == '+':
-                tag = 'line_added'
-            elif line[0] == '-':
-                tag = 'line_removed'
-            elif line[0] == ' ':
-                tag = None
-            else:
-                tag = 'hilight'
-
-            if tag:
-                text += '<{0}>{1}</{0}><br>'.format(tag, utf8_to_markup(line))
-            else:
-                text += '{0}<br>'.format(utf8_to_markup(line))
-
-        self.diff_entry.text = \
-            '<code><font={0} font_size={1}>{2}</font></code>' \
-            .format(options.diff_font_face, options.diff_font_size, text)
+        self.diff_entry.lines_set(lines)
