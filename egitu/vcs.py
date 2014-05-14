@@ -177,7 +177,7 @@ class GitCmd(Exe):
 
     def event_del_cb(self, exe, event):
         if callable(self.done_cb):
-            self.done_cb(self.lines, *self.args)
+            self.done_cb(self.lines, (event.exit_code == 0), *self.args)
 
 
 class GitBackend(Repository):
@@ -222,7 +222,7 @@ class GitBackend(Repository):
         self._fetch_tags(_multi_done_cb, *args)
 
     def _fetch_status(self, done_cb, *args):
-        def _cmd_done_cb(lines):
+        def _cmd_done_cb(lines, success):
             if len(lines) < 1 or not lines[0].startswith('## '):
                 done_cb(False)
                 return
@@ -252,17 +252,17 @@ class GitBackend(Repository):
                     self._status.changes.append(('M', False, fname))
                 # TODO more status
 
-            done_cb(True, *args)
+            done_cb(success, *args)
         GitCmd(self._url, 'status --porcelain -b', done_cb=_cmd_done_cb)
 
     def _fetch_status_text(self, done_cb, *args):
-        def _cmd_done_cb(lines):
+        def _cmd_done_cb(lines, success):
             self._status.textual = '<br>'.join(lines)
-            done_cb(True, *args)
+            done_cb(success, *args)
         GitCmd(self._url, 'status', done_cb=_cmd_done_cb)
 
     def _fetch_branches(self, done_cb, *args):
-        def _cmd_done_cb(lines):
+        def _cmd_done_cb(lines, success):
             L = []
             for branch in lines:
                 if branch.startswith('* '):
@@ -270,13 +270,13 @@ class GitBackend(Repository):
                 else:
                     L.append(branch.strip())
             self._branches = L
-            done_cb(True, *args)
+            done_cb(success, *args)
         GitCmd(self._url, 'branch', _cmd_done_cb)
 
     def _fetch_tags(self, done_cb, *args):
-        def _cmd_done_cb(lines):
+        def _cmd_done_cb(lines, success):
             self._tags = lines
-            done_cb(True, *args)
+            done_cb(success, *args)
         GitCmd(self._url, 'tag', _cmd_done_cb)
 
     @property
@@ -310,7 +310,7 @@ class GitBackend(Repository):
         return self._current_branch
 
     def current_branch_set(self, branch, done_cb, *args):
-        def _cmd_done_cb(lines):
+        def _cmd_done_cb(lines, success):
             # TODO check result
             print(lines)
             self.refresh(done_cb, *args)
@@ -327,7 +327,7 @@ class GitBackend(Repository):
 
     def request_commits(self, done_cb, prog_cb, max_count=100, skip=0):
 
-        def _cmd_done_cb(lines, lines_buf):
+        def _cmd_done_cb(lines, success, lines_buf):
             done_cb()
 
         def _cmd_line_cb(line, lines_buf):
@@ -387,7 +387,7 @@ class GitBackend(Repository):
         GitCmd(self._url, cmd, done_cb, prog_cb)
 
     def request_changes(self, done_cb, commit1=None, commit2=None):
-        def _cmd_done_cb(lines):
+        def _cmd_done_cb(lines, success):
             L = [ line.split('\t') for line in lines ]
             # A: addition of a file
             # C: copy of a file into a new one
@@ -400,7 +400,7 @@ class GitBackend(Repository):
 
             # TODO handle move, rename (unmerged ??)
 
-            done_cb(True, L)
+            done_cb(success, L)
 
         cmd = 'diff --name-status'
         if commit2 and commit2.sha and commit1 and commit1.sha:
@@ -412,19 +412,19 @@ class GitBackend(Repository):
         GitCmd(self._url, cmd, _cmd_done_cb)
 
     def stage_file(self, done_cb, path):
-        def _cmd_done_cb(lines):
+        def _cmd_done_cb(lines, success):
             self.refresh(done_cb)
         cmd = 'add ' + path
         GitCmd(self._url, cmd, _cmd_done_cb)
 
     def unstage_file(self, done_cb, path):
-        def _cmd_done_cb(lines):
+        def _cmd_done_cb(lines, success):
             self.refresh(done_cb)
         cmd = 'reset HEAD ' + path
         GitCmd(self._url, cmd, _cmd_done_cb)
 
     def commit(self, done_cb, msg):
-        def _cmd_done_cb(lines):
+        def _cmd_done_cb(lines, success):
             self.refresh(done_cb)
         cmd = 'commit -m "{}"'.format(msg.replace('"', '\"'))
         GitCmd(self._url, cmd, _cmd_done_cb)

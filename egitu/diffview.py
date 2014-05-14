@@ -171,5 +171,5 @@ class DiffViewer(Table):
             ELM_WRAP_MIXED if options.diff_text_wrap else ELM_WRAP_NONE
         self.diff_entry.text = '<info>Loading diff, please wait...</info>'
 
-    def diff_done_cb(self, lines):
+    def diff_done_cb(self, lines, success):
         self.diff_entry.lines_set(lines)
