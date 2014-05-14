@@ -53,7 +53,8 @@ class DiffViewer(Table):
         # description entry
         self.entry = Entry(self, text="Unknown", line_wrap=ELM_WRAP_MIXED,
                            size_hint_weight=EXPAND_BOTH,
-                           size_hint_align=FILL_BOTH)
+                           size_hint_align=FILL_BOTH,
+                           editable=False)
         self.pack(self.entry, 1, 0, 1, 1)
         self.entry.show()
 
