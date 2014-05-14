@@ -10,6 +10,7 @@ EFL Git user interface
 * Edit repository description
 * Switch branch
 * Stage/Unstage files
+* Commit staged changes
 * Cool Gravatar integration
 
 

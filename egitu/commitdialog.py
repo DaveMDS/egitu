@@ -20,14 +20,14 @@
 
 from __future__ import absolute_import
 
-from efl.elementary.entry import Entry, markup_to_utf8, \
+from efl.elementary.entry import Entry, markup_to_utf8, utf8_to_markup, \
     ELM_WRAP_NONE, ELM_WRAP_MIXED
 from efl.elementary.window import StandardWindow
 from efl.elementary.box import Box
 from efl.elementary.panes import Panes
 from efl.elementary.button import Button
 
-from egitu.utils import DiffedEntry, EXPAND_BOTH, FILL_BOTH, \
+from egitu.utils import DiffedEntry, ErrorPopup, EXPAND_BOTH, FILL_BOTH, \
     EXPAND_HORIZ, FILL_HORIZ
 
 
@@ -97,18 +97,19 @@ class CommitDialog(StandardWindow):
         self.diff_entry.lines_set(lines)
 
     def commit_button_cb(self, bt):
-        # TODO check empty msg !!!
         if not self.confirmed:
             self.confirmed = True
             bt.text = 'Are you sure?'
         else:
-            bt.disabled = True
+            bt.text = 'Commit'
+            self.confirmed = False
             self.repo.commit(self.commit_done_cb,
                              markup_to_utf8(self.msg_entry.text))
 
-    def commit_done_cb(self, result):
-        # TODO CHECK COMMIT RESULT !!!!!!
-        self.delete()
-        self.win.update_header()
-        self.win.graph.populate(self.repo)
-
+    def commit_done_cb(self, success, err_msg=None):
+        if success:
+            self.delete()
+            self.win.update_header()
+            self.win.graph.populate(self.repo)
+        else:
+            ErrorPopup(self, 'Commit Failed', utf8_to_markup(err_msg))

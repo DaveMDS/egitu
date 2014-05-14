@@ -23,7 +23,8 @@ from __future__ import absolute_import
 import os
 from datetime import datetime
 
-from efl.ecore import Exe, ECORE_EXE_PIPE_READ, ECORE_EXE_PIPE_READ_LINE_BUFFERED
+from efl.ecore import Exe, ECORE_EXE_PIPE_READ, ECORE_EXE_PIPE_ERROR, \
+    ECORE_EXE_PIPE_READ_LINE_BUFFERED, ECORE_EXE_PIPE_ERROR_LINE_BUFFERED
 
 from egitu.utils import file_get_contents, file_put_contents
 
@@ -164,8 +165,11 @@ class GitCmd(Exe):
         print("\n=== GITCMD " + "=" * 69)
         print(real_cmd)
         print("=" * 80)
-        Exe.__init__(self, real_cmd, ECORE_EXE_PIPE_READ | ECORE_EXE_PIPE_READ_LINE_BUFFERED)
+        Exe.__init__(self, real_cmd, ECORE_EXE_PIPE_READ |
+                     ECORE_EXE_PIPE_ERROR | ECORE_EXE_PIPE_READ_LINE_BUFFERED |
+                     ECORE_EXE_PIPE_ERROR_LINE_BUFFERED)
         self.on_data_event_add(self.event_data_cb)
+        self.on_error_event_add(self.event_data_cb)
         self.on_del_event_add(self.event_del_cb)
 
     def event_data_cb(self, exe, event):
@@ -425,6 +429,10 @@ class GitBackend(Repository):
 
     def commit(self, done_cb, msg):
         def _cmd_done_cb(lines, success):
-            self.refresh(done_cb)
+            if success:
+                self.refresh(done_cb)
+            else:
+                done_cb(success, '\n'.join(lines))
+
         cmd = 'commit -m "{}"'.format(msg.replace('"', '\"'))
         GitCmd(self._url, cmd, _cmd_done_cb)

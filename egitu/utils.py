@@ -30,6 +30,8 @@ from xdg.BaseDirectory import xdg_config_home, xdg_cache_home
 from efl.evas import EVAS_HINT_EXPAND, EVAS_HINT_FILL
 from efl.ecore import FileDownload
 from efl.elementary.photo import Photo
+from efl.elementary.popup import Popup
+from efl.elementary.button import Button
 from efl.elementary.entry import Entry, utf8_to_markup, \
     ELM_WRAP_NONE, ELM_WRAP_MIXED
 
@@ -232,3 +234,17 @@ class DiffedEntry(Entry):
         markup = markup[4:] # remove the first "<br>"
         self.text = '<code><font={0} font_size={1}>{2}</font></code>'.format(
                      options.diff_font_face, options.diff_font_size, markup)
+
+
+class ErrorPopup(Popup):
+    def __init__(self, parent, title, msg):
+        Popup.__init__(self, parent)
+        self.part_text_set('title,text', title)
+        self.part_text_set('default', msg)
+
+        b = Button(self, text='Close')
+        b.callback_clicked_add(lambda b: self.delete())
+        b.show()
+
+        self.part_content_set('button1', b)
+        self.show()
