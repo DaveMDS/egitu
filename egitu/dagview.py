@@ -163,7 +163,7 @@ class DagGraph(Table):
         self._visible_commits += 1
         self._current_row += 1
 
-    def _populate_done_cb(self):
+    def _populate_done_cb(self, success):
         # draw the last date piece
         self.date_add(self._last_date, self._last_date_row, self._current_row)
 

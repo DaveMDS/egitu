@@ -165,8 +165,7 @@ class DiffViewer(Table):
 
     def change_selected_cb(self, li, item):
         mod, path = item.data['change']
-        self.repo.request_diff(self.diff_done_cb, None,
-                               commit1=self.commit, path=path)
+        self.repo.request_diff(self.diff_done_cb, commit1=self.commit, path=path)
         self.diff_entry.line_wrap = \
             ELM_WRAP_MIXED if options.diff_text_wrap else ELM_WRAP_NONE
         self.diff_entry.text = '<info>Loading diff, please wait...</info>'

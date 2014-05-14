@@ -91,7 +91,7 @@ class CommitDialog(StandardWindow):
         en.focus = True
 
         # load the diff
-        repo.request_diff(self.diff_done_cb, None, only_staged=True)
+        repo.request_diff(self.diff_done_cb, only_staged=True)
 
     def diff_done_cb(self, lines, success):
         self.diff_entry.lines_set(lines)

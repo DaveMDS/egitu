@@ -85,70 +85,283 @@ class Status(object):
 class Repository(object):
 
     def check_url(self, url):
+        """
+        Check if the given url is loadable by the backend.
+
+        Args:
+            url:
+                Local path to check for validity.
+
+        Returns:
+            True or False.
+        """
         # here implementation must check if url is a valid repo
         raise NotImplementedError("check_url() not implemented in backend")
 
     def load_from_url(self, url, done_cb, *args):
-        # implementation fill basic repo info (name, desc, branches, tags, ...)
+        """
+        Load the given repo and fetch basic info as with refresh().
+
+        Args:
+            url:
+                Local path from where to load the repo.
+            done_cb:
+                Function to call when the operation finish.
+                Signature: cb(success, *args)
+            args:
+                All the others arguments passed will be given back in
+                the done_cb callback function.
+        """
         raise NotImplementedError("load_from_url() not implemented in backend")
 
     def refresh(self, done_cb, *args):
+        """
+        Reload the basic info from the repo.
+
+        This is used to read some of the basic info, like tags, branches,
+        and so on from the repo. The info will then be available in various
+        properties for fast access.
+
+        Args:
+            done_cb:
+                Function to call when the operation finish.
+                Signature: cb(success, *args)
+            args:
+                All the others arguments passed will be given back in
+                the done_cb callback function.
+        """
         raise NotImplementedError("refresh not implemented in backend")
 
     @property
     def url(self):
+        """
+        The full path of the repo in the local filesystem.
+        """
         raise NotImplementedError("name not implemented in backend")
 
     @property
     def name(self):
+        """
+        The name of the repo, usually this is the name of the folder
+        where the repo live.
+        """
         raise NotImplementedError("name not implemented in backend")
 
     def name_set(self, name, done_cb, *args):
+        """
+        Change the name of the repo.
+
+        Args:
+            name:
+                A string to set as the name.
+            done_cb:
+                Function to call when the operation finish.
+                Signature: cb(success, *args)
+            args:
+                All the others arguments passed will be given back in
+                the done_cb callback function.
+        """
         raise NotImplementedError("name_set() not implemented in backend")
 
     @property
     def description(self):
+        """
+        A short text that describe the repo.
+        """
         raise NotImplementedError("description not implemented in backend")
 
     def description_set(self, description, done_cb, *args):
+        """
+        Set the description of the repo.
+
+        Args:
+            description:
+                A string to set as the description.
+            done_cb:
+                Function to call when the operation finish.
+                Signature: cb(success, *args)
+            args:
+                All the others arguments passed will be given back in
+                the done_cb callback function.
+        """
         raise NotImplementedError("description_set() not implemented in backend")
 
     @property
     def status(self):
+        """
+        The current Status object of the repo.
+
+        Status rapresent local changes, staged or not.
+
+        NOTE: This property is cached, you need to call the refresh() function
+        to actually read the value from the repo.
+        """
         raise NotImplementedError("status() not implemented in backend")
 
     @property
     def current_branch(self):
+        """
+        The current branch of the repo.
+
+        NOTE: This property is cached, you need to call the refresh() function
+        to actually read the value from the repo.
+        """
         raise NotImplementedError("current_branch not implemented in backend")
 
     def current_branch_set(self, branch, done_cb, *args):
+        """
+        Change the current branch of the repo.
+
+        Args:
+            branch:
+                The name of the branch to switch to.
+            done_cb:
+                Function to call when the operation finish.
+                Signature: cb(success, *args)
+            args:
+                All the others arguments passed will be given back in
+                the done_cb callback function.
+        """
         raise NotImplementedError("current_branch_set() not implemented in backend")
 
     @property
     def branches(self):
+        """
+        The list of branches name present in the repository.
+
+        NOTE: This property is cached, you need to call the refresh() function
+        to actually read the list from the repo.
+        """
         raise NotImplementedError("branches not implemented in backend")
 
     @property
     def tags(self):
+        """
+        The list of tags name present in the repository.
+
+        NOTE: This property is cached, you need to call the refresh() function
+        to actually read the list from the repo.
+        """
         raise NotImplementedError("tags not implemented in backend")
 
     def request_commits(self, done_cb, prog_cb, max_count=100, skip=0):
+        """
+        Request a list of Commit objects.
+
+        Args:
+            done_cb:
+                Function to call when the operation finish.
+                Signature: cb(success)
+            prog_cb:
+                Function to call for each commit.
+                Signature: cb(commit)
+            max_count:
+                Maximum number of commit to return.
+            skip:
+                Start the listing from the N commit.
+        """
         raise NotImplementedError("request_commits() not implemented in backend")
 
-    def request_diff(self, done_cb, prog_cb, max_count=0, commit1=None, commit2=None, path=None, only_staged=False):
+    def request_diff(self, done_cb, prog_cb=None, commit1=None, commit2=None,
+                     path=None, only_staged=False):
+        """
+        Request the full unified diff between 2 commit.
+
+        If the prog_cb is provided then it will be called for each line of the
+        diff, otherwise the lines will be accumulated in a list and returned
+        in the done_cb function.
+
+        If commit2 is omitted only the changes that occur in commit1 is returned.
+        If also commit1 is omitted all the not-yet-committed changes is returned.
+
+        Args:
+            done_cb:
+                Function to call when the operation finish.
+                Signature: cb(lines, success)
+            prog_cb:
+                Function to call on each line of the diff.
+                Signature: cb(line)
+            commit1:
+                A Commit object.
+            commit2:
+                Another Commit object.
+            path:
+                If given only the diff that occur in that file is reported.
+            only_staged:
+                If True than only the diff of staged changes is returned,
+                otherwise both staged and unstaged diff is reported.
+        """
         raise NotImplementedError("request_diff() not implemented in backend")
 
     def request_changes(self, done_cb, commit1=None, commit2=None):
+        """
+        Request the changes between 2 commits.
+
+        If commit2 is omitted only the changes that occur in commit1 is returned.
+        If also commit1 is omitted all the not-yet-committed changes is returned.
+
+        list_of_changes is a list of tuple with the type of the change and
+        the path of the modified file. Example:
+        [('M', '/path/to/file1'), ('A', '/path/to/file1')]
+
+        Type of modification can be one of:
+        - A: addition of a file
+        - C: copy of a file into a new one
+        - D: deletion of a file
+        - M: modification of the contents or mode of a file
+        - R: renaming of a file
+        - T: change in the type of the file
+        - U: file is unmerged (you must complete the merge before it can be committed)
+        - X: "unknown" change type (most probably a bug, please report it)
+        
+        Args:
+            done_cb:
+                Function to call when the operation finish.
+                Signature: cb(success, list_of_changes)
+            commit1:
+                A Commit object.
+            commit2:
+                Another Commit object.
+        """
         raise NotImplementedError("request_changes() not implemented in backend")
 
     def stage_file(self, done_cb, path):
+        """
+        Add a file to the staging area.
+
+        Args:
+            done_cb:
+                Function to call when the operation finish.
+                Signature: cb(success)
+            path:
+                The path of the file to put in staged area.
+        """
         raise NotImplementedError("stage_file() not implemented in backend")
 
     def unstage_file(self, done_cb, path):
+        """
+        Remove a file from the staging area.
+
+        Args:
+            done_cb:
+                Function to call when the operation finish.
+                Signature: cb(success)
+            path:
+                The path of the file to remove from the staged area.
+        """
         raise NotImplementedError("unstage_file() not implemented in backend")
 
     def commit(self, done_cb):
+        """
+        Perform a commit of the local changes (staged)
+
+        Args:
+            done_cb:
+                Function to call when the operation finish.
+                signature: cb(success, err_msg=Null)
+        """
         raise NotImplementedError("commit() not implemented in backend")
+
 
 ### Git backend ###############################################################
 class GitCmd(Exe):
@@ -332,7 +545,7 @@ class GitBackend(Repository):
     def request_commits(self, done_cb, prog_cb, max_count=100, skip=0):
 
         def _cmd_done_cb(lines, success, lines_buf):
-            done_cb()
+            done_cb(success)
 
         def _cmd_line_cb(line, lines_buf):
             lines_buf.append(line)
@@ -375,8 +588,8 @@ class GitBackend(Repository):
         if skip > 0: cmd += ' --skip %d' % skip
         GitCmd(self._url, cmd, _cmd_done_cb, _cmd_line_cb, list())
 
-    def request_diff(self, done_cb, prog_cb, max_count=100,
-                     commit1=None, commit2=None, path=None, only_staged=False):
+    def request_diff(self, done_cb, prog_cb=None, commit1=None, commit2=None,
+                     path=None, only_staged=False):
         cmd = 'diff --no-prefix'
         if only_staged:
             cmd += ' --staged'
