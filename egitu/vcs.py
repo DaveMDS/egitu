@@ -131,7 +131,6 @@ class Repository(object):
     def tags(self):
         raise NotImplementedError("tags not implemented in backend")
 
-
     def request_commits(self, done_cb, prog_cb, max_count=100, skip=0):
         raise NotImplementedError("request_commits() not implemented in backend")
 
@@ -146,6 +145,9 @@ class Repository(object):
 
     def unstage_file(self, done_cb, path):
         raise NotImplementedError("unstage_file() not implemented in backend")
+
+    def commit(self, done_cb):
+        raise NotImplementedError("commit() not implemented in backend")
 
 ### Git backend ###############################################################
 class GitCmd(Exe):
@@ -419,4 +421,10 @@ class GitBackend(Repository):
         def _cmd_done_cb(lines):
             self.refresh(done_cb)
         cmd = 'reset HEAD ' + path
+        GitCmd(self._url, cmd, _cmd_done_cb)
+
+    def commit(self, done_cb, msg):
+        def _cmd_done_cb(lines):
+            self.refresh(done_cb)
+        cmd = 'commit -m "{}"'.format(msg.replace('"', '\"'))
         GitCmd(self._url, cmd, _cmd_done_cb)

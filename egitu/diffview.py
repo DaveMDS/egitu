@@ -89,7 +89,7 @@ class DiffViewer(Table):
             bt.show()
         if 'commit' in buttons:
             bt = Button(self, text="Commit")
-            bt.callback_clicked_add(lambda b: CommitDialog(self.repo))
+            bt.callback_clicked_add(lambda b: CommitDialog(self.repo, self.win))
             self.action_box.pack_end(bt)
             bt.show()
         if 'discard' in buttons:

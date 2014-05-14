@@ -20,7 +20,8 @@
 
 from __future__ import absolute_import
 
-from efl.elementary.entry import Entry, ELM_WRAP_NONE, ELM_WRAP_MIXED
+from efl.elementary.entry import Entry, markup_to_utf8, \
+    ELM_WRAP_NONE, ELM_WRAP_MIXED
 from efl.elementary.window import StandardWindow
 from efl.elementary.box import Box
 from efl.elementary.panes import Panes
@@ -31,7 +32,11 @@ from egitu.utils import DiffedEntry, EXPAND_BOTH, FILL_BOTH, \
 
 
 class CommitDialog(StandardWindow):
-    def __init__(self, repo):
+    def __init__(self, repo, win):
+        self.repo = repo
+        self.win = win
+        self.confirmed = False
+
         StandardWindow.__init__(self, 'Egitu', 'Egitu', autodel=True)
 
         vbox = Box(self, size_hint_weight=EXPAND_BOTH,
@@ -57,6 +62,7 @@ class CommitDialog(StandardWindow):
         en.part_text_set('guide', 'Enter commit message here')
         panes.part_content_set("left", en)
         en.show()
+        self.msg_entry = en
 
         # diff entry
         self.diff_entry = DiffedEntry(self)
@@ -74,7 +80,8 @@ class CommitDialog(StandardWindow):
         hbox.pack_end(bt)
         bt.show()
 
-        bt = Button(self, text="Commit", disabled=True)
+        bt = Button(self, text="Commit")
+        bt.callback_clicked_add(self.commit_button_cb)
         hbox.pack_end(bt)
         bt.show()
 
@@ -88,3 +95,20 @@ class CommitDialog(StandardWindow):
 
     def diff_done_cb(self, lines):
         self.diff_entry.lines_set(lines)
+
+    def commit_button_cb(self, bt):
+        # TODO check empty msg !!!
+        if not self.confirmed:
+            self.confirmed = True
+            bt.text = 'Are you sure?'
+        else:
+            bt.disabled = True
+            self.repo.commit(self.commit_done_cb,
+                             markup_to_utf8(self.msg_entry.text))
+
+    def commit_done_cb(self, result):
+        # TODO CHECK COMMIT RESULT !!!!!!
+        self.delete()
+        self.win.update_header()
+        self.win.graph.populate(self.repo)
+
