@@ -231,7 +231,8 @@ class DiffedEntry(Entry):
             else:
                 markup += utf8_to_markup(line)+'<br>'
 
-        markup = markup[4:] # remove the first "<br>"
+        if markup.startswith('<br>'): # remove the first "<br>"
+            markup = markup[4:]
         self.text = '<code><font={0} font_size={1}>{2}</font></code>'.format(
                      options.diff_font_face, options.diff_font_size, markup)
 

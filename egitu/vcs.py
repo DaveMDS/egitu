@@ -463,6 +463,10 @@ class GitBackend(Repository):
                     self._status.changes.append(('A', False, fname))
                 elif line[0] == 'A': # added and staged
                     self._status.changes.append(('A', True, fname))
+                elif line[0] == 'D': # deleted and staged
+                    self._status.changes.append(('D', True, fname))
+                elif line[1] == 'D': # deleted not staged
+                    self._status.changes.append(('D', False, fname))
                 elif line[0] == 'M': # modified and staged
                     self._status.changes.append(('M', True, fname))
                 elif line[1] == 'M': # modified not staged
@@ -631,7 +635,13 @@ class GitBackend(Repository):
     def stage_file(self, done_cb, path):
         def _cmd_done_cb(lines, success):
             self.refresh(done_cb)
-        cmd = 'add ' + path
+        mod = None
+        for _mod, _staged, _path in self._status.changes:
+            if _path == path: mod = _mod
+        if mod == 'D':
+            cmd = 'rm ' + path
+        else:
+            cmd = 'add ' + path
         GitCmd(self._url, cmd, _cmd_done_cb)
 
     def unstage_file(self, done_cb, path):
