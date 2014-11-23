@@ -372,6 +372,7 @@ class EgituWin(StandardWindow):
         fr = Frame(self, style="pad_medium", content=self.graph)
         scr = Scroller(self, content=fr,
                        size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
+        scr.bounce_set(0, 1)
         panes.part_content_set("left", scr)
 
         # the diff viewer on the right
