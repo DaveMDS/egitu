@@ -324,7 +324,7 @@ class EgituWin(StandardWindow):
         box.show()
 
         # header
-        fr = Frame(self, style="pad_medium", size_hint_weight=EXPAND_HORIZ,
+        fr = Frame(self, style="outdent_bottom", size_hint_weight=EXPAND_HORIZ,
                    size_hint_align=FILL_BOTH)
         box.pack_end(fr)
         fr.show()
