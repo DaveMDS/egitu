@@ -223,7 +223,7 @@ class EgituMenu(Menu):
             self.item_add(it_font, str(size), icon, self._item_font_size_cb)
 
         x, y, w, h = parent.geometry
-        self.move(x + w, y + 10)
+        self.move(x, y + h)
         self.show()
 
     def _item_refresh_cb(self, menu, item):
