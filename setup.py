@@ -17,8 +17,8 @@ setup(
     package_data = {
         'egitu': ['themes/*/*'],
     },
+    scripts = ['bin/egitu'],
     data_files = [
-        ('bin', ['bin/egitu']),
         ('share/applications', ['data/egitu.desktop']),
         ('share/icons', ['data/icons/256x256/egitu.png']),
         ('share/icons/hicolor/256x256/apps', ['data/icons/256x256/egitu.png']),
