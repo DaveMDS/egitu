@@ -423,6 +423,7 @@ class GitBackend(Repository):
         if self._description.startswith('Unnamed repository'):
             self._description = ''
 
+        os.chdir(url) # to make git diff works :/
         self.refresh(done_cb, *args)
 
     def refresh(self, done_cb, *args):
