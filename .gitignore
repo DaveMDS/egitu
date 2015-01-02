@@ -1,4 +1,5 @@
 tests/test_repo/
+installed_files.txt
 
 *.py[cod]
 

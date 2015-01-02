@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 from distutils.core import setup
-from efl.utils.setup import build_extra, build_edc
-
+from efl.utils.setup import build_extra, build_edc, uninstall
 
 
 setup(
@@ -31,6 +30,10 @@ setup(
     cmdclass={
         'build': build_extra,
         'build_edc': build_edc,
-    }
+        'uninstall': uninstall,
+    },
+    command_options={
+        'install': {'record': ('setup.py', 'installed_files.txt')}
+    },
 )
 
