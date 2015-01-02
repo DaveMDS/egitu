@@ -46,6 +46,8 @@ script_path = os.path.dirname(__file__)
 config_path = os.path.join(xdg_config_home, 'egitu')
 config_file = os.path.join(config_path, 'config.pickle')
 recent_file = os.path.join(config_path, 'recent.history')
+install_prefix = script_path[0:script_path.find('/lib/python')]
+data_path = os.path.join(install_prefix, 'share', 'egitu')
 
 
 class Options(object):
@@ -95,8 +97,11 @@ def file_put_contents(path, contents):
     except:
         return False
 
+def theme_file_get():
+    return os.path.join(data_path, 'themes', options.theme_name + '.edj')
+
 def theme_resource_get(fname):
-    return os.path.join(script_path, 'themes', options.theme_name, fname)
+    return os.path.join(data_path, 'themes', options.theme_name, fname)
 
 def recent_history_get():
     c = file_get_contents(recent_file)

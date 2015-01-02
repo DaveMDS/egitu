@@ -30,7 +30,7 @@ from efl.elementary.entry import Entry, ELM_WRAP_NONE
 from efl.elementary.table import Table
 from efl.elementary.layout import Layout
 
-from egitu.utils import options, theme_resource_get, format_date, \
+from egitu.utils import options, theme_file_get, format_date, \
     GravatarPict, EXPAND_BOTH, FILL_BOTH
 from egitu.vcs import Commit
 
@@ -63,7 +63,7 @@ class DagGraph(Table):
     def __init__(self, parent, *args, **kargs):
         self.repo = None
         self.win = parent
-        self.themef = theme_resource_get('main.edj')
+        self.themef = theme_file_get()
         self.colors = [(0,100,0,100), (0,0,100,100), (100,0,0,100),
                       (100,100,0,100), (0,100,100,100), (100,0,100,100)]
 
