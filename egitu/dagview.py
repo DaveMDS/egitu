@@ -165,7 +165,9 @@ class DagGraph(Table):
 
     def _populate_done_cb(self, success):
         # draw the last date piece
-        self.date_add(self._last_date, self._last_date_row, self._current_row)
+        if self._last_date:
+            self.date_add(self._last_date, self._last_date_row,
+                          self._current_row)
 
         # draw still-open connections lines (and clear the old ones)
         while self._open_connection_lines:
