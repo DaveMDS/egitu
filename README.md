@@ -19,7 +19,7 @@ EFL Git user interface
 ## Requirements ##
 
 * Python 2.7 or higher
-* Python-EFL 1.8 or higher
+* Python-EFL 1.13 or higher
 * python modules: efl, xdg
 
 
