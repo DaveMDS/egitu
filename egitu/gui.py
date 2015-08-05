@@ -42,7 +42,7 @@ from efl.elementary.table import Table
 from efl.elementary.frame import Frame
 
 from egitu.utils import options, theme_resource_get, GravatarPict, \
-    recent_history_get, recent_history_push, \
+    KeyBindings, recent_history_get, recent_history_push, \
     EXPAND_BOTH, EXPAND_HORIZ, FILL_BOTH, FILL_HORIZ
 from egitu.dagview import DagGraph
 from egitu.diffview import DiffViewer
@@ -227,10 +227,7 @@ class EgituMenu(Menu):
         self.show()
 
     def _item_refresh_cb(self, menu, item):
-        def _refresh_done_cb(success):
-            self.win.update_header()
-            self.win.graph.populate(self.win.repo)
-        self.win.repo.refresh(_refresh_done_cb)
+        self.win.refresh()
 
     def _item_open_cb(self, menu, item):
         RepoSelector(self.win)
@@ -380,6 +377,10 @@ class EgituWin(StandardWindow):
         self.diff_view.size_hint_weight = EXPAND_BOTH
         self.diff_view.size_hint_align = 0.0, 0.0
         panes.part_content_set("right", self.diff_view)
+        
+        # app keybindings
+        binds = KeyBindings(self, verbose=False)
+        binds.bind_add(('F5', 'Control+r'), self._binds_cb_refresh)
 
         self.resize(800, 600)
         self.show()
@@ -436,4 +437,12 @@ class EgituWin(StandardWindow):
     def show_commit(self, commit):
         self.diff_view.commit_set(self.repo, commit)
 
+    def refresh(self):
+        def _refresh_done_cb(success):
+            self.update_header()
+            self.graph.populate(self.repo)
+        self.repo.refresh(_refresh_done_cb)
 
+    def _binds_cb_refresh(self, src, key, event):
+        self.refresh()
+        return True

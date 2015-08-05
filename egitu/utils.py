@@ -254,3 +254,79 @@ class ErrorPopup(Popup):
 
         self.part_content_set('button1', b)
         self.show()
+
+
+class KeyBindings(object):
+    """ A simple class to manage Shortcuts in elm applications
+
+    Used like this:
+    
+    binds = KeyBindings(elm_window, verbose=True)
+    binds.bind_add(('F5', 'Control+r'), my_callback)
+    
+    def my_callback(src, key, event):
+        print("Shortcut pressed: %s" % key)
+    
+    """
+
+    def __init__(self, win, verbose=False):
+        """Initialize the KeyBinding class.
+        
+        Args:
+            win (ElmObject): the elm object to use as base for connecting
+                events, usually your main window object.
+            verbose (bool): If True then all unhandled key combination will
+                be printed out.
+        
+        """
+        self._binds = {}
+        self.verbose = verbose
+        win.elm_event_callback_add(self._elm_events_cb)
+
+    def bind_add(self, keys, cb, *args, **kargs):
+        """Add a new Shortcut -> Callback combination.
+        
+        Args:
+            keys (string or strings sequence): The keys that will trigger the 
+                shortcut, examples: 's', 'Control+s', 'Control+Shift+s',
+                'Control+Shift+Alt+s', 'F5', etc...
+                Can be a single string or a sequence of strings to bind the
+                same callback to multiple keys.
+            cb (callable): the function to call when the shortcut keys will be
+                pressed. Signature: cb(src, key, event, *args, **kargs) -> bool
+                The callback should return True if it has consumed the event,
+                False otherwise.
+        Note:
+            Any other positional or keywords arguments will be passed back in
+            the callback
+
+        """
+        if callable(cb):
+            if isinstance(keys, (list, tuple)):
+                for key in keys:
+                    self._binds[key] = (cb, args, kargs) 
+            else:
+                self._binds[keys] = (cb, args, kargs) 
+        else:
+            raise TypeError('cb must be callable')
+
+    def _elm_events_cb(self, win, src, event_type, event):
+        from efl.evas import EVAS_CALLBACK_KEY_DOWN, EVAS_EVENT_FLAG_ON_HOLD
+
+        if not event_type == EVAS_CALLBACK_KEY_DOWN:
+            return False
+
+        key = ''
+        for mod in ('Control', 'Shift', 'Alt'):
+            if event.modifier_is_set(mod):
+                key += mod + '+'
+        key += event.keyname
+
+        if key in self._binds:
+            cb, args, kargs = self._binds[key]
+            if cb(src, key, event, *args, **kargs) == True:
+                event.event_flags = event.event_flags | EVAS_EVENT_FLAG_ON_HOLD
+        elif self.verbose:
+            print('Unhandled key: ' + key)
+
+        return True
