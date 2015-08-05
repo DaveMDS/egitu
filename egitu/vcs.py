@@ -475,7 +475,7 @@ class GitBackend(Repository):
                 # TODO more status
 
             done_cb(success, *args)
-        GitCmd(self._url, 'status --porcelain -b', done_cb=_cmd_done_cb)
+        GitCmd(self._url, 'status --porcelain -b -u', done_cb=_cmd_done_cb)
 
     def _fetch_status_text(self, done_cb, *args):
         def _cmd_done_cb(lines, success):
