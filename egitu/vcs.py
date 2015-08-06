@@ -681,7 +681,7 @@ class GitBackend(Repository):
             else:
                 done_cb(success, '\n'.join(lines))
 
-        cmd = 'commit -m "{}"'.format(msg.replace('"', '\"'))
+        cmd = 'commit -m "{}"'.format(msg.replace('"', '\\"'))
         GitCmd(self._url, cmd, _cmd_done_cb)
 
     def revert(self, done_cb, commit, auto_commit=False, commit_msg=None):
