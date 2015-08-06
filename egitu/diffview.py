@@ -51,7 +51,7 @@ class DiffViewer(Table):
         self.pack(self.picture, 0, 0, 1, 2)
 
         # description entry
-        self.entry = Entry(self, text="Unknown", line_wrap=ELM_WRAP_MIXED,
+        self.entry = Entry(self, text='Unknown', line_wrap=ELM_WRAP_MIXED,
                            size_hint_weight=EXPAND_BOTH,
                            size_hint_align=FILL_BOTH,
                            editable=False)
@@ -75,27 +75,27 @@ class DiffViewer(Table):
         self.diff_list = List(self, size_hint_weight=EXPAND_BOTH,
                                     size_hint_align=FILL_BOTH)
         self.diff_list.callback_selected_add(self.change_selected_cb)
-        panes.part_content_set("left", self.diff_list)
+        panes.part_content_set('left', self.diff_list)
 
         # diff entry
         self.diff_entry = DiffedEntry(self)
-        panes.part_content_set("right", self.diff_entry)
+        panes.part_content_set('right', self.diff_entry)
 
     def update_action_buttons(self, buttons):
         self.action_box.clear()
         if 'revert' in buttons:
-            bt = Button(self, text="Revert")
+            bt = Button(self, text='Revert')
             bt.callback_clicked_add(lambda b: \
                 CommitDialog(self.repo, self.win, revert_commit=self.commit))
             self.action_box.pack_end(bt)
             bt.show()
         if 'commit' in buttons:
-            bt = Button(self, text="Commit")
+            bt = Button(self, text='Commit')
             bt.callback_clicked_add(lambda b: CommitDialog(self.repo, self.win))
             self.action_box.pack_end(bt)
             bt.show()
         if 'discard' in buttons:
-            bt = Button(self, text="Discard", disabled=True)
+            bt = Button(self, text='Discard', disabled=True)
             self.action_box.pack_end(bt)
             bt.show()
 
@@ -118,7 +118,7 @@ class DiffViewer(Table):
             self.update_action_buttons(['revert'])
         else:
             # or the fake 'local changes' commit
-            text = "<bigger><b>Local changes</b></bigger>"
+            text = '<bigger><b>Local changes</b></bigger>'
             self.show_local_status()
             self.update_action_buttons(['commit', 'discard'])
 
@@ -131,7 +131,7 @@ class DiffViewer(Table):
             icon_name = 'mod_{}.png'.format(mod.lower())
             icon = Icon(self, file=theme_resource_get(icon_name))
 
-            check = Check(self, text="", state=staged)
+            check = Check(self, text='', state=staged)
             check.callback_changed_add(self.stage_unstage_cb)
             check.data['path'] = name
 
