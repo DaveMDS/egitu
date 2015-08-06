@@ -26,16 +26,18 @@ from efl.elementary.window import StandardWindow
 from efl.elementary.box import Box
 from efl.elementary.panes import Panes
 from efl.elementary.button import Button
+from efl.elementary.check import Check
 
 from egitu.utils import DiffedEntry, ErrorPopup, EXPAND_BOTH, FILL_BOTH, \
     EXPAND_HORIZ, FILL_HORIZ
 
 
 class CommitDialog(StandardWindow):
-    def __init__(self, repo, win):
+    def __init__(self, repo, win, revert_commit=None):
         self.repo = repo
         self.win = win
         self.confirmed = False
+        self.revert_commit = revert_commit
 
         StandardWindow.__init__(self, 'Egitu', 'Egitu', autodel=True)
 
@@ -45,28 +47,42 @@ class CommitDialog(StandardWindow):
         vbox.show()
 
         # title
+        title = 'Revert commit' if revert_commit else 'Commit changes'
         en = Entry(self, editable=False,
-                   text='<title><align=center>Commit changes</align></title>',
+                   text='<title><align=center>%s</align></title>' % title,
                    size_hint_weight=EXPAND_HORIZ, size_hint_align=FILL_HORIZ)
         vbox.pack_end(en)
         en.show()
 
+        # revert auto-commit checkbox
+        if revert_commit:
+            ck = Check(vbox, state=True, text='Automatically commit the revert')
+            ck.callback_changed_add(lambda c: self.msg_entry.disabled_set(not c.state))
+            vbox.pack_end(ck)
+            ck.show()
+            self.revert_chk = ck
+
+        # Panes
         panes = Panes(self, content_left_size = 0.2, horizontal=True,
                       size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
         vbox.pack_end(panes)
         panes.show()
-        
+
         # message entry
         en = Entry(self, editable=True, scrollable=True,
                    size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
         en.part_text_set('guide', 'Enter commit message here')
         panes.part_content_set("left", en)
+        if revert_commit:
+            en.text = 'Revert [%s]<br><br>This reverts commit %s.<br><br>' % \
+                      (revert_commit.title, revert_commit.sha)
+            en.cursor_end_set()
         en.show()
         self.msg_entry = en
 
         # diff entry
         self.diff_entry = DiffedEntry(self)
-        panes.part_content_set("right", self.diff_entry)
+        panes.part_content_set('right', self.diff_entry)
         self.diff_entry.show()
 
         # buttons
@@ -75,12 +91,12 @@ class CommitDialog(StandardWindow):
         vbox.pack_end(hbox)
         hbox.show()
 
-        bt = Button(self, text="Cancel")
+        bt = Button(self, text='Cancel')
         bt.callback_clicked_add(lambda b: self.delete())
         hbox.pack_end(bt)
         bt.show()
 
-        bt = Button(self, text="Commit")
+        bt = Button(self, text='Revert' if revert_commit else 'Commit')
         bt.callback_clicked_add(self.commit_button_cb)
         hbox.pack_end(bt)
         bt.show()
@@ -91,7 +107,11 @@ class CommitDialog(StandardWindow):
         en.focus = True
 
         # load the diff
-        repo.request_diff(self.diff_done_cb, only_staged=True)
+        if revert_commit:
+            repo.request_diff(self.diff_done_cb, revert=True,
+                              commit1=self.revert_commit)
+        else:
+            repo.request_diff(self.diff_done_cb, only_staged=True)
 
     def diff_done_cb(self, lines, success):
         self.diff_entry.lines_set(lines)
@@ -100,6 +120,12 @@ class CommitDialog(StandardWindow):
         if not self.confirmed:
             self.confirmed = True
             bt.text = 'Are you sure?'
+        elif self.revert_commit:
+            bt.text = 'Revert'
+            self.confirmed = False
+            self.repo.revert(self.commit_done_cb, self.revert_commit,
+                             auto_commit=self.revert_chk.state, 
+                             commit_msg=markup_to_utf8(self.msg_entry.text))
         else:
             bt.text = 'Commit'
             self.confirmed = False
@@ -112,4 +138,4 @@ class CommitDialog(StandardWindow):
             self.win.update_header()
             self.win.graph.populate(self.repo)
         else:
-            ErrorPopup(self, 'Commit Failed', utf8_to_markup(err_msg))
+            ErrorPopup(self, 'Operation Failed', utf8_to_markup(err_msg))

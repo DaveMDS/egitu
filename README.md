@@ -5,13 +5,14 @@ EFL Git user interface
 
 ## Features ##
 
-* Draw the DAG of the repo
-* View the diff of each revision
-* Edit repository description
-* Switch branch
-* Stage/Unstage files
-* Commit staged changes
-* Cool Gravatar integration
+* Draw the **DAG** of the repo
+* View the **diff** of each revision
+* Edit repository **description**
+* Switch **branch**
+* **Stage/unstage** files
+* **Commit** staged changes
+* **Revert** commits (optionally autocommit the revert)
+* Cool **Gravatar** integration
 
 ![Screenshot1](https://github.com/davemds/egitu/blob/master/data/screenshots/screenshot1.jpg)
 

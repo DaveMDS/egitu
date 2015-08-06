@@ -263,7 +263,7 @@ class Repository(object):
         raise NotImplementedError("request_commits() not implemented in backend")
 
     def request_diff(self, done_cb, prog_cb=None, commit1=None, commit2=None,
-                     path=None, only_staged=False):
+                     path=None, only_staged=False, revert=False):
         """
         Request the full unified diff between 2 commit.
 
@@ -290,6 +290,9 @@ class Repository(object):
             only_staged:
                 If True than only the diff of staged changes is returned,
                 otherwise both staged and unstaged diff is reported.
+            revert:
+                If True and only commit1 is given then the diff of reverting
+                commit1 will be calculated
         """
         raise NotImplementedError("request_diff() not implemented in backend")
 
@@ -358,9 +361,27 @@ class Repository(object):
         Args:
             done_cb:
                 Function to call when the operation finish.
-                signature: cb(success, err_msg=Null)
+                signature: cb(success, err_msg=None)
         """
         raise NotImplementedError("commit() not implemented in backend")
+
+    def revert(self, done_cb, commit, auto_commit=False, commit_msg=None):
+        """
+        Perform a revert of the given commit, with optionally autocommit
+
+        Args:
+            done_cb:
+                Function to call when the operation finish.
+                signature: cb(success, err_msg=None)
+            commit:
+                The Commit object to revert
+            auto_commit (bool):
+                If True than a commit will also be performed
+            commit_msg (str):
+                The messagge for the auto commit. Mandatory if auto_commit
+                is True
+        """
+        raise NotImplementedError("revert() not implemented in backend")
 
 
 ### Git backend ###############################################################
@@ -594,12 +615,14 @@ class GitBackend(Repository):
         GitCmd(self._url, cmd, _cmd_done_cb, _cmd_line_cb, list())
 
     def request_diff(self, done_cb, prog_cb=None, commit1=None, commit2=None,
-                     path=None, only_staged=False):
+                     path=None, only_staged=False, revert=False):
         cmd = 'diff --no-prefix'
         if only_staged:
             cmd += ' --staged'
         if commit2 and commit2.sha and commit1 and commit1.sha:
             cmd += ' %s %s' % (commit1.sha, commit2.sha)
+        elif revert and commit1 and commit1.sha:
+            cmd += ' %s %s^' % (commit1.sha, commit1.sha)
         elif commit1 and commit1.sha:
             cmd += ' %s^ %s' % (commit1.sha, commit1.sha)
         else:
@@ -659,4 +682,15 @@ class GitBackend(Repository):
                 done_cb(success, '\n'.join(lines))
 
         cmd = 'commit -m "{}"'.format(msg.replace('"', '\"'))
+        GitCmd(self._url, cmd, _cmd_done_cb)
+
+    def revert(self, done_cb, commit, auto_commit=False, commit_msg=None):
+        def _cmd_done_cb(lines, success):
+            if success and auto_commit:
+                self.commit(done_cb, commit_msg)
+            elif success:
+                self.refresh(done_cb)
+            else:
+                done_cb(success, '\n'.join(lines))
+        cmd = 'revert --no-edit --no-commit %s' % commit.sha
         GitCmd(self._url, cmd, _cmd_done_cb)

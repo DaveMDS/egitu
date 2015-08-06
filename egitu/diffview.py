@@ -84,7 +84,9 @@ class DiffViewer(Table):
     def update_action_buttons(self, buttons):
         self.action_box.clear()
         if 'revert' in buttons:
-            bt = Button(self, text="Revert", disabled=True)
+            bt = Button(self, text="Revert")
+            bt.callback_clicked_add(lambda b: \
+                CommitDialog(self.repo, self.win, revert_commit=self.commit))
             self.action_box.pack_end(bt)
             bt.show()
         if 'commit' in buttons:
