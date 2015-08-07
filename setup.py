@@ -25,6 +25,7 @@ setup(
                                         'data/themes/default/images/mod_a.png',
                                         'data/themes/default/images/mod_d.png',
                                         'data/themes/default/images/mod_?.png',
+                                        'data/themes/default/images/mod_r.png',
                                        ]),
         ('share/applications', ['data/egitu.desktop']),
         ('share/icons', ['data/icons/256x256/egitu.png']),

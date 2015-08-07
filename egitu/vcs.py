@@ -74,7 +74,7 @@ class Status(object):
     def __init__(self):
         self.ahead = 0
         self.textual = ''
-        self.changes = [] # list of tuples: (mod, staged, path)
+        self.changes = [] # list of tuples: (mod, staged, path, new_path=None)
 
     @property
     def is_clean(self):
@@ -303,9 +303,12 @@ class Repository(object):
         If commit2 is omitted only the changes that occur in commit1 is returned.
         If also commit1 is omitted all the not-yet-committed changes is returned.
 
-        list_of_changes is a list of tuple with the type of the change and
-        the path of the modified file. Example:
-        [('M', '/path/to/file1'), ('A', '/path/to/file1')]
+        list_of_changes is a list of tuple with the type of the change,
+        the path of the modified file and (in case fo rename) the new path.
+        Example:
+          [('M', '/path/to/file1', None), 
+           ('A', '/path/to/file1', None),
+           ('R', '/old/file/path', '/new/file/path')]
 
         Type of modification can be one of:
         - ?: untracked file
@@ -568,17 +571,20 @@ class GitBackend(Repository):
             for line in lines:
                 fname = line[3:]
                 if line[0] == '?':   # untracked (added not staged)
-                    self._status.changes.append(('?', False, fname))
+                    self._status.changes.append(('?', False, fname, None))
                 elif line[0] == 'A': # added and staged
-                    self._status.changes.append(('A', True, fname))
+                    self._status.changes.append(('A', True, fname, None))
                 elif line[0] == 'D': # deleted and staged
-                    self._status.changes.append(('D', True, fname))
+                    self._status.changes.append(('D', True, fname, None))
                 elif line[1] == 'D': # deleted not staged
-                    self._status.changes.append(('D', False, fname))
+                    self._status.changes.append(('D', False, fname, None))
                 elif line[0] == 'M': # modified and staged
-                    self._status.changes.append(('M', True, fname))
+                    self._status.changes.append(('M', True, fname, None))
                 elif line[1] == 'M': # modified not staged
-                    self._status.changes.append(('M', False, fname))
+                    self._status.changes.append(('M', False, fname, None))
+                elif line[0] == 'R': # renamed
+                    name, new_name = fname.split(' -> ')
+                    self._status.changes.append(('R', True, name, new_name))
                 # TODO more status
 
             done_cb(success, *args)
@@ -721,7 +727,13 @@ class GitBackend(Repository):
 
     def request_changes(self, done_cb, commit1=None, commit2=None):
         def _cmd_done_cb(lines, success):
-            L = [ line.split('\t') for line in lines ]
+            L = []
+            for line in lines:
+                split = line.split('\t')
+                if line[0] == 'R':
+                    L.append(('R', split[1], split[2]))
+                else:
+                    L.append((split[0], split[1], None))
             # A: addition of a file
             # C: copy of a file into a new one
             # D: deletion of a file
@@ -731,11 +743,11 @@ class GitBackend(Repository):
             # U: file is unmerged (you must complete the merge before it can be committed)
             # X: "unknown" change type (most probably a bug, please report it)
 
-            # TODO handle move, rename (unmerged ??)
+            # TODO handle unmerged ??
 
             done_cb(success, L)
 
-        cmd = 'diff --name-status'
+        cmd = 'diff --name-status --find-renames'
         if commit2 and commit2.sha and commit1 and commit1.sha:
             cmd += ' %s %s' % (commit1.sha, commit2.sha)
         elif commit1 is not None and commit1.sha:
@@ -782,7 +794,7 @@ class GitBackend(Repository):
         def _cmd_done_cb(lines, success):
             self.refresh(done_cb)
         mod = None
-        for _mod, _staged, _path in self._status.changes:
+        for _mod, _staged, _path, _new_path in self._status.changes:
             if _path == path: mod = _mod
         if mod == 'D':
             cmd = 'rm ' + path

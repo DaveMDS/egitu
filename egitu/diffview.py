@@ -137,7 +137,7 @@ class DiffViewer(Table):
 
     def show_local_status(self):
         sortd = sorted(self.repo.status.changes, key=lambda c: c[2])
-        for mod, staged, name in sortd:
+        for mod, staged, name, new_name in sortd:
             icon_name = 'mod_{}.png'.format(mod.lower())
             icon = Icon(self, file=theme_resource_get(icon_name))
 
@@ -146,15 +146,16 @@ class DiffViewer(Table):
             check.data['path'] = name
             check.data['icon'] = icon
 
-            it = self.diff_list.item_append(name, icon, check)
-            it.data['change'] = mod, name
+            label = '{} → {}'.format(name, new_name) if new_name else name
+            it = self.diff_list.item_append(label, icon, check)
+            it.data['change'] = mod, new_name or name
 
         self.diff_list.go()
 
     def stage_unstage_cb(self, check):
         def stage_unstage_done_cb(success):
             self.win.update_header()
-            for mod, staged, name in self.repo.status.changes:
+            for mod, staged, name, new_name in self.repo.status.changes:
                 if name == check.data['path']:
                     ic = check.data['icon']
                     icon_name = 'mod_{}.png'.format(mod.lower())
@@ -170,11 +171,12 @@ class DiffViewer(Table):
             self.change_selected_cb(self.diff_list, self.diff_list.selected_item)
 
     def changes_done_cb(self, success, lines):
-        for mod, name in lines:
-            if mod in ('M', 'A', 'D'):
+        for mod, name, new_name in lines:
+            if mod in ('M', 'A', 'D', 'R'):
                 icon_name = 'mod_{}.png'.format(mod.lower())
                 icon = Icon(self, file=theme_resource_get(icon_name))
-                it = self.diff_list.item_append(name, icon)
+                label = '{} → {}'.format(name, new_name) if new_name else name
+                it = self.diff_list.item_append(label, icon)
             else:
                 it = self.diff_list.item_append('[{}] {}'.format(mod, name))
             it.data['change'] = mod, name
