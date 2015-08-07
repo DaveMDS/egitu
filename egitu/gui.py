@@ -28,7 +28,7 @@ from efl.elementary.window import StandardWindow
 from efl.elementary.box import Box
 from efl.elementary.button import Button
 from efl.elementary.check import Check
-from efl.elementary.entry import Entry
+from efl.elementary.entry import Entry, utf8_to_markup
 from efl.elementary.fileselector import Fileselector
 from efl.elementary.hoversel import Hoversel
 from efl.elementary.icon import Icon, ELM_ICON_STANDARD
@@ -42,7 +42,7 @@ from efl.elementary.table import Table
 from efl.elementary.frame import Frame
 
 from egitu.utils import options, theme_resource_get, GravatarPict, \
-    KeyBindings, recent_history_get, recent_history_push, \
+    KeyBindings, ErrorPopup, recent_history_get, recent_history_push, \
     EXPAND_BOTH, EXPAND_HORIZ, FILL_BOTH, FILL_HORIZ
 from egitu.dagview import DagGraph
 from egitu.diffview import DiffViewer
@@ -426,11 +426,13 @@ class EgituWin(StandardWindow):
         self.status_label.text = text
         self.status_label.tooltip_text_set(self.repo.status.textual)
 
-    def branch_selected_cb(self, flipselector, item):
-        # TODO alert if unstaged changes are present
-        def _switch_done_cb(success):
-            self.update_header()
-            self.graph.populate(self.repo)
+    def branch_selected_cb(self, hoversel, item):
+        def _switch_done_cb(success, err_msg=None):
+            if success:
+                self.update_header()
+                self.graph.populate(self.repo)
+            else:
+                ErrorPopup(self, 'Operation Failed', utf8_to_markup(err_msg))
 
         self.repo.current_branch_set(item.text, _switch_done_cb)
 

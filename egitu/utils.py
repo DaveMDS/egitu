@@ -246,7 +246,7 @@ class ErrorPopup(Popup):
     def __init__(self, parent, title, msg):
         Popup.__init__(self, parent)
         self.part_text_set('title,text', title)
-        self.part_text_set('default', msg)
+        self.part_text_set('default', '<align=left>'+msg+'</align>')
 
         b = Button(self, text='Close')
         b.callback_clicked_add(lambda b: self.delete())

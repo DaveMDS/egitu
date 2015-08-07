@@ -217,7 +217,7 @@ class Repository(object):
                 The name of the branch to switch to.
             done_cb:
                 Function to call when the operation finish.
-                Signature: cb(success, *args)
+                Signature: cb(success, err_msg=None, *args)
             args:
                 All the others arguments passed will be given back in
                 the done_cb callback function.
@@ -569,9 +569,11 @@ class GitBackend(Repository):
 
     def current_branch_set(self, branch, done_cb, *args):
         def _cmd_done_cb(lines, success):
-            # TODO check result
-            print(lines)
-            self.refresh(done_cb, *args)
+            if success:
+                self.refresh(done_cb, *args)
+            else:
+                done_cb(success, '\n'.join(lines))
+
         cmd = "checkout %s" % (branch)
         GitCmd(self._url, cmd, _cmd_done_cb)
 
