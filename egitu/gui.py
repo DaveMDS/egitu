@@ -420,11 +420,6 @@ class EgituWin(StandardWindow):
         tb.pack(self.caption_label, 1, 0, 1, 1)
         self.caption_label.show()
 
-        # branch selector
-        lb = Label(self, text='On branch')
-        tb.pack(lb, 2, 0, 1, 1)
-        lb.show()
-
         self.branch_selector = Hoversel(self, text='none')
         self.branch_selector.callback_selected_add(self.branch_selected_cb)
         tb.pack(self.branch_selector, 3, 0, 1, 1)
@@ -432,7 +427,7 @@ class EgituWin(StandardWindow):
 
         # status label + button
         self.status_label = lb = Entry(self, single_line=True, editable=False)
-        tb.pack(lb, 4, 0, 1, 1)
+        tb.pack(lb, 2, 0, 1, 1)
         lb.show()
 
         ### Main content (left + right panes)
@@ -474,11 +469,13 @@ class EgituWin(StandardWindow):
             self.branch_selector.clear()
             for branch in self.repo.branches:
                 if branch == self.repo.current_branch:
-                    self.branch_selector.item_add(branch, 'arrow_right', ELM_ICON_STANDARD)
+                    self.branch_selector.item_add(branch, 'arrow_right',
+                                                  ELM_ICON_STANDARD)
                 else:
                     self.branch_selector.item_add(branch)
             self.branch_selector.text = self.repo.current_branch
-            self.branch_selector.content = Icon(self, standard='arrow_right')
+            ic = Icon(self, file=theme_resource_get('branch.png'))
+            self.branch_selector.content = ic
         except:
             self.branch_selector.text = 'Unknown'
 

@@ -20,6 +20,7 @@ setup(
     data_files = [
         ('share/egitu/themes/default', ['data/themes/default/images/avatar.png',
                                         'data/themes/default/images/egitu.png',
+                                        'data/themes/default/images/branch.png',
                                         'data/themes/default/images/mod_m.png',
                                         'data/themes/default/images/mod_a.png',
                                         'data/themes/default/images/mod_d.png',
