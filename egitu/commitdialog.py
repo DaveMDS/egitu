@@ -22,7 +22,7 @@ from __future__ import absolute_import
 
 from efl.elementary.entry import Entry, markup_to_utf8, utf8_to_markup, \
     ELM_WRAP_NONE, ELM_WRAP_MIXED
-from efl.elementary.window import StandardWindow
+from efl.elementary.window import DialogWindow
 from efl.elementary.box import Box
 from efl.elementary.panes import Panes
 from efl.elementary.button import Button
@@ -57,7 +57,7 @@ class DiscardDialog(ConfirmPupup):
             ErrorPopup(self, 'Operation Failed', utf8_to_markup(err_msg))
 
 
-class CommitDialog(StandardWindow):
+class CommitDialog(DialogWindow):
     def __init__(self, repo, win, revert_commit=None, cherrypick_commit=None):
         self.repo = repo
         self.win = win
@@ -65,8 +65,8 @@ class CommitDialog(StandardWindow):
         self.revert_commit = revert_commit
         self.cherrypick_commit = cherrypick_commit
 
-        StandardWindow.__init__(self, 'Egitu', 'Egitu', 
-                                size=(500,500), autodel=True)
+        DialogWindow.__init__(self, win, 'Egitu', 'Egitu', 
+                              size=(500,500), autodel=True)
 
         vbox = Box(self, size_hint_weight=EXPAND_BOTH,
                    size_hint_align=FILL_BOTH)
@@ -88,7 +88,9 @@ class CommitDialog(StandardWindow):
 
         # auto-commit checkbox (for revert and cherry-pick)
         if revert_commit or cherrypick_commit:
-            ck = Check(vbox, state=True, text='Automatically commit the operation')
+            ck = Check(vbox, state=True)
+            ck.text = 'Automatically commit, in branch: %s' % \
+                      self.repo.current_branch
             ck.callback_changed_add(lambda c: self.msg_entry.disabled_set(not c.state))
             vbox.pack_end(ck)
             ck.show()
