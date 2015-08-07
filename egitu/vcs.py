@@ -308,6 +308,7 @@ class Repository(object):
         [('M', '/path/to/file1'), ('A', '/path/to/file1')]
 
         Type of modification can be one of:
+        - ?: untracked file
         - A: addition of a file
         - C: copy of a file into a new one
         - D: deletion of a file
@@ -496,7 +497,7 @@ class GitBackend(Repository):
             for line in lines:
                 fname = line[3:]
                 if line[0] == '?':   # untracked (added not staged)
-                    self._status.changes.append(('A', False, fname))
+                    self._status.changes.append(('?', False, fname))
                 elif line[0] == 'A': # added and staged
                     self._status.changes.append(('A', True, fname))
                 elif line[0] == 'D': # deleted and staged

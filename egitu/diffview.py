@@ -138,6 +138,7 @@ class DiffViewer(Table):
             check = Check(self, text='', state=staged)
             check.callback_changed_add(self.stage_unstage_cb)
             check.data['path'] = name
+            check.data['icon'] = icon
 
             it = self.diff_list.item_append(name, icon, check)
             it.data['change'] = mod, name
@@ -147,6 +148,11 @@ class DiffViewer(Table):
     def stage_unstage_cb(self, check):
         def stage_unstage_done_cb(success):
             self.win.update_header()
+            for mod, staged, name in self.repo.status.changes:
+                if name == check.data['path']:
+                    ic = check.data['icon']
+                    icon_name = 'mod_{}.png'.format(mod.lower())
+                    ic.file = theme_resource_get(icon_name)
 
         if check.state is True:
             self.repo.stage_file(stage_unstage_done_cb, check.data['path'])
