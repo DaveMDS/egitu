@@ -32,7 +32,7 @@ from efl.elementary.box import Box
 
 from egitu.utils import options, theme_resource_get, format_date, \
     GravatarPict, DiffedEntry, EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ, FILL_HORIZ
-from egitu.commitdialog import CommitDialog, DiscardDialog
+from egitu.commit import CommitDialog, DiscardDialog
 
 
 class DiffViewer(Table):
