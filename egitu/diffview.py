@@ -97,8 +97,9 @@ class DiffViewer(Table):
             bt.show()
         if 'discard' in buttons:
             bt = Button(self, text='Discard')
-            bt.callback_clicked_add(lambda b: DiscardDialog(self.repo, self.win,
-                        [ item.text for item in self.diff_list.selected_items ]))
+            bt.callback_clicked_add(lambda b: \
+                DiscardDialog(self.repo, self.win,
+                              [it.text for it in self.diff_list.selected_items]))
             self.action_box.pack_end(bt)
             bt.show()
 
