@@ -336,6 +336,7 @@ class InfoWin(DialogWindow):
         self.resize(400, 200)
         self.show()
 
+
 class EditableDescription(Entry):
     def __init__(self, win):
         self.win = win

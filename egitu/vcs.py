@@ -436,6 +436,25 @@ class Repository(object):
         """
         raise NotImplementedError("revert() not implemented in backend")
 
+    def cherrypick(self, done_cb, commit, auto_commit=False, commit_msg=None):
+        """
+        Perform a cherry-pick of the given commit in the current branch,
+        with optionally autocommit.
+
+        Args:
+            done_cb:
+                Function to call when the operation finish.
+                signature: cb(success, err_msg=None)
+            commit:
+                The Commit object to cherrypick in current branch
+            auto_commit (bool):
+                If True than a commit will also be performed
+            commit_msg (str):
+                The messagge for the auto commit. Mandatory if auto_commit
+                is True
+        """
+        raise NotImplementedError("cherrypick() not implemented in backend")
+
     def discard(self, done_cb, files=[]):
         """
         Discard all the changes not yet committed.
@@ -795,7 +814,20 @@ class GitBackend(Repository):
                 self.refresh(done_cb)
             else:
                 done_cb(success, '\n'.join(lines))
+
         cmd = 'revert --no-edit --no-commit %s' % commit.sha
+        GitCmd(self._url, cmd, _cmd_done_cb)
+
+    def cherrypick(self, done_cb, commit, auto_commit=False, commit_msg=None):
+        def _cmd_done_cb(lines, success):
+            if success and auto_commit:
+                self.commit(done_cb, commit_msg)
+            elif success:
+                self.refresh(done_cb)
+            else:
+                done_cb(success, '\n'.join(lines))
+
+        cmd = 'cherry-pick --no-commit %s' % commit.sha
         GitCmd(self._url, cmd, _cmd_done_cb)
 
     def discard(self, done_cb, files=[]):

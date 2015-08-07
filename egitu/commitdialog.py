@@ -58,13 +58,15 @@ class DiscardDialog(ConfirmPupup):
 
 
 class CommitDialog(StandardWindow):
-    def __init__(self, repo, win, revert_commit=None):
+    def __init__(self, repo, win, revert_commit=None, cherrypick_commit=None):
         self.repo = repo
         self.win = win
         self.confirmed = False
         self.revert_commit = revert_commit
+        self.cherrypick_commit = cherrypick_commit
 
-        StandardWindow.__init__(self, 'Egitu', 'Egitu', autodel=True)
+        StandardWindow.__init__(self, 'Egitu', 'Egitu', 
+                                size=(500,500), autodel=True)
 
         vbox = Box(self, size_hint_weight=EXPAND_BOTH,
                    size_hint_align=FILL_BOTH)
@@ -72,20 +74,25 @@ class CommitDialog(StandardWindow):
         vbox.show()
 
         # title
-        title = 'Revert commit' if revert_commit else 'Commit changes'
+        if revert_commit:
+            title = 'Revert commit'
+        elif cherrypick_commit:
+            title = 'Cherry-pick commit'
+        else:
+            title = 'Commit changes'
         en = Entry(self, editable=False,
                    text='<title><align=center>%s</align></title>' % title,
                    size_hint_weight=EXPAND_HORIZ, size_hint_align=FILL_HORIZ)
         vbox.pack_end(en)
         en.show()
 
-        # revert auto-commit checkbox
-        if revert_commit:
-            ck = Check(vbox, state=True, text='Automatically commit the revert')
+        # auto-commit checkbox (for revert and cherry-pick)
+        if revert_commit or cherrypick_commit:
+            ck = Check(vbox, state=True, text='Automatically commit the operation')
             ck.callback_changed_add(lambda c: self.msg_entry.disabled_set(not c.state))
             vbox.pack_end(ck)
             ck.show()
-            self.revert_chk = ck
+            self.autocommit_chk = ck
 
         # Panes
         panes = Panes(self, content_left_size = 0.2, horizontal=True,
@@ -99,9 +106,15 @@ class CommitDialog(StandardWindow):
         en.part_text_set('guide', 'Enter commit message here')
         panes.part_content_set("left", en)
         if revert_commit:
-            en.text = 'Revert [%s]<br><br>This reverts commit %s.<br><br>' % \
-                      (revert_commit.title, revert_commit.sha)
-            en.cursor_end_set()
+            en.text = 'Revert "%s"<br><br>This reverts commit %s.<br><br>' % \
+                      (utf8_to_markup(revert_commit.title),
+                       revert_commit.sha)
+        elif cherrypick_commit:
+            en.text = '%s<br><br>%s<br>(cherry picked from commit %s)<br>' % \
+                      (utf8_to_markup(cherrypick_commit.title),
+                       utf8_to_markup(cherrypick_commit.message),
+                       cherrypick_commit.sha)
+        en.cursor_end_set()
         en.show()
         self.msg_entry = en
 
@@ -121,20 +134,27 @@ class CommitDialog(StandardWindow):
         hbox.pack_end(bt)
         bt.show()
 
-        bt = Button(self, text='Revert' if revert_commit else 'Commit')
+        if revert_commit:
+            label = 'Revert'
+        elif cherrypick_commit:
+            label = 'Cherry-pick'
+        else:
+            label = 'Commit'
+        bt = Button(self, text=label)
         bt.callback_clicked_add(self.commit_button_cb)
         hbox.pack_end(bt)
         bt.show()
 
         # show the window and give focus to the editable entry
-        self.size = 500, 500
         self.show()
         en.focus = True
 
         # load the diff
         if revert_commit:
             repo.request_diff(self.diff_done_cb, revert=True,
-                              commit1=self.revert_commit)
+                              commit1=revert_commit)
+        elif cherrypick_commit:
+            repo.request_diff(self.diff_done_cb, commit1=cherrypick_commit)
         else:
             repo.request_diff(self.diff_done_cb, only_staged=True)
 
@@ -149,8 +169,14 @@ class CommitDialog(StandardWindow):
             bt.text = 'Revert'
             self.confirmed = False
             self.repo.revert(self.commit_done_cb, self.revert_commit,
-                             auto_commit=self.revert_chk.state, 
+                             auto_commit=self.autocommit_chk.state, 
                              commit_msg=markup_to_utf8(self.msg_entry.text))
+        elif self.cherrypick_commit:
+            bt.text = 'Cherry-pick'
+            self.confirmed = False
+            self.repo.cherrypick(self.commit_done_cb, self.cherrypick_commit,
+                                 auto_commit=self.autocommit_chk.state, 
+                                 commit_msg=markup_to_utf8(self.msg_entry.text))
         else:
             bt.text = 'Commit'
             self.confirmed = False

@@ -89,6 +89,12 @@ class DiffViewer(Table):
                 CommitDialog(self.repo, self.win, revert_commit=self.commit))
             self.action_box.pack_end(bt)
             bt.show()
+        if 'cherrypick' in buttons:
+            bt = Button(self, text='Cherry-pick')
+            bt.callback_clicked_add(lambda b: \
+                CommitDialog(self.repo, self.win, cherrypick_commit=self.commit))
+            self.action_box.pack_end(bt)
+            bt.show()
         if 'commit' in buttons:
             bt = Button(self, text='Commit')
             bt.callback_clicked_add(lambda b: \
@@ -119,7 +125,7 @@ class DiffViewer(Table):
                 msg = commit.message.strip().replace('\n', '<br>')
                 text += u'<br><br>{}'.format(msg)
             repo.request_changes(self.changes_done_cb, commit1=commit)
-            self.update_action_buttons(['revert'])
+            self.update_action_buttons(['revert', 'cherrypick'])
         else:
             # or the fake 'local changes' commit
             text = '<bigger><b>Local changes</b></bigger>'
