@@ -32,7 +32,7 @@ from efl.elementary.box import Box
 
 from egitu.utils import options, theme_resource_get, format_date, \
     GravatarPict, DiffedEntry, EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ, FILL_HORIZ
-from egitu.commitdialog import CommitDialog
+from egitu.commitdialog import CommitDialog, DiscardDialog
 
 
 class DiffViewer(Table):
@@ -91,11 +91,14 @@ class DiffViewer(Table):
             bt.show()
         if 'commit' in buttons:
             bt = Button(self, text='Commit')
-            bt.callback_clicked_add(lambda b: CommitDialog(self.repo, self.win))
+            bt.callback_clicked_add(lambda b: \
+                CommitDialog(self.repo, self.win))
             self.action_box.pack_end(bt)
             bt.show()
         if 'discard' in buttons:
-            bt = Button(self, text='Discard', disabled=True)
+            bt = Button(self, text='Discard')
+            bt.callback_clicked_add(lambda b: DiscardDialog(self.repo, self.win,
+                        [ item.text for item in self.diff_list.selected_items ]))
             self.action_box.pack_end(bt)
             bt.show()
 

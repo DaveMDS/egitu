@@ -256,6 +256,25 @@ class ErrorPopup(Popup):
         self.show()
 
 
+class ConfirmPupup(Popup):
+    def __init__(self, parent, title=None, msg=None, ok_cb=None):
+        Popup.__init__(self, parent)
+        self.part_text_set('title,text', title or 'Are you sure?')
+        self.part_text_set('default', msg or 'Please confirm')
+
+        b = Button(self, text='Cancel')
+        b.callback_clicked_add(lambda b: self.delete())
+        self.part_content_set('button1', b)
+        b.show()
+        
+        b = Button(self, text='Ok')
+        b.callback_clicked_add(lambda b: ok_cb())
+        self.part_content_set('button2', b)
+        b.show()
+
+        self.show()
+
+
 class KeyBindings(object):
     """ A simple class to manage Shortcuts in elm applications
 

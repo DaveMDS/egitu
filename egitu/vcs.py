@@ -383,6 +383,20 @@ class Repository(object):
         """
         raise NotImplementedError("revert() not implemented in backend")
 
+    def discard(self, done_cb, files=[]):
+        """
+        Discard all the changes not yet committed.
+
+        Args:
+            done_cb:
+                Function to call when the operation finish.
+                signature: cb(success, err_msg=None)
+            files:
+                List of paths to revert, if empty ALL the uncommitted changes
+                will be discarted.
+        """
+        raise NotImplementedError("discard() not implemented in backend")
+
 
 ### Git backend ###############################################################
 class GitCmd(Exe):
@@ -693,4 +707,16 @@ class GitBackend(Repository):
             else:
                 done_cb(success, '\n'.join(lines))
         cmd = 'revert --no-edit --no-commit %s' % commit.sha
+        GitCmd(self._url, cmd, _cmd_done_cb)
+
+    def discard(self, done_cb, files=[]):
+        def _cmd_done_cb(lines, success):
+            if success:
+                self.refresh(done_cb)
+            else:
+                done_cb(success, '\n'.join(lines))
+        if files:
+            cmd = 'checkout %s' % (' '.join(files))
+        else:
+            cmd = 'reset --hard HEAD'
         GitCmd(self._url, cmd, _cmd_done_cb)

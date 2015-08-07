@@ -28,8 +28,33 @@ from efl.elementary.panes import Panes
 from efl.elementary.button import Button
 from efl.elementary.check import Check
 
-from egitu.utils import DiffedEntry, ErrorPopup, EXPAND_BOTH, FILL_BOTH, \
-    EXPAND_HORIZ, FILL_HORIZ
+from egitu.utils import DiffedEntry, ErrorPopup, ConfirmPupup, \
+    EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ, FILL_HORIZ
+
+
+class DiscardDialog(ConfirmPupup):
+    def __init__(self, repo, win, files=[]):
+        self.win = win
+        self.repo = repo
+        self.files = files
+
+        if files:
+            msg = 'The following files will be <b>reverted</b> to the last commit:' \
+                  '<br><br><b>%s</b>' % '<br>'.join(files)
+        else:
+            msg = 'This will <b>destroy ALL</b> the changes not committed !!!'
+
+        ConfirmPupup.__init__(self, win, msg=msg, ok_cb=self._confirm_cb)
+
+    def _confirm_cb(self):
+        self.repo.discard(self._discard_done_cb, self.files)
+
+    def _discard_done_cb(self, success, err_msg=None):
+        self.delete()
+        if success:
+            self.win.refresh()
+        else:
+            ErrorPopup(self, 'Operation Failed', utf8_to_markup(err_msg))
 
 
 class CommitDialog(StandardWindow):
