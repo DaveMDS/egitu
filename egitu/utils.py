@@ -78,6 +78,7 @@ Switch <b>branch</b><br>
 <b>Commit</b> staged changes<br>
 <b>Revert</b> commits<br>
 <b>Discard</b> not committed changes<br>
+Manage repository <b>remotes</b><br>
 Cool <b>Gravatar</b> integration<br>
 <br>
 <br>
@@ -337,6 +338,14 @@ class ConfirmPupup(Popup):
         self.part_content_set('button2', b)
         b.show()
 
+        self.show()
+
+
+class WaitPopup(Popup):
+    def __init__(self, parent, text=None, title=None):
+        Popup.__init__(self, parent)
+        self.part_text_set('title,text', title or 'Please wait')
+        self.part_text_set('default', text or 'Operation in progress')
         self.show()
 
 

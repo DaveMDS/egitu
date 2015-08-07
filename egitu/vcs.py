@@ -329,6 +329,58 @@ class Repository(object):
         """
         raise NotImplementedError("request_changes() not implemented in backend")
 
+    def request_remotes(self, done_cb):
+        """
+        Request the list of remotes
+
+        Args:
+            done_cb:
+                Function to call when the operation finish.
+                Signature: cb(success, remotes, err_msg=None)
+        """
+        raise NotImplementedError("request_remotes() not implemented in backend")
+
+    def request_remote_info(self, done_cb, remote_name):
+        """
+        Request the info for the given remote.
+        
+        Args:
+            done_cb:
+                Function to call when the operation finish.
+                Signature: cb(success, info, err_msg=None)
+            remote_name:
+                The short name of the remote to query
+        """
+        raise NotImplementedError("request_remote_info() not implemented in backend")
+
+    def remote_add(self, done_cb, name, url):
+        """
+        Add a new remote to the repo
+        
+        Args:
+            done_cb:
+                Function to call when the operation finish.
+                Signature: cb(success, err_msg=None)
+            name:
+                The name for the new remote
+            url:
+                The url for the remote
+        """
+        raise NotImplementedError("remote_add() not implemented in backend")
+
+    def remote_del(self, done_cb, name):
+        """
+        Delete the given remote from the repo
+        
+        Args:
+            done_cb:
+                Function to call when the operation finish.
+                Signature: cb(success, err_msg=None)
+            name:
+                The name for remote to remove
+        """
+        raise NotImplementedError("remote_del() not implemented in backend")
+
     def stage_file(self, done_cb, path):
         """
         Add a file to the staging area.
@@ -671,6 +723,40 @@ class GitBackend(Repository):
             cmd += ' %s^ %s' % (commit1.sha, commit1.sha)
         else:
             cmd += ' HEAD'
+        GitCmd(self._url, cmd, _cmd_done_cb)
+
+    def request_remotes(self, done_cb):
+        def _cmd_done_cb(lines, success):
+            if success:
+                done_cb(success, lines)
+            else:
+                done_cb(success, [], '\n'.join(lines))
+
+        cmd = 'remote'
+        GitCmd(self._url, cmd, _cmd_done_cb)
+
+    def request_remote_info(self, done_cb, remote_name):
+        def _cmd_done_cb(lines, success):
+            if success:
+                done_cb(success, '\n'.join(lines))
+            else:
+                done_cb(success, None, '\n'.join(lines))
+
+        cmd = 'remote show %s' % remote_name
+        GitCmd(self._url, cmd, _cmd_done_cb)
+
+    def remote_add(self, done_cb, name, url):
+        def _cmd_done_cb(lines, success):
+            done_cb(success, '\n'.join(lines))
+
+        cmd = 'remote add %s %s' % (name, url)
+        GitCmd(self._url, cmd, _cmd_done_cb)
+
+    def remote_del(self, done_cb, name):
+        def _cmd_done_cb(lines, success):
+            done_cb(success, '\n'.join(lines))
+
+        cmd = 'remote remove %s' % (name)
         GitCmd(self._url, cmd, _cmd_done_cb)
 
     def stage_file(self, done_cb, path):

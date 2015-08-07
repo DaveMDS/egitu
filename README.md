@@ -13,6 +13,7 @@ EFL Git user interface
 * **Commit** staged changes
 * **Revert** commits (optionally autocommit the revert)
 * **Discard** not committed changes (checkout <files> or reset --HARD)
+* Manage repository **remotes**
 * Cool **Gravatar** integration
 
 ![Screenshot1](https://github.com/davemds/egitu/blob/master/data/screenshots/screenshot1.jpg)

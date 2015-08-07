@@ -48,6 +48,7 @@ from egitu.utils import options, theme_resource_get, GravatarPict, \
     INFO, HOMEPAGE, AUTHORS, LICENSE, xdg_open
 from egitu.dagview import DagGraph
 from egitu.diffview import DiffViewer
+from egitu.remotes import RemotesDialog
 from egitu.vcs import repo_factory
 from egitu import __version__
 
@@ -180,6 +181,7 @@ class EgituMenu(Menu):
         # main actions
         self.item_add(None, 'Refresh', 'refresh', self._item_refresh_cb)
         self.item_add(None, 'Open', 'folder', self._item_open_cb)
+        self.item_add(None, 'Edit remotes', None, self._item_remotes_cb)
         self.item_separator_add()
 
         # general options
@@ -239,6 +241,9 @@ class EgituMenu(Menu):
 
     def _item_open_cb(self, menu, item):
         RepoSelector(self.win)
+
+    def _item_remotes_cb(self, menu, item):
+        RemotesDialog(self.win.repo, self.win)
 
     def _item_check_opts_cb(self, menu, item, opt):
         setattr(options, opt, not item.content.state)
