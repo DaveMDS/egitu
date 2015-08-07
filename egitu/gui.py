@@ -222,6 +222,10 @@ class EgituMenu(Menu):
             icon = "arrow_right" if size == options.diff_font_size else None
             self.item_add(it_font, str(size), icon, self._item_font_size_cb)
 
+        # quit item
+        self.item_separator_add()
+        self.item_add(None, "Quit", "close", self._item_quit_cb)
+        
         x, y, w, h = parent.geometry
         self.move(x, y + h)
         self.show()
@@ -252,6 +256,10 @@ class EgituMenu(Menu):
     def _item_font_size_cb(self, menu, item):
         options.diff_font_size = int(item.text)
         self.win.diff_view.refresh_diff()
+
+    def _item_quit_cb(self, menu, item):
+        elm.exit()
+
 
 
 class EditableDescription(Entry):
@@ -381,6 +389,7 @@ class EgituWin(StandardWindow):
         # app keybindings
         binds = KeyBindings(self, verbose=False)
         binds.bind_add(('F5', 'Control+r'), self._binds_cb_refresh)
+        binds.bind_add('Control+q', self._binds_cb_quit)
 
         self.resize(800, 600)
         self.show()
@@ -447,4 +456,8 @@ class EgituWin(StandardWindow):
 
     def _binds_cb_refresh(self, src, key, event):
         self.refresh()
+        return True
+
+    def _binds_cb_quit(self, src, key, event):
+        elm.exit()
         return True
