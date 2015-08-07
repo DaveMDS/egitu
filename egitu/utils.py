@@ -83,6 +83,7 @@ Cool <b>Gravatar</b> integration<br>
 <br>
 <hilight>Shortcuts</hilight><br>
 Ctrl+r or F5  refresh the repo<br>
+Ctrl+o  open a new repository<br>
 Ctrl+q  quit egitu<br>
 </align>
 """

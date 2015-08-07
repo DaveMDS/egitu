@@ -452,7 +452,8 @@ class EgituWin(StandardWindow):
         
         # app keybindings
         binds = KeyBindings(self, verbose=False)
-        binds.bind_add(('F5', 'Control+r'), self._binds_cb_refresh)
+        binds.bind_add(('Control+r', 'F5'), self._binds_cb_refresh)
+        binds.bind_add('Control+o', self._binds_cb_open)
         binds.bind_add('Control+q', self._binds_cb_quit)
 
         self.resize(800, 600)
@@ -522,6 +523,10 @@ class EgituWin(StandardWindow):
 
     def _binds_cb_refresh(self, src, key, event):
         self.refresh()
+        return True
+
+    def _binds_cb_open(self, src, key, event):
+        RepoSelector(self)
         return True
 
     def _binds_cb_quit(self, src, key, event):
