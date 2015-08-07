@@ -178,57 +178,57 @@ class EgituMenu(Menu):
         self.win = win
 
         # main actions
-        self.item_add(None, "Refresh", "refresh", self._item_refresh_cb)
-        self.item_add(None, "Open", "folder", self._item_open_cb)
+        self.item_add(None, 'Refresh', 'refresh', self._item_refresh_cb)
+        self.item_add(None, 'Open', 'folder', self._item_open_cb)
         self.item_separator_add()
 
         # general options
-        it_gen = self.item_add(None, "General", "preference")
+        it_gen = self.item_add(None, 'General', 'preference')
 
-        it = self.item_add(it_gen, "Use relative dates", None,
+        it = self.item_add(it_gen, 'Use relative dates', None,
                            self._item_check_opts_cb, 'date_relative')
         it.content = Check(self, state=options.date_relative)
 
-        it_gravatar = self.item_add(it_gen, "Gravatar")
+        it_gravatar = self.item_add(it_gen, 'Gravatar')
         for name in ('mm', 'identicon', 'monsterid', 'wavatar', 'retro'):
-            icon = "arrow_right" if name == options.gravatar_default else None
+            icon = 'arrow_right' if name == options.gravatar_default else None
             self.item_add(it_gravatar, name, icon,  self._item_gravatar_cb)
         self.item_separator_add(it_gravatar)
         self.item_add(it_gravatar, 'Clear icons cache', 'delete',
                       lambda m,i: GravatarPict.clear_icon_cache())
 
         # dag options
-        it_dag = self.item_add(None, "Dag", "preference")
+        it_dag = self.item_add(None, 'Dag', 'preference')
 
-        it = self.item_add(it_dag, "Show remote refs", None,
+        it = self.item_add(it_dag, 'Show remote refs', None,
                            self._item_check_opts_cb, 'show_remotes_in_dag')
         it.content = Check(self, state=options.show_remotes_in_dag)
 
-        it = self.item_add(it_dag, "Show commit messagges", None,
+        it = self.item_add(it_dag, 'Show commit messagges', None,
                            self._item_check_opts_cb, 'show_message_in_dag')
         it.content = Check(self, state=options.show_message_in_dag)
 
         # diff options
-        it_diff = self.item_add(None, "Diff", "preference")
+        it_diff = self.item_add(None, 'Diff', 'preference')
 
-        it = self.item_add(it_diff, "Wrap long lines", None,
+        it = self.item_add(it_diff, 'Wrap long lines', None,
                            self._item_wrap_line_cb)
         it.content = Check(self, state=options.diff_text_wrap)
 
-        it_font = self.item_add(it_diff, "Font face")
+        it_font = self.item_add(it_diff, 'Font face')
         for face in ('Sans', 'Mono'):
-            icon = "arrow_right" if face == options.diff_font_face else None
+            icon = 'arrow_right' if face == options.diff_font_face else None
             self.item_add(it_font, face, icon, self._item_font_face_cb)
 
-        it_font = self.item_add(it_diff, "Font size")
+        it_font = self.item_add(it_diff, 'Font size')
         for size in (8, 9, 10, 11, 12, 13, 14):
-            icon = "arrow_right" if size == options.diff_font_size else None
+            icon = 'arrow_right' if size == options.diff_font_size else None
             self.item_add(it_font, str(size), icon, self._item_font_size_cb)
 
         # quit item
         self.item_separator_add()
-        self.item_add(None, "Info", "info", self._item_info_cb)
-        self.item_add(None, "Quit", "close", self._item_quit_cb)
+        self.item_add(None, 'Info', 'info', self._item_info_cb)
+        self.item_add(None, 'Quit', 'close', self._item_quit_cb)
         
         x, y, w, h = parent.geometry
         self.move(x, y + h)
@@ -348,12 +348,12 @@ class EditableDescription(Entry):
             self.go_active()
 
     def go_passive(self):
-        if hasattr(self, "orig_text"):
+        if hasattr(self, 'orig_text'):
             del self.orig_text
         self.editable = False
         self.scrollable = False
         self.text_style_user_push("DEFAULT='font_size=18'")
-        self.tooltip_text_set("Click to edit description")
+        self.tooltip_text_set('Click to edit description')
 
     def go_active(self):
         self.orig_text = self.text
@@ -362,9 +362,9 @@ class EditableDescription(Entry):
         self.scrollable = True
         self.text_style_user_push("DEFAULT='font_size=18'")
         self.tooltip_unset()
-        ic = Icon(self, standard="close", size_hint_min=(20,20))
+        ic = Icon(self, standard='close', size_hint_min=(20,20))
         ic.callback_clicked_add(self._done_cb, False)
-        self.part_content_set("end", ic)
+        self.part_content_set('end', ic)
         self.focus = True
 
     def _done_cb(self, entry, save):
@@ -388,7 +388,7 @@ class EgituWin(StandardWindow):
         self.graph = None
         self.diff_view = None
 
-        StandardWindow.__init__(self, "egitu", "Efl GIT gUi - Egitu")
+        StandardWindow.__init__(self, 'egitu', 'Efl GIT gUi - Egitu')
         self.autodel_set(True)
         self.callback_delete_request_add(lambda o: elm.exit())
 
@@ -398,7 +398,7 @@ class EgituWin(StandardWindow):
         box.show()
 
         # header
-        fr = Frame(self, style="outdent_bottom", size_hint_weight=EXPAND_HORIZ,
+        fr = Frame(self, style='outdent_bottom', size_hint_weight=EXPAND_HORIZ,
                    size_hint_align=FILL_BOTH)
         box.pack_end(fr)
         fr.show()
@@ -443,17 +443,17 @@ class EgituWin(StandardWindow):
 
         # the dag graph inside a scroller on the left
         self.graph = DagGraph(self, self.repo)
-        fr = Frame(self, style="pad_medium", content=self.graph)
+        fr = Frame(self, style='pad_medium', content=self.graph)
         scr = Scroller(self, content=fr,
                        size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
         scr.bounce_set(0, 1)
-        panes.part_content_set("left", scr)
+        panes.part_content_set('left', scr)
 
         # the diff viewer on the right
         self.diff_view = DiffViewer(self, self.repo)
         self.diff_view.size_hint_weight = EXPAND_BOTH
         self.diff_view.size_hint_align = 0.0, 0.0
-        panes.part_content_set("right", self.diff_view)
+        panes.part_content_set('right', self.diff_view)
         
         # app keybindings
         binds = KeyBindings(self, verbose=False)
@@ -480,10 +480,10 @@ class EgituWin(StandardWindow):
             self.branch_selector.text = self.repo.current_branch
             self.branch_selector.content = Icon(self, standard='arrow_right')
         except:
-            self.branch_selector.text = "Unknown"
+            self.branch_selector.text = 'Unknown'
 
         # update window title
-        self.title = "%s [%s]" % (self.repo.name, self.repo.current_branch)
+        self.title = '%s [%s]' % (self.repo.name, self.repo.current_branch)
 
         # update repo description
         self.caption_label.text = self.repo.description or \
@@ -491,14 +491,14 @@ class EgituWin(StandardWindow):
 
         # update the status
         if self.repo.status.ahead == 1 and self.repo.status.is_clean:
-            text = "<warning>Ahead by 1 commit</warning>"
+            text = '<warning>Ahead by 1 commit</warning>'
         elif self.repo.status.ahead > 1 and self.repo.status.is_clean:
-            text = "<warning>Ahead by {} commits</warning>".format(self.repo.status.ahead)
+            text = '<warning>Ahead by {} commits</warning>'.format(self.repo.status.ahead)
         elif self.repo.status.is_clean:
-            text = "<success>Status is clean!</success>"
+            text = '<success>Status is clean!</success>'
             # self.commit_button.hide()
         else:
-            text = "<warning>Status is dirty !!!</warning>"
+            text = '<warning>Status is dirty !!!</warning>'
             # self.commit_button.show()
 
         self.status_label.text = text
