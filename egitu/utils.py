@@ -28,7 +28,7 @@ from datetime import datetime
 from xdg.BaseDirectory import xdg_config_home, xdg_cache_home
 
 from efl.evas import EVAS_HINT_EXPAND, EVAS_HINT_FILL
-from efl.ecore import FileDownload
+from efl.ecore import FileDownload, Exe
 from efl.elementary.photo import Photo
 from efl.elementary.popup import Popup
 from efl.elementary.button import Button
@@ -38,8 +38,10 @@ from efl.elementary.entry import Entry, utf8_to_markup, \
 
 EXPAND_BOTH = EVAS_HINT_EXPAND, EVAS_HINT_EXPAND
 EXPAND_HORIZ = EVAS_HINT_EXPAND, 0.0
+EXPAND_VERT = 0.0, EVAS_HINT_EXPAND
 FILL_BOTH = EVAS_HINT_FILL, EVAS_HINT_FILL
 FILL_HORIZ = EVAS_HINT_FILL, 0.5
+FILL_VERT = 0.5, EVAS_HINT_FILL
 
 
 script_path = os.path.dirname(__file__)
@@ -48,6 +50,65 @@ config_file = os.path.join(config_path, 'config.pickle')
 recent_file = os.path.join(config_path, 'recent.history')
 install_prefix = script_path[0:script_path.find('/lib/python')]
 data_path = os.path.join(install_prefix, 'share', 'egitu')
+
+HOMEPAGE = 'https://github.com/davemds/egitu'
+
+AUTHORS = """
+<br>
+<align=center>
+
+<hilight>Davide Andreoli (davemds)</hilight><br>
+dave@gurumeditation.it<br><br>
+
+</align>
+"""
+
+INFO = """
+<align=center>
+<hilight>Egitu</hilight><br>
+A Git user interface written in Python-EFL<br>
+<br>
+<br>
+<hilight>Features</hilight><br>
+Draw the <b>DAG</b> of the repo<br>
+View the <b>diff</b> of each revision<br>
+Edit repository <b>description</b><br>
+Switch <b>branch</b><br>
+<b>Stage/unstage</b> files<br>
+<b>Commit</b> staged changes<br>
+<b>Revert</b> commits<br>
+<b>Discard</b> not committed changes<br>
+Cool <b>Gravatar</b> integration<br>
+<br>
+<br>
+<hilight>Shortcuts</hilight><br>
+Ctrl+r or F5  refresh the repo<br>
+Ctrl+q  quit egitu<br>
+</align>
+"""
+
+LICENSE = """
+<align=center>
+<hilight>
+GNU GENERAL PUBLIC LICENSE<br>
+Version 3, 29 June 2007<br><br>
+</hilight>
+
+This program is free software: you can redistribute it and/or modify 
+it under the terms of the GNU General Public License as published by 
+the Free Software Foundation, either version 3 of the License, or 
+(at your option) any later version.<br><br>
+
+This program is distributed in the hope that it will be useful, 
+but WITHOUT ANY WARRANTY; without even the implied warranty of 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+GNU General Public License for more details.<br><br>
+
+You should have received a copy of the GNU General Public License 
+along with this program. If not, see<br>
+<link><a href=http://www.gnu.org/licenses>http://www.gnu.org/licenses/</a></link>
+</align>
+"""
 
 
 class Options(object):
@@ -81,6 +142,9 @@ class Options(object):
 
 options = Options()
 
+
+def xdg_open(url_or_file):
+    Exe('xdg-open "%s"' % url_or_file)
 
 def file_get_contents(path):
     try:

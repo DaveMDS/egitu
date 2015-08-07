@@ -2,11 +2,12 @@
 
 from distutils.core import setup
 from efl.utils.setup import build_extra, build_edc, uninstall
+from egitu import __version__
 
 
 setup(
     name = 'egitu',
-    version = '0.1',
+    version = __version__,
     description = 'Git GUI',
     long_description = 'Efl GIT gUi written in python',
     license = "GNU GPL",
