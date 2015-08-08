@@ -148,3 +148,119 @@ class PullPopup(Popup):
     def _pull_done_cb(self, success, err_msg=None):
         self.stop_pulse()
         self.parent.refresh()
+
+
+class PushPopup(Popup):
+    def __init__(self, parent, repo):
+        self.repo = repo
+
+        Popup.__init__(self, parent)
+        self.part_text_set('title,text', 'Push changes to the remote')
+        self.part_content_set('title,icon',
+                              Icon(self, file=theme_resource_get('push.png')))
+
+        tb = Table(self, padding=(0,4), size_hint_expand=EXPAND_BOTH)
+        self.content = tb
+        tb.show()
+
+        # sep
+        sep = Separator(self, horizontal=True, size_hint_expand=EXPAND_BOTH)
+        tb.pack(sep, 0, 0, 2, 1)
+        sep.show()
+
+        # remote url
+        lb = Label(tb, text='<align=left>Remote</align>',
+                   size_hint_fill=FILL_BOTH)
+        tb.pack(lb, 0, 1, 1, 1)
+        lb.show()
+
+        en = Entry(tb, editable=True, single_line=True, scrollable=True,
+                   size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        en.part_text_set('guide', 'Where to push to (TODO)')
+        tb.pack(en, 1, 1, 1, 1)
+        en.show()
+
+        # remote branch
+        lb = Label(tb, text='<align=left>Remote branch  </align>',
+                   size_hint_fill=FILL_BOTH)
+        tb.pack(lb, 0, 2, 1, 1)
+        lb.show()
+
+        en = Entry(tb, editable=True, single_line=True, scrollable=True,
+                   size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        en.part_text_set('guide', 'The remote branch to push to (TODO)')
+        tb.pack(en, 1, 2, 1, 1)
+        en.show()
+
+        # local branch
+        lb = Label(tb, text='<align=left>Local branch</align>',
+                   size_hint_fill=FILL_BOTH)
+        tb.pack(lb, 0, 3, 1, 1)
+        lb.show()
+
+        en = Entry(tb, editable=False, single_line=True, scrollable=True,
+                   text=repo.current_branch,
+                   size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        tb.pack(en, 1, 3, 1, 1)
+        en.show()
+
+        # output entry
+        en = Entry(tb, scrollable=True, editable=False, line_wrap=ELM_WRAP_NONE,
+                   size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        tb.pack(en, 0, 4, 2, 1)
+        en.show()
+        self.output_entry = en
+
+        r = Rectangle(tb.evas, size_hint_min=(400,200),
+                      size_hint_expand=EXPAND_BOTH)
+        tb.pack(r, 0, 4, 2, 1)
+
+        # progress wheel
+        pb = Progressbar(self, style='wheel', pulse_mode=True,
+                         size_hint_expand=EXPAND_BOTH)
+        tb.pack(pb, 0, 4, 2, 1)
+        self.wheel = pb
+
+        # sep
+        sep = Separator(self, horizontal=True, size_hint_expand=EXPAND_BOTH)
+        tb.pack(sep, 0, 5, 2, 1)
+        sep.show()
+
+        # buttons
+        bt = Button(self, text='Close')
+        bt.callback_clicked_add(lambda b: self.delete())
+        self.part_content_set('button1', bt)
+        bt.show()
+        self.close_btn = bt
+
+        bt = Button(self, text='Push')
+        bt.callback_clicked_add(self._push_btn_cb)
+        self.part_content_set('button2', bt)
+        bt.show()
+        self.pull_btn = bt
+
+        self.show()
+
+    def start_pulse(self):
+        self.wheel.pulse(True)
+        self.wheel.show()
+        self.pull_btn.disabled = True
+        self.close_btn.disabled = True
+
+    def stop_pulse(self):
+        self.wheel.pulse(False)
+        self.wheel.hide()
+        self.pull_btn.disabled = False
+        self.close_btn.disabled = False
+
+    def _push_btn_cb(self, btn):
+        self.start_pulse()
+        self.repo.push(self._push_done_cb, self._push_progress_cb)
+
+    def _push_progress_cb(self, line):
+        self.output_entry.entry_append(line + '<br>')
+        self.output_entry.cursor_end_set()
+
+    def _push_done_cb(self, success, err_msg=None):
+        self.stop_pulse()
+        self.parent.refresh()

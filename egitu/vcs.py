@@ -490,6 +490,24 @@ class Repository(object):
         """
         raise NotImplementedError("pull() not implemented in backend")
 
+    def push(self, done_cb, progress_cb, remote=None, branch=None):
+        """
+        Push local changes to upsteram from the current branch.
+
+        Args:
+            done_cb:
+                Function to call when the operation finish.
+                signature: cb(success, err_msg=None)
+            progress_cb:
+                Function to call on each line of output.
+                signature: cb(line)
+            remote:
+                The remote server to push to (TODO)
+            branch:
+                The remote branch to push to (TODO)
+        """
+        raise NotImplementedError("push() not implemented in backend")
+
 ### Git backend ###############################################################
 class GitCmd(Exe):
     def __init__(self, local_path, cmd, done_cb=None, line_cb=None, *args):
@@ -875,5 +893,12 @@ class GitBackend(Repository):
         def _cmd_done_cb(lines, success):
             done_cb(success)
 
-        cmd = 'pull origin'
+        cmd = 'pull'
+        GitCmd(self._url, cmd, _cmd_done_cb, progress_cb)
+
+    def push(self, done_cb, progress_cb, remote=None, branch=None):
+        def _cmd_done_cb(lines, success):
+            done_cb(success)
+
+        cmd = 'push'
         GitCmd(self._url, cmd, _cmd_done_cb, progress_cb)

@@ -49,7 +49,7 @@ from egitu.utils import options, theme_resource_get, GravatarPict, \
 from egitu.dagview import DagGraph
 from egitu.diffview import DiffViewer
 from egitu.remotes import RemotesDialog
-from egitu.pushpull import PullPopup
+from egitu.pushpull import PullPopup, PushPopup
 from egitu.vcs import repo_factory
 from egitu import __version__
 
@@ -443,6 +443,13 @@ class EgituWin(StandardWindow):
         bt = Button(self, text='Pull', content=ic)
         bt.callback_clicked_add(lambda b: PullPopup(self, self.repo))
         tb.pack(bt, 4, 0, 1, 1)
+        bt.show()
+
+        # push button
+        ic = Icon(self, file=theme_resource_get('push.png'))
+        bt = Button(self, text='Push', content=ic)
+        bt.callback_clicked_add(lambda b: PushPopup(self, self.repo))
+        tb.pack(bt, 5, 0, 1, 1)
         bt.show()
 
         ### Main content (left + right panes)
