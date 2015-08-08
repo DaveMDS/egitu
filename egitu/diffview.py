@@ -23,7 +23,7 @@ from __future__ import absolute_import
 from efl.elementary.entry import Entry, ELM_WRAP_NONE, ELM_WRAP_MIXED
 from efl.elementary.icon import Icon
 from efl.elementary.image import Image
-from efl.elementary.list import List
+from efl.elementary.list import List, ELM_OBJECT_SELECT_MODE_ALWAYS
 from efl.elementary.panes import Panes
 from efl.elementary.table import Table
 from efl.elementary.check import Check
@@ -72,8 +72,9 @@ class DiffViewer(Table):
         panes.show()
 
         # file list
-        self.diff_list = List(self, size_hint_weight=EXPAND_BOTH,
-                                    size_hint_align=FILL_BOTH)
+        self.diff_list = List(self, select_mode=ELM_OBJECT_SELECT_MODE_ALWAYS,
+                              size_hint_weight=EXPAND_BOTH,
+                              size_hint_align=FILL_BOTH)
         self.diff_list.callback_selected_add(self.change_selected_cb)
         panes.part_content_set('left', self.diff_list)
 
