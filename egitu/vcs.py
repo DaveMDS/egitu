@@ -902,7 +902,7 @@ class GitBackend(Repository):
         def _cmd_done_cb(lines, success):
             done_cb(success)
 
-        cmd = 'push'
+        cmd = 'push --verbose'
         if dryrun:
             cmd += ' --dry-run'
         GitCmd(self._url, cmd, _cmd_done_cb, progress_cb)
