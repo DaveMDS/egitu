@@ -128,6 +128,7 @@ class PushPullBase(Popup):
         self.show()
 
     def start_pulse(self):
+        self.output_entry.text = None
         self.wheel.pulse(True)
         self.wheel.show()
         self.action_btn.disabled = True
