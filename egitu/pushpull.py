@@ -149,7 +149,11 @@ class PushPullBase(Popup):
 
     def _action_done_cb(self, success, err_msg=None):
         self.stop_pulse()
-        self.parent.refresh()
+        if success:
+            self.parent.refresh()
+            self.output_entry.entry_insert('<success>Operation successfully completed.</success><br>')
+        else:
+            self.output_entry.entry_insert('<failure>Error! Something goes wrong.</failure><br>')
 
 
 class PullPopup(PushPullBase):
