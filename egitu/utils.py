@@ -78,6 +78,7 @@ Switch <b>branch</b><br>
 <b>Commit</b> staged changes<br>
 <b>Revert</b> commits<br>
 <b>Cherry-pick</b> commits<br>
+<b>Pull</b> from remote repository<br>
 <b>Discard</b> not committed changes<br>
 Manage repository <b>remotes</b><br>
 Cool <b>Gravatar</b> integration<br>

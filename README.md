@@ -13,6 +13,7 @@ EFL Git user interface
 * **Commit** staged changes
 * **Revert** commits (optionally autocommit the revert)
 * **Cherry-pick** commits (optionally autocommit)
+* **Pull** from remote repository
 * **Discard** not committed changes (checkout <files> or reset --HARD)
 * Manage repository **remotes**
 * Cool **Gravatar** integration

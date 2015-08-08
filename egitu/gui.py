@@ -49,6 +49,7 @@ from egitu.utils import options, theme_resource_get, GravatarPict, \
 from egitu.dagview import DagGraph
 from egitu.diffview import DiffViewer
 from egitu.remotes import RemotesDialog
+from egitu.pushpull import PullPopup
 from egitu.vcs import repo_factory
 from egitu import __version__
 
@@ -403,14 +404,14 @@ class EgituWin(StandardWindow):
         self.resize_object_add(box)
         box.show()
 
-        # header
+        ### header
         fr = Frame(self, style='outdent_bottom', size_hint_weight=EXPAND_HORIZ,
                    size_hint_align=FILL_BOTH)
         box.pack_end(fr)
         fr.show()
 
-        tb = Table(self, size_hint_weight=EXPAND_HORIZ,
-                  size_hint_align=FILL_BOTH)
+        tb = Table(self, padding=(3,3), 
+                   size_hint_weight=EXPAND_HORIZ, size_hint_align=FILL_BOTH)
         fr.content = tb
         tb.show()
 
@@ -426,15 +427,23 @@ class EgituWin(StandardWindow):
         tb.pack(self.caption_label, 1, 0, 1, 1)
         self.caption_label.show()
 
+        # status label + button
+        self.status_label = lb = Entry(self, single_line=True, editable=False)
+        tb.pack(lb, 2, 0, 1, 1)
+        lb.show()
+
+        # branch selector
         self.branch_selector = Hoversel(self, text='none')
         self.branch_selector.callback_selected_add(self.branch_selected_cb)
         tb.pack(self.branch_selector, 3, 0, 1, 1)
         self.branch_selector.show()
 
-        # status label + button
-        self.status_label = lb = Entry(self, single_line=True, editable=False)
-        tb.pack(lb, 2, 0, 1, 1)
-        lb.show()
+        # pull button
+        ic = Icon(self, file=theme_resource_get('pull.png'))
+        bt = Button(self, text='Pull', content=ic)
+        bt.callback_clicked_add(lambda b: PullPopup(self, self.repo))
+        tb.pack(bt, 4, 0, 1, 1)
+        bt.show()
 
         ### Main content (left + right panes)
         panes = Panes(self, content_left_size = 0.5,
@@ -455,8 +464,8 @@ class EgituWin(StandardWindow):
         self.diff_view.size_hint_weight = EXPAND_BOTH
         self.diff_view.size_hint_align = 0.0, 0.0
         panes.part_content_set('right', self.diff_view)
-        
-        # app keybindings
+
+        # setup keyboard shortcuts
         binds = KeyBindings(self, verbose=False)
         binds.bind_add(('Control+r', 'F5'), self._binds_cb_refresh)
         binds.bind_add('Control+o', self._binds_cb_open)

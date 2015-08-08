@@ -21,6 +21,8 @@ setup(
         ('share/egitu/themes/default', ['data/themes/default/images/avatar.png',
                                         'data/themes/default/images/egitu.png',
                                         'data/themes/default/images/branch.png',
+                                        'data/themes/default/images/pull.png',
+                                        'data/themes/default/images/push.png',
                                         'data/themes/default/images/mod_m.png',
                                         'data/themes/default/images/mod_a.png',
                                         'data/themes/default/images/mod_d.png',

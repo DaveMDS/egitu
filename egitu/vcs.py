@@ -64,7 +64,7 @@ class Commit(object):
                     self.heads,
                     self.remotes,
                     self.tags,
-                    self.title[:20])
+                    self.title[:20] + ('...' if len(self.title) > 20 else ''))
 
     def is_a_merge(self):
         return len(self.parents) > 1
@@ -472,6 +472,23 @@ class Repository(object):
         """
         raise NotImplementedError("discard() not implemented in backend")
 
+    def pull(self, done_cb, progress_cb, remote=None, branch=None):
+        """
+        Fetch and merge changes from upsteram in the current branch.
+
+        Args:
+            done_cb:
+                Function to call when the operation finish.
+                signature: cb(success, err_msg=None)
+            progress_cb:
+                Function to call on each line of output.
+                signature: cb(line)
+            remote:
+                The remote server to fetch from (TODO)
+            branch:
+                The remote branch to fetch (TODO)
+        """
+        raise NotImplementedError("pull() not implemented in backend")
 
 ### Git backend ###############################################################
 class GitCmd(Exe):
@@ -853,3 +870,10 @@ class GitBackend(Repository):
         else:
             cmd = 'reset --hard HEAD'
         GitCmd(self._url, cmd, _cmd_done_cb)
+
+    def pull(self, done_cb, progress_cb, remote=None, branch=None):
+        def _cmd_done_cb(lines, success):
+            done_cb(success)
+
+        cmd = 'pull origin'
+        GitCmd(self._url, cmd, _cmd_done_cb, progress_cb)
