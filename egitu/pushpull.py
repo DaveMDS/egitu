@@ -29,6 +29,7 @@ from efl.elementary.table import Table
 from efl.elementary.label import Label
 from efl.elementary.icon import Icon
 from efl.elementary.progressbar import Progressbar
+from efl.elementary.check import Check
 
 from egitu.utils import theme_resource_get, \
     EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ, FILL_HORIZ
@@ -226,6 +227,13 @@ class PushPopup(Popup):
         tb.pack(sep, 0, 5, 2, 1)
         sep.show()
 
+        # dry-run checkbox
+        ck = Check(self, text='dry-run (only simulate the operation)', 
+                   size_hint_expand=EXPAND_BOTH, size_hint_align=(1.0, 0.5))
+        tb.pack(ck, 0, 6, 2, 1)
+        ck.show()
+        self.dryrun_chk = ck
+
         # buttons
         bt = Button(self, text='Close')
         bt.callback_clicked_add(lambda b: self.delete())
@@ -255,7 +263,8 @@ class PushPopup(Popup):
 
     def _push_btn_cb(self, btn):
         self.start_pulse()
-        self.repo.push(self._push_done_cb, self._push_progress_cb)
+        self.repo.push(self._push_done_cb, self._push_progress_cb,
+                       dryrun=self.dryrun_chk.state)
 
     def _push_progress_cb(self, line):
         self.output_entry.entry_append(line + '<br>')
