@@ -31,8 +31,7 @@ from efl.elementary.icon import Icon
 from efl.elementary.progressbar import Progressbar
 from efl.elementary.check import Check
 
-from egitu.utils import theme_resource_get, \
-    EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ, FILL_HORIZ
+from egitu.utils import EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ, FILL_HORIZ
 
 
 class PushPullBase(Popup):
@@ -41,8 +40,7 @@ class PushPullBase(Popup):
 
         Popup.__init__(self, parent)
         self.part_text_set('title,text', title)
-        self.part_content_set('title,icon',
-                              Icon(self, file=theme_resource_get(icon_name)))
+        self.part_content_set('title,icon', Icon(self, standard=icon_name))
         
         # TODO padding should be (4,4) but it seems buggy for the big entry
         tb = Table(self, padding=(0,4), size_hint_expand=EXPAND_BOTH)
@@ -157,7 +155,7 @@ class PushPullBase(Popup):
 class PullPopup(PushPullBase):
     def __init__(self, parent, repo):
         PushPullBase.__init__(self, parent, repo,
-                              'Fetch changes (pull)', 'pull.png')
+                              'Fetch changes (pull)', 'git-pull')
         self.remote_entry.part_text_set('guide', 'Where to fetch from (TODO)')
         self.rbranch_entry.part_text_set('guide', 'The remote branch to fetch (TODO)')
         self.action_btn.text = 'Pull'
@@ -170,7 +168,7 @@ class PullPopup(PushPullBase):
 class PushPopup(PushPullBase):
     def __init__(self, parent, repo):
         PushPullBase.__init__(self, parent, repo,
-                              'Push changes to the remote', 'push.png')
+                              'Push changes to the remote', 'git-push')
         self.remote_entry.part_text_set('guide', 'Where to push to (TODO)')
         self.rbranch_entry.part_text_set('guide', 'The remote branch to push to (TODO)')
         self.action_btn.text = 'Push'

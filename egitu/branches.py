@@ -35,7 +35,7 @@ from efl.elementary.radio import Radio
 from efl.elementary.table import Table
 from efl.elementary.check import Check
 
-from egitu.utils import theme_resource_get, ErrorPopup, \
+from egitu.utils import ErrorPopup, \
     EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ, FILL_HORIZ
 
 
@@ -108,7 +108,7 @@ class BranchesDialog(DialogWindow):
                 label = '{} → {}/{}'.format(b.name, b.remote, b.remote_branch)
             else:
                 label = bname
-            icon = Icon(self, file=theme_resource_get('branch.png'))
+            icon = Icon(self, standard='git-branch')
             it = self.branches_list.item_append(label, icon)
             it.data['Branch'] = b
         self.branches_list.go()
@@ -128,7 +128,7 @@ class CreateBranchPopup(Popup):
         Popup.__init__(self, parent)
         self.part_text_set('title,text', 'Create a new local branch')
         self.part_content_set('title,icon',
-                              Icon(self, file=theme_resource_get('branch.png')))
+                              Icon(self, standard='git-branch'))
 
         # main table
         # TODO padding should be (4,4) but it seems buggy for colspan > 1
@@ -228,18 +228,18 @@ class CreateBranchPopup(Popup):
         # local branches
         if not only_tracking:
             for bname in self.repo.branches_names:
-                ic = Icon(self, file=theme_resource_get('branch.png'))
+                ic = Icon(self, standard='git-branch')
                 self.rev_list.item_append(bname, ic)
 
         # remote tracking branches
         for bname in self.repo.remote_branches_names:
-            ic = Icon(self, file=theme_resource_get('branch.png'))
+            ic = Icon(self, standard='git-branch')
             self.rev_list.item_append(bname, ic)
 
         # tags
         if not only_tracking:
             for tag in self.repo.tags:
-                self.rev_list.item_append(tag) # TODO: add tags icon
+                self.rev_list.item_append(tag, Icon(self, standard='git-tag'))
 
         self.rev_list.go()
 
@@ -282,7 +282,7 @@ class DeleteBranchPopup(Popup):
         Popup.__init__(self, parent)
         self.part_text_set('title,text', 'Branch deletion')
         self.part_content_set('title,icon',
-                              Icon(self, file=theme_resource_get('branch.png')))
+                              Icon(self, standard='git-branch'))
 
         # main vertical box
         box = Box(self)

@@ -42,8 +42,8 @@ from efl.elementary.table import Table
 from efl.elementary.frame import Frame
 from efl.elementary.separator import Separator
 
-from egitu.utils import options, theme_resource_get, GravatarPict, \
-    KeyBindings, ErrorPopup, recent_history_get, recent_history_push, \
+from egitu.utils import options, GravatarPict, KeyBindings, ErrorPopup, \
+    recent_history_get, recent_history_push, \
     EXPAND_BOTH, EXPAND_HORIZ, EXPAND_VERT, FILL_BOTH, FILL_HORIZ, FILL_VERT, \
     INFO, HOMEPAGE, AUTHORS, LICENSE, xdg_open
 from egitu.dagview import DagGraph
@@ -67,8 +67,7 @@ class RepoSelector(Popup):
 
         # title
         self.part_text_set('title,text', 'Recent Repositories')
-        ic = Icon(self, file=theme_resource_get('egitu.png'))
-        self.part_content_set('title,icon', ic)
+        self.part_content_set('title,icon', Icon(self, standard='egitu'))
 
         # content: recent list
         li = List(self, size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
@@ -183,8 +182,8 @@ class EgituMenu(Menu):
         # main actions
         self.item_add(None, 'Refresh', 'refresh', self._item_refresh_cb)
         self.item_add(None, 'Open...', 'folder', self._item_open_cb)
-        self.item_add(None, 'Edit branches...', None, self._item_branches_cb)
-        self.item_add(None, 'Edit remotes...', None, self._item_remotes_cb)
+        self.item_add(None, 'Edit branches...', 'git-branch', self._item_branches_cb)
+        self.item_add(None, 'Edit remotes...', 'git-remote', self._item_remotes_cb)
         self.item_separator_add()
 
         # general options
@@ -444,15 +443,14 @@ class EgituWin(StandardWindow):
         self.branch_selector.show()
 
         # pull button
-        ic = Icon(self, file=theme_resource_get('pull.png'))
-        bt = Button(self, text='Pull', content=ic)
+        bt = Button(self, text='Pull', content=Icon(self, standard='git-pull'))
         bt.callback_clicked_add(lambda b: PullPopup(self, self.repo))
         tb.pack(bt, 4, 0, 1, 1)
         bt.show()
 
         # push button
-        ic = Icon(self, file=theme_resource_get('push.png'))
-        bt = Button(self, text='Push', content=ic, disabled=True)
+        bt = Button(self, text='Push', disabled=True,
+                    content=Icon(self, standard='git-push'))
         bt.callback_clicked_add(lambda b: PushPopup(self, self.repo))
         tb.pack(bt, 5, 0, 1, 1)
         bt.show()
@@ -506,7 +504,7 @@ class EgituWin(StandardWindow):
                 else:
                     self.branch_selector.item_add(branch)
             self.branch_selector.text = self.repo.current_branch
-            ic = Icon(self, file=theme_resource_get('branch.png'))
+            ic = Icon(self, standard='git-branch')
             self.branch_selector.content = ic
         except:
             self.branch_selector.text = 'Unknown'

@@ -426,5 +426,28 @@ collections {
       }
    }
 
+
+   /// ELM ICONS /////////////////////////////////////////////////////////////
+#define IC(Name, File) \
+   group { name: "elm/icon/"##Name##"/default"; \
+      min: 16 16; max: 0 0; \
+      images.image: File COMP; \
+      parts { part { name: "base"; \
+         description { \
+            aspect: 1.0 1.0; aspect_preference: BOTH; \
+            image.normal: File; } } } }
+   IC("git-branch", "branch.png")
+   IC("git-pull", "pull.png")
+   IC("git-push", "push.png")
+   IC("git-remote", "remote.png")
+   IC("git-commit", "commit.png")
+   IC("git-tag", "tag.png")
+   IC("git-mod-A", "mod_a.png")
+   IC("git-mod-D", "mod_d.png")
+   IC("git-mod-M", "mod_m.png")
+   IC("git-mod-R", "mod_r.png")
+   IC("git-mod-?", "mod_?.png")
+
+#undef IC
 }
 

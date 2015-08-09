@@ -30,8 +30,8 @@ from efl.elementary.check import Check
 from efl.elementary.button import Button
 from efl.elementary.box import Box
 
-from egitu.utils import options, theme_resource_get, format_date, \
-    GravatarPict, DiffedEntry, EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ, FILL_HORIZ
+from egitu.utils import options, format_date, GravatarPict, DiffedEntry, \
+    EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ, FILL_HORIZ
 from egitu.commit import CommitDialog, DiscardDialog
 
 
@@ -139,8 +139,7 @@ class DiffViewer(Table):
     def show_local_status(self):
         sortd = sorted(self.repo.status.changes, key=lambda c: c[2])
         for mod, staged, name, new_name in sortd:
-            icon_name = 'mod_{}.png'.format(mod.lower())
-            icon = Icon(self, file=theme_resource_get(icon_name))
+            icon = Icon(self, standard='git-mod-'+mod)
 
             check = Check(self, text='', state=staged)
             check.callback_changed_add(self.stage_unstage_cb)
@@ -159,8 +158,7 @@ class DiffViewer(Table):
             for mod, staged, name, new_name in self.repo.status.changes:
                 if name == check.data['path']:
                     ic = check.data['icon']
-                    icon_name = 'mod_{}.png'.format(mod.lower())
-                    ic.file = theme_resource_get(icon_name)
+                    ic.standard = 'git-mod-' + mod
 
         if check.state is True:
             self.repo.stage_file(stage_unstage_done_cb, check.data['path'])
@@ -174,8 +172,7 @@ class DiffViewer(Table):
     def changes_done_cb(self, success, lines):
         for mod, name, new_name in lines:
             if mod in ('M', 'A', 'D', 'R'):
-                icon_name = 'mod_{}.png'.format(mod.lower())
-                icon = Icon(self, file=theme_resource_get(icon_name))
+                icon = Icon(self, standard='git-mod-'+mod)
                 label = '{} → {}'.format(name, new_name) if new_name else name
                 it = self.diff_list.item_append(label, icon)
             else:

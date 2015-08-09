@@ -31,6 +31,7 @@ from efl.elementary.frame import Frame
 from efl.elementary.popup import Popup
 from efl.elementary.table import Table
 from efl.elementary.label import Label
+from efl.elementary.icon import Icon
 
 from egitu.utils import WaitPopup, ErrorPopup, \
     EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ, FILL_HORIZ
@@ -116,7 +117,7 @@ class RemotesDialog(DialogWindow):
         if success:
             self.remotes_list.clear()
             for r in remotes:
-                self.remotes_list.item_append(r)
+                self.remotes_list.item_append(r, Icon(self, standard='git-remote'))
             self.remotes_list.go()
         else:
              self.info_entry.text = '<code>%s</code>' % utf8_to_markup(err_msg)

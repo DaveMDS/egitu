@@ -260,8 +260,6 @@ class GravatarPict(Photo):
         # or download from gravatar
         gravatar_url = "http://www.gravatar.com/avatar/%s?size=%d&d=%s" % \
                         (hash_key, self.size_min, options.gravatar_default)
-
-        # local_path += '.part'
         FileDownload(gravatar_url, local_path, self._download_done_cb, None)
         self.jobs.append(local_path)
         self.file = self.default_file
