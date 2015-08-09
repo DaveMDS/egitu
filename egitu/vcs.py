@@ -257,6 +257,15 @@ class Repository(object):
         raise NotImplementedError("branches_names not implemented in backend")
 
     @property
+    def remote_branches_names(self):
+        """
+        List of remote branches names.
+
+        NOTE: This property is cached, you need to call the refresh() function.
+        """
+        raise NotImplementedError("remote_branches_names not implemented in backend")
+
+    @property
     def tags(self):
         """
         The list of tags name present in the repository.
@@ -532,6 +541,25 @@ class Repository(object):
         """
         raise NotImplementedError("push() not implemented in backend")
 
+    def branch_create(self, done_cb, name, revision, track=False):
+        """
+        Create a new local branch.
+        
+        Args:
+            done_cb:
+                Function to call when the operation finish.
+                signature: cb(success, err_msg=None)
+            name:
+                Name for the new branch
+            revision:
+                Starting revision to use, can be a branch name, a commit-id
+                or a tag name
+            track:
+                If True also setup tracking information
+        """
+        raise NotImplementedError("branch_create() not implemented in backend")
+
+
 ### Git backend ###############################################################
 class GitCmd(Exe):
     def __init__(self, local_path, cmd, done_cb=None, line_cb=None, *args):
@@ -574,6 +602,7 @@ class GitBackend(Repository):
         self._current_branch = ""
         self._branches = {}
         self._tags = []
+        self._remote_branches = []
 
     def check_url(self, url):
         if url and os.path.isdir(os.path.join(url, '.git')):
@@ -675,13 +704,19 @@ class GitBackend(Repository):
     def _fetch_branches(self, done_cb, *args):
         def _cmd_done_cb(lines, success):
             self._branches.clear()
+            del self._remote_branches[:]
             for branch in lines:
-                bname = branch[2:] if branch.startswith('* ') else branch
-                bname = bname.strip()
-                self._branches[bname] = Branch(bname)
+                if ' -> ' in branch:
+                    continue # do we need those ?
+                if branch.startswith('  remotes/'):
+                    self._remote_branches.append(branch[10:]) # remove '  remotes/'
+                else:
+                    bname = branch[2:] if branch.startswith('* ') else branch
+                    bname = bname.strip()
+                    self._branches[bname] = Branch(bname)
             done_cb(success, *args)
 
-        GitCmd(self._url, 'branch', _cmd_done_cb)
+        GitCmd(self._url, 'branch -a', _cmd_done_cb)
 
     def _fetch_branches_info(self, done_cb, *args):
         # git config --list --local | grep branch
@@ -751,6 +786,10 @@ class GitBackend(Repository):
     @property
     def branches_names(self):
         return sorted(self._branches.keys())
+
+    @property
+    def remote_branches_names(self):
+        return self._remote_branches
 
     @property
     def tags(self):
@@ -963,3 +1002,14 @@ class GitBackend(Repository):
         if dryrun:
             cmd += ' --dry-run'
         GitCmd(self._url, cmd, _cmd_done_cb, progress_cb)
+
+    def branch_create(self, done_cb, name, revision, track=False):
+        def _cmd_done_cb(lines, success):
+            if success:
+                self.refresh(done_cb)
+            else:
+                done_cb(success, '\n'.join(lines))
+
+        track = '--track' if track else '--no-track'
+        cmd = 'branch %s %s %s' % (track, name, revision)
+        GitCmd(self._url, cmd, _cmd_done_cb)

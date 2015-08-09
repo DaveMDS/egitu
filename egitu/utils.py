@@ -311,9 +311,11 @@ class DiffedEntry(Entry):
 
 
 class ErrorPopup(Popup):
-    def __init__(self, parent, title, msg):
+    def __init__(self, parent, title=None, msg=None):
         Popup.__init__(self, parent)
-        self.part_text_set('title,text', title)
+        self.part_text_set('title,text', title or 'Error')
+        if not msg:
+            msg = 'Unknown error'
         self.part_text_set('default', '<align=left>'+msg+'</align>')
 
         b = Button(self, text='Close')

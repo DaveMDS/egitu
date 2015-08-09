@@ -20,6 +20,7 @@
 
 from __future__ import absolute_import
 
+from efl.evas import Rectangle
 from efl.elementary.window import DialogWindow
 from efl.elementary.entry import Entry
 from efl.elementary.box import Box
@@ -27,16 +28,22 @@ from efl.elementary.button import Button
 from efl.elementary.list import List
 from efl.elementary.separator import Separator
 from efl.elementary.frame import Frame
+from efl.elementary.popup import Popup
+from efl.elementary.icon import Icon
+from efl.elementary.label import Label
+from efl.elementary.radio import Radio
+from efl.elementary.table import Table
 
-from egitu.utils import EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ, FILL_HORIZ
+from egitu.utils import theme_resource_get, ErrorPopup, \
+    EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ, FILL_HORIZ
 
 
 class BranchesDialog(DialogWindow):
     def __init__(self, repo, win):
         self.repo = repo
-        # self.win = win
+        self.win = win
 
-        DialogWindow.__init__(self, win, 'Egitu-branches', 'Branches', 
+        DialogWindow.__init__(self, win, 'Egitu-branches', 'Branches',
                               size=(500,500), autodel=True)
 
         # main vertical box (inside a padding frame
@@ -58,35 +65,28 @@ class BranchesDialog(DialogWindow):
         # list
         li = List(self, size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
         vbox.pack_end(li)
-
-        for bname, branch in repo.branches.iteritems():
-            if branch.is_tracking:
-                li.item_append('{} → {}/{}'.format(bname, branch.remote, branch.remote_branch))
-            else:
-                li.item_append(bname)
-
         li.show()
-        li.go()
+        self.branches_list = li
 
-    
         # buttons
         hbox = Box(self, horizontal=True,
                    size_hint_expand=EXPAND_HORIZ, size_hint_fill=FILL_BOTH)
         vbox.pack_end(hbox)
         hbox.show()
-        
-        bt = Button(self, text='Add (TODO)')
+
+        bt = Button(self, text='Create')
+        bt.callback_clicked_add(lambda b: CreateBranchPopup(self, self.repo))
         hbox.pack_end(bt)
         bt.show()
-        
+
         bt = Button(self, text='Delete (TODO)')
         hbox.pack_end(bt)
         bt.show()
-        
+
         bt = Button(self, text='Rename (TODO)')
         hbox.pack_end(bt)
         bt.show()
-        
+
         sep = Separator(self, size_hint_expand=EXPAND_HORIZ)
         hbox.pack_end(sep)
 
@@ -94,6 +94,171 @@ class BranchesDialog(DialogWindow):
         bt.callback_clicked_add(lambda b: self.delete())
         hbox.pack_end(bt)
         bt.show()
-        
-        #
+
+        # populate the list and show the dialog
+        self.populate()
         self.show()
+
+    def populate(self):
+        self.branches_list.clear()
+        for bname, b in self.repo.branches.iteritems():
+            if b.is_tracking:
+                label = '{} → {}/{}'.format(b.name, b.remote, b.remote_branch)
+            else:
+                label = bname
+            icon = Icon(self, file=theme_resource_get('branch.png'))
+            self.branches_list.item_append(label, icon)
+        self.branches_list.go()
+
+
+class CreateBranchPopup(Popup):
+    def __init__(self, parent, repo, branch=None):
+        self.repo = repo
+
+        Popup.__init__(self, parent)
+        self.part_text_set('title,text', 'Create a new local branch')
+        self.part_content_set('title,icon',
+                              Icon(self, file=theme_resource_get('branch.png')))
+
+        # main table
+        # TODO padding should be (4,4) but it seems buggy for colspan > 1
+        tb = Table(self, padding=(0,4),
+                   size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        self.content = tb
+        tb.show()
+
+        # sep
+        sep = Separator(self, horizontal=True, size_hint_expand=EXPAND_BOTH)
+        tb.pack(sep, 0, 0, 2, 1)
+        sep.show()
+
+        # branch name
+        lb = Label(self, text='Branch name', size_hint_align=(0.0, 0.5))
+        tb.pack(lb, 0, 1, 1, 1)
+        lb.show()
+
+        en = Entry(self, single_line=True, scrollable=True,
+                   size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        tb.pack(en, 1, 1, 1, 1)
+        en.show()
+        self.name_entry = en
+
+        # branch type
+        lb = Label(self, text='Branch type', size_hint_align=(0.0, 0.5))
+        tb.pack(lb, 0, 2, 1, 1)
+        lb.show()
+
+        hbox = Box(self, horizontal=True, padding=(6,0),
+                   size_hint_expand=EXPAND_BOTH, size_hint_align=(0.0, 0.5))
+        tb.pack(hbox, 1, 2, 1, 1)
+        hbox.show()
+
+        rdg = Radio(self, state_value=0, text='Local branch')
+        rdg.callback_changed_add(self._type_radio_changed_cb)
+        hbox.pack_end(rdg)
+        rdg.show()
+
+        rd = Radio(self, state_value=1, text='Tracking branch')
+        rd.callback_changed_add(self._type_radio_changed_cb)
+        rd.group_add(rdg)
+        hbox.pack_end(rd)
+        rd.show()
+        
+        self.type_radio = rdg
+
+        # starting revision
+        fr = Frame(self, text='Starting revision',
+                   size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        tb.pack(fr, 0, 3, 2, 1)
+        fr.show()
+
+        r = Rectangle(self.evas, size_hint_min=(300,200),
+                      size_hint_expand=EXPAND_BOTH)
+        tb.pack(r, 0, 3, 2, 1)
+
+        # TODO: use genlist to speedup population
+        li = List(self, size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        li.callback_selected_add(self._revision_selected_cb)
+        fr.content = li
+        li.show()
+        self.rev_list = li
+
+        # sep
+        sep = Separator(self, horizontal=True, size_hint_expand=EXPAND_BOTH)
+        tb.pack(sep, 0, 4, 2, 1)
+        sep.show()
+
+        # buttons
+        hbox = Box(self, horizontal=True,
+                   size_hint_expand=EXPAND_HORIZ, size_hint_fill=FILL_BOTH)
+        tb.pack(hbox, 0, 5, 2, 1)
+        hbox.show()
+
+        bt = Button(self, text='Close')
+        bt.callback_clicked_add(lambda b: self.delete())
+        hbox.pack_end(bt)
+        bt.show()
+
+        sep = Separator(self, size_hint_expand=EXPAND_HORIZ)
+        hbox.pack_end(sep)
+
+        bt = Button(self, text='Create')
+        bt.callback_clicked_add(self._create_clicked_cb)
+        hbox.pack_end(bt)
+        bt.show()
+
+        # populate the revision list and show the popup
+        self.populate()
+        self.show()
+        self.name_entry.focus = True
+
+    def populate(self, only_tracking=False):
+        self.rev_list.clear()
+
+        # local branches
+        if not only_tracking:
+            for bname in self.repo.branches_names:
+                ic = Icon(self, file=theme_resource_get('branch.png'))
+                self.rev_list.item_append(bname, ic)
+
+        # remote tracking branches
+        for bname in self.repo.remote_branches_names:
+            ic = Icon(self, file=theme_resource_get('branch.png'))
+            self.rev_list.item_append(bname, ic)
+
+        # tags
+        if not only_tracking:
+            for tag in self.repo.tags:
+                self.rev_list.item_append(tag) # TODO: add tags icon
+
+        self.rev_list.go()
+
+    def _type_radio_changed_cb(self, chk):
+        self.populate(only_tracking=True if chk.state_value else False)
+
+    def _revision_selected_cb(self, li, it):
+        name = it.text
+        if '/' in name:
+            self.name_entry.text = name.split('/')[-1]
+
+    def _create_clicked_cb(self, bt):
+        name = self.name_entry.text
+        if not name:
+            ErrorPopup(self.parent, msg='Invalid branch name')
+            return
+
+        if not self.rev_list.selected_item:
+            ErrorPopup(self.parent, msg='You must select a starting revision')
+            return
+        rev = self.rev_list.selected_item.text
+
+        self.repo.branch_create(self._branch_created_cb, name, rev,
+                                track=True if self.type_radio.value else False)
+
+    def _branch_created_cb(self, success, err_msg=None):
+        if success:
+            self.parent.populate() # update branches dialog list
+            self.parent.win.update_header() # update main win header
+            self.delete()
+        else:
+            ErrorPopup(self.parent, msg=err_msg)
