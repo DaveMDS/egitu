@@ -73,7 +73,8 @@ A Git user interface written in Python-EFL<br>
 Draw the <b>DAG</b> of the repo<br>
 View the <b>diff</b> of each revision<br>
 Edit repository <b>description</b><br>
-Switch <b>branch</b><br>
+Change current <b>branch</b><br>
+Powerfull <b>branches</b> management<br>
 <b>Stage/unstage</b> files<br>
 <b>Commit</b> staged changes<br>
 <b>Revert</b> commits<br>

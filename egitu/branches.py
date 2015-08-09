@@ -33,6 +33,7 @@ from efl.elementary.icon import Icon
 from efl.elementary.label import Label
 from efl.elementary.radio import Radio
 from efl.elementary.table import Table
+from efl.elementary.check import Check
 
 from egitu.utils import theme_resource_get, ErrorPopup, \
     EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ, FILL_HORIZ
@@ -79,7 +80,8 @@ class BranchesDialog(DialogWindow):
         hbox.pack_end(bt)
         bt.show()
 
-        bt = Button(self, text='Delete (TODO)')
+        bt = Button(self, text='Delete')
+        bt.callback_clicked_add(self._delete_btn_cb)
         hbox.pack_end(bt)
         bt.show()
 
@@ -107,8 +109,16 @@ class BranchesDialog(DialogWindow):
             else:
                 label = bname
             icon = Icon(self, file=theme_resource_get('branch.png'))
-            self.branches_list.item_append(label, icon)
+            it = self.branches_list.item_append(label, icon)
+            it.data['Branch'] = b
         self.branches_list.go()
+
+    def _delete_btn_cb(self, btn):
+        item = self.branches_list.selected_item
+        if item:
+            DeleteBranchPopup(self, self.repo, item.data['Branch'])
+        else:
+            ErrorPopup(self, msg='You must select a branch to delete')
 
 
 class CreateBranchPopup(Popup):
@@ -163,7 +173,7 @@ class CreateBranchPopup(Popup):
         rd.group_add(rdg)
         hbox.pack_end(rd)
         rd.show()
-        
+
         self.type_radio = rdg
 
         # starting revision
@@ -262,3 +272,70 @@ class CreateBranchPopup(Popup):
             self.delete()
         else:
             ErrorPopup(self.parent, msg=err_msg)
+
+
+class DeleteBranchPopup(Popup):
+    def __init__(self, parent, repo, branch):
+        self.repo = repo
+        self.branch = branch
+
+        Popup.__init__(self, parent)
+        self.part_text_set('title,text', 'Branch deletion')
+        self.part_content_set('title,icon',
+                              Icon(self, file=theme_resource_get('branch.png')))
+
+        # main vertical box
+        box = Box(self)
+        self.content = box
+        box.show()
+
+        # sep
+        sep = Separator(self, horizontal=True, size_hint_expand=EXPAND_BOTH)
+        box.pack_end(sep)
+        sep.show()
+
+        # label
+        en = Entry(self, editable=False,
+                   text='%s<br><br><hilight>%s</hilight><br>' % (
+                        'Are you sure you want to delete this branch?', branch.name),
+                   size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        box.pack_end(en)
+        en.show()
+
+        # force checkbox
+        ck = Check(self, text='Force delete (even if not fully merged)',
+                   size_hint_expand=EXPAND_BOTH, size_hint_align=(0.0, 0.5))
+        box.pack_end(ck)
+        ck.show()
+        self.force_chk = ck
+
+        # buttons
+        sep = Separator(self, horizontal=True, size_hint_expand=EXPAND_BOTH)
+        box.pack_end(sep)
+        sep.show()
+
+        bt = Button(self, text='Cancel')
+        bt.callback_clicked_add(lambda b: self.delete())
+        self.part_content_set('button1', bt)
+        bt.show()
+
+        bt = Button(self, text='Delete branch')
+        bt.callback_clicked_add(self._delete_btn_cb)
+        self.part_content_set('button2', bt)
+        bt.show()
+
+        #
+        self.show()
+
+    def _delete_btn_cb(self, btn):
+        self.repo.branch_delete(self._branch_deleted_cb, self.branch.name,
+                                force=self.force_chk.state)
+
+    def _branch_deleted_cb(self, success, err_msg=None):
+        if success:
+            self.parent.populate() # update branches dialog list
+            self.parent.win.update_header() # update main win header
+            self.delete()
+        else:
+            ErrorPopup(self, msg=err_msg)
+

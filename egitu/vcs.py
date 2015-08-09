@@ -559,6 +559,21 @@ class Repository(object):
         """
         raise NotImplementedError("branch_create() not implemented in backend")
 
+    def branch_delete(self, done_cb, name, force=False):
+        """
+        Delete a local branch.
+        
+        Args:
+            done_cb:
+                Function to call when the operation finish.
+                signature: cb(success, err_msg=None)
+            name:
+                Name of the branch to delete
+            force:
+                Force branch deletion (even if not fully merged)
+        """
+        raise NotImplementedError("branch_delete() not implemented in backend")
+
 
 ### Git backend ###############################################################
 class GitCmd(Exe):
@@ -1012,4 +1027,14 @@ class GitBackend(Repository):
 
         track = '--track' if track else '--no-track'
         cmd = 'branch %s %s %s' % (track, name, revision)
+        GitCmd(self._url, cmd, _cmd_done_cb)
+
+    def branch_delete(self, done_cb, name, force=False):
+        def _cmd_done_cb(lines, success):
+            if success:
+                self.refresh(done_cb)
+            else:
+                done_cb(success, '\n'.join(lines))
+
+        cmd = 'branch %s %s' % ('-D' if force else '-d', name)
         GitCmd(self._url, cmd, _cmd_done_cb)

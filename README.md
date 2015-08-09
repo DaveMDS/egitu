@@ -8,7 +8,8 @@ EFL Git user interface
 * Draw the **DAG** of the repo
 * View the **diff** of each revision
 * Edit repository **description**
-* Switch **branch**
+* Change current **branch**
+* Powerfull **branches** management
 * **Stage/unstage** files
 * **Commit** staged changes
 * **Revert** commits (optionally autocommit the revert)
