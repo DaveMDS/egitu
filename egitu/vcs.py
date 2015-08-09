@@ -81,6 +81,17 @@ class Status(object):
         return (len(self.changes) == 0)
 
 
+class Branch(object):
+    def __init__(self, name, remote=None, remote_branch=None):
+        self.name = name
+        self.remote = remote
+        self.remote_branch = remote_branch
+
+    @property
+    def is_tracking(self):
+        return True if self.remote_branch else False
+
+
 ### Base class for backends ###################################################
 class Repository(object):
 
@@ -227,12 +238,23 @@ class Repository(object):
     @property
     def branches(self):
         """
-        The list of branches name present in the repository.
+        Dict of local Branch instances present in the repository.
 
-        NOTE: This property is cached, you need to call the refresh() function
-        to actually read the list from the repo.
+        key = branch name
+        value = Branch instance
+
+        NOTE: This property is cached, you need to call the refresh() function.
         """
         raise NotImplementedError("branches not implemented in backend")
+
+    @property
+    def branches_names(self):
+        """
+        List of all the local branches name present in the repository.
+
+        NOTE: This property is cached, you need to call the refresh() function.
+        """
+        raise NotImplementedError("branches_names not implemented in backend")
 
     @property
     def tags(self):
@@ -522,9 +544,8 @@ class GitCmd(Exe):
         real_cmd = 'git --git-dir="%s" --work-tree="%s" %s' % \
                    (git_dir, local_path, cmd)
 
-        print("\n=== GITCMD " + "=" * 69)
-        print(real_cmd)
-        print("=" * 80)
+        print("=== GIT " + cmd) # just for debug
+
         Exe.__init__(self, real_cmd, ECORE_EXE_PIPE_READ |
                      ECORE_EXE_PIPE_ERROR | ECORE_EXE_PIPE_READ_LINE_BUFFERED |
                      ECORE_EXE_PIPE_ERROR_LINE_BUFFERED)
@@ -551,7 +572,7 @@ class GitBackend(Repository):
         self._description = ""
         self._status = None
         self._current_branch = ""
-        self._branches = []
+        self._branches = {}
         self._tags = []
 
     def check_url(self, url):
@@ -573,6 +594,8 @@ class GitBackend(Repository):
         os.chdir(url) # to make git diff works :/
         self.refresh(done_cb, *args)
 
+    """
+    Old ASYNC refresh implementation
     def refresh(self, done_cb, *args):
         def _multi_done_cb(success, *args):
             self._op_count -= 1
@@ -585,6 +608,22 @@ class GitBackend(Repository):
         self._fetch_status_text(_multi_done_cb, *args)
         self._fetch_branches(_multi_done_cb, *args)
         self._fetch_tags(_multi_done_cb, *args)
+    """
+
+    def refresh(self, done_cb, *args):
+        ops = [self._fetch_status, self._fetch_status_text,
+               self._fetch_branches, self._fetch_branches_info,
+               self._fetch_tags]
+        self._status = Status()
+        
+        def _multi_done_cb(success):
+            if len(ops) > 0:
+                func = ops.pop(0)
+                func(_multi_done_cb)
+            else:
+                done_cb(True, *args)
+
+        _multi_done_cb(True)
 
     def _fetch_status(self, done_cb, *args):
         def _cmd_done_cb(lines, success):
@@ -635,15 +674,29 @@ class GitBackend(Repository):
 
     def _fetch_branches(self, done_cb, *args):
         def _cmd_done_cb(lines, success):
-            L = []
+            self._branches.clear()
             for branch in lines:
-                if branch.startswith('* '):
-                    L.append(branch[2:].strip())
-                else:
-                    L.append(branch.strip())
-            self._branches = L
+                bname = branch[2:] if branch.startswith('* ') else branch
+                bname = bname.strip()
+                self._branches[bname] = Branch(bname)
             done_cb(success, *args)
+
         GitCmd(self._url, 'branch', _cmd_done_cb)
+
+    def _fetch_branches_info(self, done_cb, *args):
+        # git config --list --local | grep branch
+        def _cmd_done_cb(lines, success):
+            for line in lines:
+                if line.startswith('branch.'):
+                    key, val = line.split('=')
+                    _, bname, key = key.split('.')
+                    if key == 'remote':
+                        self._branches[bname].remote = val
+                    elif key == 'merge':
+                        self._branches[bname].remote_branch = val[11:] # remove 'refs/head/'
+            done_cb(success, *args)
+
+        GitCmd(self._url, 'config --list --local', _cmd_done_cb)
 
     def _fetch_tags(self, done_cb, *args):
         def _cmd_done_cb(lines, success):
@@ -694,6 +747,10 @@ class GitBackend(Repository):
     @property
     def branches(self):
         return self._branches
+    
+    @property
+    def branches_names(self):
+        return sorted(self._branches.keys())
 
     @property
     def tags(self):

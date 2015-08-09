@@ -49,6 +49,7 @@ from egitu.utils import options, theme_resource_get, GravatarPict, \
 from egitu.dagview import DagGraph
 from egitu.diffview import DiffViewer
 from egitu.remotes import RemotesDialog
+from egitu.branches import BranchesDialog
 from egitu.pushpull import PullPopup, PushPopup
 from egitu.vcs import repo_factory
 from egitu import __version__
@@ -182,6 +183,7 @@ class EgituMenu(Menu):
         # main actions
         self.item_add(None, 'Refresh', 'refresh', self._item_refresh_cb)
         self.item_add(None, 'Open', 'folder', self._item_open_cb)
+        self.item_add(None, 'Edit branches', None, self._item_branches_cb)
         self.item_add(None, 'Edit remotes', None, self._item_remotes_cb)
         self.item_separator_add()
 
@@ -242,6 +244,9 @@ class EgituMenu(Menu):
 
     def _item_open_cb(self, menu, item):
         RepoSelector(self.win)
+
+    def _item_branches_cb(self, menu, item):
+        BranchesDialog(self.win.repo, self.win)
 
     def _item_remotes_cb(self, menu, item):
         RemotesDialog(self.win.repo, self.win)
@@ -490,7 +495,7 @@ class EgituWin(StandardWindow):
         # update the branch selector
         try:
             self.branch_selector.clear()
-            for branch in self.repo.branches:
+            for branch in self.repo.branches_names:
                 if branch == self.repo.current_branch:
                     self.branch_selector.item_add(branch, 'arrow_right',
                                                   ELM_ICON_STANDARD)
