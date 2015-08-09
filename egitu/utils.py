@@ -32,6 +32,9 @@ from efl.ecore import FileDownload, Exe
 from efl.elementary.photo import Photo
 from efl.elementary.popup import Popup
 from efl.elementary.button import Button
+from efl.elementary.box import Box
+from efl.elementary.progressbar import Progressbar
+from efl.elementary.label import Label
 from efl.elementary.entry import Entry, utf8_to_markup, \
     ELM_WRAP_NONE, ELM_WRAP_MIXED
 
@@ -350,7 +353,20 @@ class WaitPopup(Popup):
     def __init__(self, parent, text=None, title=None):
         Popup.__init__(self, parent)
         self.part_text_set('title,text', title or 'Please wait')
-        self.part_text_set('default', text or 'Operation in progress')
+
+        box = Box(self, horizontal=True, padding=(6,6))
+        self.content = box
+        box.show()
+
+        wheel = Progressbar(self, style='wheel', pulse_mode=True)
+        wheel.pulse(True)
+        box.pack_end(wheel)
+        wheel.show()
+
+        lb = Label(self, text=text or 'Operation in progress...')
+        box.pack_end(lb)
+        lb.show()
+
         self.show()
 
 
