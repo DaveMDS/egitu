@@ -44,6 +44,7 @@ class PushPullBase(Popup):
         self.part_content_set('title,icon',
                               Icon(self, file=theme_resource_get(icon_name)))
         
+        # TODO padding should be (4,4) but it seems buggy for the big entry
         tb = Table(self, padding=(0,4), size_hint_expand=EXPAND_BOTH)
         self.content = tb
         tb.show()
@@ -55,8 +56,7 @@ class PushPullBase(Popup):
         sep.show()
 
         # remote url
-        lb = Label(tb, text='<align=left>Remote</align>',
-                   size_hint_fill=FILL_BOTH)
+        lb = Label(tb, text='Remote', size_hint_align=(0.0, 0.5))
         tb.pack(lb, 0, 1, 1, 1)
         lb.show()
 
@@ -67,8 +67,7 @@ class PushPullBase(Popup):
         self.remote_entry = en
 
         # remote branch
-        lb = Label(tb, text='<align=left>Remote branch  </align>',
-                   size_hint_fill=FILL_BOTH)
+        lb = Label(tb, text='Remote branch', size_hint_align=(0.0, 0.5))
         tb.pack(lb, 0, 2, 1, 1)
         lb.show()
 
@@ -79,8 +78,7 @@ class PushPullBase(Popup):
         self.rbranch_entry = en
 
         # local branch
-        lb = Label(tb, text='<align=left>Local branch</align>',
-                   size_hint_fill=FILL_BOTH)
+        lb = Label(tb, text='Local branch', size_hint_align=(0.0, 0.5))
         tb.pack(lb, 0, 3, 1, 1)
         lb.show()
 
