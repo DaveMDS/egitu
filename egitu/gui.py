@@ -182,9 +182,9 @@ class EgituMenu(Menu):
 
         # main actions
         self.item_add(None, 'Refresh', 'refresh', self._item_refresh_cb)
-        self.item_add(None, 'Open', 'folder', self._item_open_cb)
-        self.item_add(None, 'Edit branches', None, self._item_branches_cb)
-        self.item_add(None, 'Edit remotes', None, self._item_remotes_cb)
+        self.item_add(None, 'Open...', 'folder', self._item_open_cb)
+        self.item_add(None, 'Edit branches...', None, self._item_branches_cb)
+        self.item_add(None, 'Edit remotes...', None, self._item_remotes_cb)
         self.item_separator_add()
 
         # general options
@@ -232,7 +232,7 @@ class EgituMenu(Menu):
 
         # quit item
         self.item_separator_add()
-        self.item_add(None, 'Info', 'info', self._item_info_cb)
+        self.item_add(None, 'About', 'info', self._item_info_cb)
         self.item_add(None, 'Quit', 'close', self._item_quit_cb)
         
         x, y, w, h = parent.geometry
@@ -483,6 +483,9 @@ class EgituWin(StandardWindow):
         binds.bind_add(('Control+r', 'F5'), self._binds_cb_refresh)
         binds.bind_add('Control+o', self._binds_cb_open)
         binds.bind_add('Control+q', self._binds_cb_quit)
+        binds.bind_add('Control+b', self._binds_cb_branches)
+        binds.bind_add('Control+p', self._binds_cb_pull)
+        binds.bind_add('Control+Shift+p', self._binds_cb_push)
 
         self.resize(800, 600)
         self.show()
@@ -522,10 +525,8 @@ class EgituWin(StandardWindow):
             text = '<warning>Ahead by {} commits</warning>'.format(self.repo.status.ahead)
         elif self.repo.status.is_clean:
             text = '<success>Status is clean!</success>'
-            # self.commit_button.hide()
         else:
             text = '<warning>Status is dirty !!!</warning>'
-            # self.commit_button.show()
 
         self.status_label.text = text
         self.status_label.tooltip_text_set(self.repo.status.textual)
@@ -562,4 +563,16 @@ class EgituWin(StandardWindow):
 
     def _binds_cb_quit(self, src, key, event):
         elm.exit()
+        return True
+
+    def _binds_cb_branches(self, src, key, event):
+        BranchesDialog(self.repo, self)
+        return True
+
+    def _binds_cb_push(self, src, key, event):
+        PushPopup(self, self.repo)
+        return True
+    
+    def _binds_cb_pull(self, src, key, event):
+        PullPopup(self, self.repo)
         return True

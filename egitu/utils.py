@@ -67,7 +67,7 @@ dave@gurumeditation.it<br><br>
 """
 
 INFO = """
-<align=center>
+<align=left>
 <hilight>Egitu</hilight><br>
 A Git user interface written in Python-EFL<br>
 <br>
@@ -89,9 +89,12 @@ Cool <b>Gravatar</b> integration<br>
 <br>
 <br>
 <hilight>Shortcuts</hilight><br>
-Ctrl+r or F5  refresh the repo<br>
-Ctrl+o  open a new repository<br>
-Ctrl+q  quit egitu<br>
+Ctrl+R  (or F5) refresh the repo<br>
+Ctrl+O  open a new repository<br>
+Ctrl+P  Pull<br>
+Ctrl+Shift+P  Push<br>
+Ctrl+B  branches manager<br>
+Ctrl+Q  quit egitu<br>
 </align>
 """
 
