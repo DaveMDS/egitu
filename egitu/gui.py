@@ -174,69 +174,85 @@ class FolderSelector(Fileselector):
         self.popup.delete()
 
 
-class EgituMenu(Menu):
-    def __init__(self, win, parent):
-        Menu.__init__(self, win)
-        self.win = win
+class MainMenuButton(Button):
+    def __init__(self, parent):
+        self.win = parent
+        self._menu = None
+        Button.__init__(self, parent, text='Menu',
+                        content=Icon(parent, standard='home'))
+        self.callback_pressed_add(self._button_pressed_cb)
+
+    def _button_pressed_cb(self, btn):
+        # close the menu if it is visible yet
+        if self._menu and self._menu.visible:
+            self._menu.delete()
+            self._menu = None
+            return
+
+        # build a new menu
+        m = Menu(self.top_widget)
+        self._menu = m
 
         # main actions
-        self.item_add(None, 'Refresh', 'refresh', self._item_refresh_cb)
-        self.item_add(None, 'Open...', 'folder', self._item_open_cb)
-        self.item_add(None, 'Edit branches...', 'git-branch', self._item_branches_cb)
-        self.item_add(None, 'Edit remotes...', 'git-remote', self._item_remotes_cb)
-        self.item_separator_add()
+        m.item_add(None, 'Refresh', 'refresh', self._item_refresh_cb)
+        m.item_add(None, 'Open...', 'folder', self._item_open_cb)
+        m.item_add(None, 'Edit branches...', 'git-branch', self._item_branches_cb)
+        m.item_add(None, 'Edit remotes...', 'git-remote', self._item_remotes_cb)
+        m.item_separator_add()
 
         # general options
-        it_gen = self.item_add(None, 'General', 'preference')
+        it_gen = m.item_add(None, 'General', 'preference')
 
-        it = self.item_add(it_gen, 'Use relative dates', None,
+        it = m.item_add(it_gen, 'Use relative dates', None,
                            self._item_check_opts_cb, 'date_relative')
         it.content = Check(self, state=options.date_relative)
 
-        it_gravatar = self.item_add(it_gen, 'Gravatar')
+        it_gravatar = m.item_add(it_gen, 'Gravatar')
         for name in ('mm', 'identicon', 'monsterid', 'wavatar', 'retro'):
             icon = 'arrow_right' if name == options.gravatar_default else None
-            self.item_add(it_gravatar, name, icon,  self._item_gravatar_cb)
-        self.item_separator_add(it_gravatar)
-        self.item_add(it_gravatar, 'Clear icons cache', 'delete',
-                      lambda m,i: GravatarPict.clear_icon_cache())
+            m.item_add(it_gravatar, name, icon,  self._item_gravatar_cb)
+        m.item_separator_add(it_gravatar)
+        m.item_add(it_gravatar, 'Clear icons cache', 'delete',
+                   lambda m,i: GravatarPict.clear_icon_cache())
 
         # dag options
-        it_dag = self.item_add(None, 'Dag', 'preference')
+        it_dag = m.item_add(None, 'Dag', 'preference')
 
-        it = self.item_add(it_dag, 'Show remote refs', None,
-                           self._item_check_opts_cb, 'show_remotes_in_dag')
+        it = m.item_add(it_dag, 'Show remote refs', None,
+                        self._item_check_opts_cb, 'show_remotes_in_dag')
         it.content = Check(self, state=options.show_remotes_in_dag)
 
-        it = self.item_add(it_dag, 'Show commit messagges', None,
-                           self._item_check_opts_cb, 'show_message_in_dag')
+        it = m.item_add(it_dag, 'Show commit messagges', None,
+                        self._item_check_opts_cb, 'show_message_in_dag')
         it.content = Check(self, state=options.show_message_in_dag)
 
         # diff options
-        it_diff = self.item_add(None, 'Diff', 'preference')
+        it_diff = m.item_add(None, 'Diff', 'preference')
 
-        it = self.item_add(it_diff, 'Wrap long lines', None,
-                           self._item_wrap_line_cb)
+        it = m.item_add(it_diff, 'Wrap long lines', None,
+                        self._item_wrap_line_cb)
         it.content = Check(self, state=options.diff_text_wrap)
 
-        it_font = self.item_add(it_diff, 'Font face')
+        it_font = m.item_add(it_diff, 'Font face')
         for face in ('Sans', 'Mono'):
             icon = 'arrow_right' if face == options.diff_font_face else None
-            self.item_add(it_font, face, icon, self._item_font_face_cb)
+            m.item_add(it_font, face, icon, self._item_font_face_cb)
 
-        it_font = self.item_add(it_diff, 'Font size')
+        it_font = m.item_add(it_diff, 'Font size')
         for size in (8, 9, 10, 11, 12, 13, 14):
             icon = 'arrow_right' if size == options.diff_font_size else None
-            self.item_add(it_font, str(size), icon, self._item_font_size_cb)
+            m.item_add(it_font, str(size), icon, self._item_font_size_cb)
 
         # quit item
-        self.item_separator_add()
-        self.item_add(None, 'About', 'info', self._item_info_cb)
-        self.item_add(None, 'Quit', 'close', self._item_quit_cb)
-        
-        x, y, w, h = parent.geometry
-        self.move(x, y + h)
-        self.show()
+        m.item_separator_add()
+        m.item_add(None, 'About', 'info', self._item_info_cb)
+        m.item_add(None, 'Quit', 'close', self._item_quit_cb)
+
+
+        # show the menu
+        x, y, w, h = self.geometry
+        m.move(x, y + h)
+        m.show()
 
     def _item_refresh_cb(self, menu, item):
         self.win.refresh()
@@ -420,9 +436,7 @@ class EgituWin(StandardWindow):
         tb.show()
 
         # main menu button
-        bt = Button(self, text='Menu')
-        bt.content = Icon(self, standard='home')
-        bt.callback_clicked_add(lambda b: EgituMenu(self, b))
+        bt = MainMenuButton(self)
         tb.pack(bt, 0, 0, 1, 1)
         bt.show()
 
