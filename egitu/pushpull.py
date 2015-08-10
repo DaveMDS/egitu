@@ -85,6 +85,7 @@ class PushPullBase(Popup):
                    size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
         tb.pack(en, 1, 3, 1, 1)
         en.show()
+        self.lbranch_entry = en
 
         # output entry
         en = Entry(tb, scrollable=True, editable=False, line_wrap=ELM_WRAP_NONE,
@@ -121,6 +122,7 @@ class PushPullBase(Popup):
         bt.show()
         self.action_btn = bt
 
+        self.autopopulate()
         self.show()
 
     def start_pulse(self):
@@ -135,10 +137,45 @@ class PushPullBase(Popup):
         self.wheel.hide()
         self.action_btn.disabled = False
         self.close_btn.disabled = False
+    
+    def autopopulate(self):
+        branch = self.repo.current_branch_instance
+        if branch.is_tracking:
+            self.remote_entry.text = branch.remote
+            self.rbranch_entry.text = branch.remote_branch
+        else:
+            self.output_entry.text = '<warning>%s</warning><br>%s' % \
+                ('Warning:', 
+                 'No tracking information setup for the current branch.<br>'
+                 'You must fill the information yourself,<br>'
+                 'or setup tracking information in the remote configuration.')
 
     def _action_btn_cb(self, bt):
-        pass
+        remote = self.remote_entry.text
+        rbranch = self.rbranch_entry.text
+        lbranch = self.lbranch_entry.text
+
+        if not remote:
+            self.output_entry.text = '<failure>%s</failure><br>%s' % \
+                        ('Error', 'You must specify a remote')
+            return
+
+        if not rbranch:
+            self.output_entry.text = '<failure>%s</failure><br>%s' % \
+                        ('Error', 'You must specify a remote branch to use')
+            return
+
+        if not lbranch:
+            self.output_entry.text = '<failure>%s</failure><br>%s' % \
+                        ('Error', 'You must specify a local branch to use')
+            return
+        
+        self.start_pulse()
+        self.action(remote, rbranch, lbranch)
     
+    def action(self, remote, rbranch, lbranch):
+        pass # implemented in subclasses
+
     def _action_progress_cb(self, line):
         self.output_entry.entry_append(line + '<br>')
         self.output_entry.cursor_end_set()
@@ -156,21 +193,21 @@ class PullPopup(PushPullBase):
     def __init__(self, parent, repo):
         PushPullBase.__init__(self, parent, repo,
                               'Fetch changes (pull)', 'git-pull')
-        self.remote_entry.part_text_set('guide', 'Where to fetch from (TODO)')
-        self.rbranch_entry.part_text_set('guide', 'The remote branch to fetch (TODO)')
+        self.remote_entry.part_text_set('guide', 'Where to fetch from')
+        self.rbranch_entry.part_text_set('guide', 'The remote branch to fetch')
         self.action_btn.text = 'Pull'
-
-    def _action_btn_cb(self, btn):
-        self.start_pulse()
-        self.repo.pull(self._action_done_cb, self._action_progress_cb)
+    
+    def action(self, remote, rbranch, lbranch):
+        self.repo.pull(self._action_done_cb, self._action_progress_cb,
+                       remote, rbranch, lbranch)
 
 
 class PushPopup(PushPullBase):
     def __init__(self, parent, repo):
         PushPullBase.__init__(self, parent, repo,
                               'Push changes to the remote', 'git-push')
-        self.remote_entry.part_text_set('guide', 'Where to push to (TODO)')
-        self.rbranch_entry.part_text_set('guide', 'The remote branch to push to (TODO)')
+        self.remote_entry.part_text_set('guide', 'Where to push to')
+        self.rbranch_entry.part_text_set('guide', 'The remote branch to push to')
         self.action_btn.text = 'Push'
 
         ck = Check(self, text='dry-run (only simulate the operation)', 
@@ -179,8 +216,7 @@ class PushPopup(PushPullBase):
         ck.show()
         self.dryrun_chk = ck
 
-    def _action_btn_cb(self, bt):
-        self.start_pulse()
+    def action(self, remote, rbranch, lbranch):
         self.repo.push(self._action_done_cb, self._action_progress_cb,
-                       dryrun=self.dryrun_chk.state)
+                       remote, rbranch, lbranch, dry=self.dryrun_chk.state)
 

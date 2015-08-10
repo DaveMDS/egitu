@@ -212,12 +212,22 @@ class Repository(object):
     @property
     def current_branch(self):
         """
-        The current branch of the repo.
+        The name of the current branch.
 
         NOTE: This property is cached, you need to call the refresh() function
         to actually read the value from the repo.
         """
         raise NotImplementedError("current_branch not implemented in backend")
+
+    @property 
+    def current_branch_instance(self):
+        """
+        The current branch (Branch class instance)
+        
+        NOTE: This property is cached, you need to call the refresh() function
+        to actually read the value from the repo.
+        """
+        raise NotImplementedError("current_branch_instance not implemented in backend")
 
     def current_branch_set(self, branch, done_cb, *args):
         """
@@ -503,9 +513,9 @@ class Repository(object):
         """
         raise NotImplementedError("discard() not implemented in backend")
 
-    def pull(self, done_cb, progress_cb, remote=None, branch=None):
+    def pull(self, done_cb, progress_cb, remote, rbranch, lbranch):
         """
-        Fetch and merge changes from upsteram in the current branch.
+        Fetch and merge changes from upsteram in the given branch.
 
         Args:
             done_cb:
@@ -515,15 +525,17 @@ class Repository(object):
                 Function to call on each line of output.
                 signature: cb(line)
             remote:
-                The remote server to fetch from (TODO)
-            branch:
-                The remote branch to fetch (TODO)
+                The remote server to fetch from
+            rbranch:
+                The remote branch to fetch
+            lbranch:
+                The local branch to merge into
         """
         raise NotImplementedError("pull() not implemented in backend")
 
-    def push(self, done_cb, progress_cb, remote=None, branch=None, dryrun=False):
+    def push(self, done_cb, progress_cb, remote, rbranch, lbranch, dry=False):
         """
-        Push local changes to upsteram from the current branch.
+        Push local changes to upsteram from the given branch.
 
         Args:
             done_cb:
@@ -533,10 +545,12 @@ class Repository(object):
                 Function to call on each line of output.
                 signature: cb(line)
             remote:
-                The remote server to push to (TODO)
-            branch:
-                The remote branch to push to (TODO)
-            dryrun:
+                The remote server to push to
+            rbranch:
+                The remote branch to push to
+            lbranch:
+                The local branch to push
+            dry:
                 Do not actually perform the push
         """
         raise NotImplementedError("push() not implemented in backend")
@@ -784,6 +798,10 @@ class GitBackend(Repository):
     def current_branch(self):
         return self._current_branch
 
+    @property
+    def current_branch_instance(self):
+        return self._branches[self._current_branch]
+
     def current_branch_set(self, branch, done_cb, *args):
         def _cmd_done_cb(lines, success):
             if success:
@@ -1002,20 +1020,19 @@ class GitBackend(Repository):
             cmd = 'reset --hard HEAD'
         GitCmd(self._url, cmd, _cmd_done_cb)
 
-    def pull(self, done_cb, progress_cb, remote=None, branch=None):
+    def pull(self, done_cb, progress_cb, remote, rbranch, lbranch):
         def _cmd_done_cb(lines, success):
             done_cb(success)
 
-        cmd = 'pull'
+        cmd = 'pull %s %s:%s' % (remote, rbranch, lbranch)
         GitCmd(self._url, cmd, _cmd_done_cb, progress_cb)
 
-    def push(self, done_cb, progress_cb, remote=None, branch=None, dryrun=False):
+    def push(self, done_cb, progress_cb, remote, rbranch, lbranch, dry=False):
         def _cmd_done_cb(lines, success):
             done_cb(success)
 
-        cmd = 'push --verbose'
-        if dryrun:
-            cmd += ' --dry-run'
+        cmd = 'push --verbose %s %s %s:%s ' % ('--dry-run' if dry else '',
+                                               remote, lbranch, rbranch)
         GitCmd(self._url, cmd, _cmd_done_cb, progress_cb)
 
     def branch_create(self, done_cb, name, revision, track=False):
