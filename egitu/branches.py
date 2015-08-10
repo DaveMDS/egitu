@@ -103,7 +103,8 @@ class BranchesDialog(DialogWindow):
 
     def populate(self):
         self.branches_list.clear()
-        for bname, b in self.repo.branches.iteritems():
+        for bname in self.repo.branches_names:
+            b = self.repo.branches[bname]
             if b.is_tracking:
                 label = '{} → {}/{}'.format(b.name, b.remote, b.remote_branch)
             else:
