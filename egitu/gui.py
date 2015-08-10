@@ -463,12 +463,10 @@ class EgituWin(StandardWindow):
         bt.show()
 
         # push button
-        bt = Button(self, text='Push', disabled=True,
-                    content=Icon(self, standard='git-push'))
+        bt = Button(self, text='Push', content=Icon(self, standard='git-push'))
         bt.callback_clicked_add(lambda b: PushPopup(self, self.repo))
         tb.pack(bt, 5, 0, 1, 1)
         bt.show()
-        self.push_btn = bt
 
         ### Main content (left + right panes)
         panes = Panes(self, content_left_size = 0.5,
@@ -542,9 +540,6 @@ class EgituWin(StandardWindow):
 
         self.status_label.text = text
         self.status_label.tooltip_text_set(self.repo.status.textual)
-        
-        # enable/disable the push button
-        self.push_btn.disabled = not (self.repo.status.ahead > 0)
 
     def branch_selected_cb(self, hoversel, item):
         def _switch_done_cb(success, err_msg=None):
