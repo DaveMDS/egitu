@@ -92,6 +92,13 @@ class Branch(object):
         return True if self.remote_branch else False
 
 
+class Remote(object):
+    def __init__(self, name, url=None, fetch=None):
+        self.name = name
+        self.url = url
+        self.fetch = fetch
+
+
 ### Base class for backends ###################################################
 class Repository(object):
 
@@ -373,16 +380,25 @@ class Repository(object):
         """
         raise NotImplementedError("request_changes() not implemented in backend")
 
-    def request_remotes(self, done_cb):
+    @property
+    def remotes(self):
         """
-        Request the list of remotes
+        List of all the remotes configured. (Remote instances)
+
+        NOTE: This property is cached, you need to call the refresh() function
+        to actually read the list from the repo.
+        """
+        raise NotImplementedError("remotes not implemented in backend")
+
+    def remote_get_by_name(self, name):
+        """
+        Get the Remote instance for the given remote name
 
         Args:
-            done_cb:
-                Function to call when the operation finish.
-                Signature: cb(success, remotes, err_msg=None)
+            name:
+                The name of the remote
         """
-        raise NotImplementedError("request_remotes() not implemented in backend")
+        raise NotImplementedError("remote_get_by_name not implemented in backend")
 
     def request_remote_info(self, done_cb, remote_name):
         """
@@ -424,6 +440,21 @@ class Repository(object):
                 The name for remote to remove
         """
         raise NotImplementedError("remote_del() not implemented in backend")
+
+    def remote_url_set(self, done_cb, name, new_url):
+        """
+        Change the url fo rthe given remote
+        
+        Args:
+            done_cb:
+                Function to call when the operation finish.
+                Signature: cb(success, err_msg=None)
+            name:
+                The name of the remote to change
+            new_url:
+                The new url to set
+        """
+        raise NotImplementedError("remote_url_set() not implemented in backend")
 
     def stage_file(self, done_cb, path):
         """
@@ -632,6 +663,7 @@ class GitBackend(Repository):
         self._branches = {}
         self._tags = []
         self._remote_branches = []
+        self._remotes = []
 
     def check_url(self, url):
         if url and os.path.isdir(os.path.join(url, '.git')):
@@ -670,7 +702,7 @@ class GitBackend(Repository):
 
     def refresh(self, done_cb, *args):
         ops = [self._fetch_status, self._fetch_status_text,
-               self._fetch_branches, self._fetch_branches_info,
+               self._fetch_branches, self._fetch_local_config,
                self._fetch_tags]
         self._status = Status()
         
@@ -747,20 +779,29 @@ class GitBackend(Repository):
 
         GitCmd(self._url, 'branch -a', _cmd_done_cb)
 
-    def _fetch_branches_info(self, done_cb, *args):
-        # git config --list --local | grep branch
+    def _fetch_local_config(self, done_cb, *args):
         def _cmd_done_cb(lines, success):
             for line in lines:
-                if line.startswith('branch.'):
-                    key, val = line.split('=')
-                    _, bname, key = key.split('.')
-                    if key == 'remote':
-                        self._branches[bname].remote = val
-                    elif key == 'merge':
-                        self._branches[bname].remote_branch = val[11:] # remove 'refs/head/'
+                key, val = line.split(' ', 1)
+                key, name, prop = key.split('.')
+                if key == 'branch':
+                    if prop == 'remote':
+                        self._branches[name].remote = val
+                    elif prop == 'merge':
+                        self._branches[name].remote_branch = val[11:] # remove 'refs/head/'
+                elif key == 'remote':
+                    r = self.remote_get_by_name(name) 
+                    if not r:
+                        r = Remote(name)
+                        self._remotes.append(r)
+                    if prop in ('url', 'fetch'):
+                        setattr(r, prop, val)
+
             done_cb(success, *args)
 
-        GitCmd(self._url, 'config --list --local', _cmd_done_cb)
+        del self._remotes[:]
+        cmd = 'config --local --get-regexp "branch.|remote."'
+        GitCmd(self._url, cmd, _cmd_done_cb)
 
     def _fetch_tags(self, done_cb, *args):
         def _cmd_done_cb(lines, success):
@@ -922,15 +963,14 @@ class GitBackend(Repository):
             cmd += ' HEAD'
         GitCmd(self._url, cmd, _cmd_done_cb)
 
-    def request_remotes(self, done_cb):
-        def _cmd_done_cb(lines, success):
-            if success:
-                done_cb(success, lines)
-            else:
-                done_cb(success, [], '\n'.join(lines))
+    @property
+    def remotes(self):
+        return self._remotes
 
-        cmd = 'remote'
-        GitCmd(self._url, cmd, _cmd_done_cb)
+    def remote_get_by_name(self, name):
+        for r in self._remotes:
+            if r.name == name:
+                return r
 
     def request_remote_info(self, done_cb, remote_name):
         def _cmd_done_cb(lines, success):
@@ -944,16 +984,23 @@ class GitBackend(Repository):
 
     def remote_add(self, done_cb, name, url):
         def _cmd_done_cb(lines, success):
-            done_cb(success, '\n'.join(lines))
+            self._fetch_local_config(done_cb)
 
         cmd = 'remote add %s %s' % (name, url)
         GitCmd(self._url, cmd, _cmd_done_cb)
 
     def remote_del(self, done_cb, name):
         def _cmd_done_cb(lines, success):
-            done_cb(success, '\n'.join(lines))
+            self._fetch_local_config(done_cb)
 
         cmd = 'remote remove %s' % (name)
+        GitCmd(self._url, cmd, _cmd_done_cb)
+
+    def remote_url_set(self, done_cb, name, new_url):
+        def _cmd_done_cb(lines, success):
+            self._fetch_local_config(done_cb)
+
+        cmd = 'remote set-url %s %s' % (name, new_url)
         GitCmd(self._url, cmd, _cmd_done_cb)
 
     def stage_file(self, done_cb, path):

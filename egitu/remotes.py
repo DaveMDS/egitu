@@ -34,14 +34,14 @@ from efl.elementary.label import Label
 from efl.elementary.icon import Icon
 
 from egitu.utils import WaitPopup, ErrorPopup, \
-    EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ, FILL_HORIZ
+    EXPAND_BOTH, EXPAND_HORIZ, EXPAND_VERT, FILL_BOTH, FILL_HORIZ, FILL_VERT
 
 
 class RemotesDialog(DialogWindow):
     def __init__(self, repo, win):
         self.repo = repo
 
-        DialogWindow.__init__(self, win, 'egitu-remotes', 'Remotes', 
+        DialogWindow.__init__(self, win, 'egitu-remotes', 'Remotes',
                               autodel=True, size=(600,400))
 
         # main vertical box (inside a padding frame)
@@ -52,30 +52,68 @@ class RemotesDialog(DialogWindow):
         box = Box(fr, padding=(6,6))
         fr.content = box
         box.show()
-        
+
         # panes
         panes = Panes(box, content_left_size=0.25,
                       size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
         box.pack_end(panes)
         panes.show()
-        
-        # remotes List (on the left)
+
+        ### remotes List (on the left)
         li = List(panes)
         li.callback_selected_add(self._list_selected_cb)
         panes.part_content_set('left', li)
         li.show()
         self.remotes_list = li
 
-        # remote info entry (on the right)
+        ### remote info (on the right)
+        tb = Table(self, padding=(4, 4))
+        panes.part_content_set('right', tb)
+        tb.show()
+
+        # url
+        lb = Label(self, text='URL', size_hint_align=(0.0,0.5))
+        tb.pack(lb, 0, 0, 1, 1)
+        lb.show()
+
+        en = Entry(self, single_line=True, scrollable=True,
+                   size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        en.callback_changed_user_add(lambda e: \
+                                setattr(self.save_url_btn, 'disabled', False))
+        tb.pack(en, 1, 0, 1, 1)
+        en.show()
+        self.url_entry = en
+
+        # fetch
+        lb = Label(self, text='Fetch', size_hint_align=(0.0,0.5))
+        tb.pack(lb, 0, 1, 1, 1)
+        lb.show()
+
+        en = Entry(self, single_line=True, scrollable=True, editable=False,
+                   size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        tb.pack(en, 1, 1, 1, 1)
+        en.show()
+        self.fetch_entry = en
+
+        # save button
+        bt = Button(self, text='Save', disabled=True,
+                    size_hint_expand=EXPAND_VERT, size_hint_fill=FILL_VERT)
+        bt.callback_clicked_add(self._save_url_clicked_cb)
+        tb.pack(bt, 2, 0, 1, 1)
+        bt.show()
+        self.save_url_btn = bt
+
+        # big info entry
         en = Entry(panes, scrollable=True, editable=False,
-                   line_wrap=ELM_WRAP_NONE)
-        en.part_text_set('guide', 'Choose a remote from the list.')
-        panes.part_content_set('right', en)
+                   line_wrap=ELM_WRAP_NONE,
+                   size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        en.callback_clicked_add(self._info_clicked_cb)
+        tb.pack(en, 0, 2, 3, 1)
         en.show()
         self.info_entry = en
 
-        # botton bar
-        hbox = Box(box, horizontal=True, 
+        ### buttons bar
+        hbox = Box(box, horizontal=True,
                    size_hint_expand=EXPAND_HORIZ, size_hint_fill=FILL_BOTH)
         box.pack_end(hbox)
         hbox.show()
@@ -103,29 +141,41 @@ class RemotesDialog(DialogWindow):
         hbox.pack_end(bt)
         bt.show()
 
-        # request remotes (while showing a wait popup)
+        # populate and show the dialog window
         self.restart_dialog()
         self.show()
 
     def restart_dialog(self):
+        self.url_entry.text = None
+        self.fetch_entry.text = None
         self.info_entry.text = None
-        self.repo.request_remotes(self._remotes_cb)
-        self.wait_popup = WaitPopup(self)
-        
-    def _remotes_cb(self, success, remotes, err_msg=None):
-        self.wait_popup.delete()
-        if success:
-            self.remotes_list.clear()
-            for r in remotes:
-                self.remotes_list.item_append(r, Icon(self, standard='git-remote'))
-            self.remotes_list.go()
-        else:
-             self.info_entry.text = '<code>%s</code>' % utf8_to_markup(err_msg)
-    
+        self.info_entry.part_text_set('guide', 'Choose a remote from the list.')
+
+        self.remotes_list.clear()
+        for remote in self.repo.remotes:
+            self.remotes_list.item_append(remote.name,
+                                          Icon(self, standard='git-remote'))
+        self.remotes_list.go()
+
+    @property
+    def selected_remote(self):
+        item = self.remotes_list.selected_item
+        return self.repo.remote_get_by_name(item.text) if item else None
+
     def _list_selected_cb(self, list, item):
-        self.wait_popup = WaitPopup(self, text='Fetching remote info...')
-        self.repo.request_remote_info(self._remote_info_cb, item.text)
-    
+        remote = self.repo.remote_get_by_name(item.text)
+        self.url_entry.text = remote.url
+        self.fetch_entry.text = remote.fetch
+        self.info_entry.text = None
+        self.info_entry.part_text_set('guide',
+                                    'Click here to fetch extended information.')
+
+    def _info_clicked_cb(self, en):
+        remote = self.selected_remote
+        if remote:
+            self.wait_popup = WaitPopup(self, text='Fetching remote info...')
+            self.repo.request_remote_info(self._remote_info_cb, remote.name)
+
     def _remote_info_cb(self, success, info, err_msg=None):
         self.wait_popup.delete()
         if success:
@@ -140,9 +190,20 @@ class RemotesDialog(DialogWindow):
                        msg='You must select a remote to delete.')
         else:
             self.repo.remote_del(self._del_done_cb, item.text)
-    
+
     def _del_done_cb(self, success, err_msg=None):
         self.restart_dialog()
+
+    def _save_url_clicked_cb(self, btn):
+        self.repo.remote_url_set(self._save_done_cb,
+                                 self.selected_remote.name,
+                                 self.url_entry.text)
+
+    def _save_done_cb(self, success, err_msg=None):
+        if success:
+            self.save_url_btn.disabled = True
+        else:
+            ErrorPopup(self, msg=err_msg)
 
 
 class RemoteAddPopup(Popup):
@@ -203,7 +264,7 @@ class RemoteAddPopup(Popup):
 
     def err(self, text):
         self.error_label.text = 'ERROR: ' + text
-    
+
     def err_unset(self):
         self.error_label.text = ''
 
@@ -221,7 +282,7 @@ class RemoteAddPopup(Popup):
 
         # create the remote
         self.repo.remote_add(self._add_done_cb, name, url)
-        
+
     def _add_done_cb(self, success, err_msg=None):
         self.parent.restart_dialog()
         self.delete()
