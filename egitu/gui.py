@@ -529,7 +529,15 @@ class EgituWin(StandardWindow):
                                   'Unnamed repository; click to edit.'
 
         # update the status
-        if self.repo.status.ahead == 1 and self.repo.status.is_clean:
+        if self.repo.status.is_merging:
+            text = "<warning>MERGING</warning>"
+        elif self.repo.status.is_cherry:
+            text = "<warning>CHERRY-PICKING</warning>"
+        elif self.repo.status.is_reverting:
+            text = "<warning>REVERTING</warning>"
+        elif self.repo.status.is_bisecting:
+            text = "<warning>BISECTING</warning>"
+        elif self.repo.status.ahead == 1 and self.repo.status.is_clean:
             text = '<warning>Ahead by 1 commit</warning>'
         elif self.repo.status.ahead > 1 and self.repo.status.is_clean:
             text = '<warning>Ahead by {} commits</warning>'.format(self.repo.status.ahead)

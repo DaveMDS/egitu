@@ -76,6 +76,12 @@ class Status(object):
         self.textual = ''
         self.changes = [] # list of tuples: (mod, staged, path, new_path=None)
 
+        # special statuses
+        self.is_merging = False
+        self.is_cherry = False
+        self.is_reverting = False
+        self.is_bisecting = False
+
     @property
     def is_clean(self):
         return (len(self.changes) == 0)
@@ -748,10 +754,21 @@ class GitBackend(Repository):
                     self._status.changes.append(('M', True, fname, None))
                 elif line[1] == 'M': # modified not staged
                     self._status.changes.append(('M', False, fname, None))
+                elif line[0] == 'U': # unmerged
+                    self._status.changes.append(('U', False, fname, None))
                 elif line[0] == 'R': # renamed
                     name, new_name = fname.split(' -> ')
                     self._status.changes.append(('R', True, name, new_name))
-                # TODO more status
+            
+            # special statuses
+            self._status.is_merging = \
+                os.path.exists(os.path.join(self._url, '.git', 'MERGE_HEAD'))
+            self._status.is_cherry = \
+                os.path.exists(os.path.join(self._url, '.git', 'CHERRY_PICK_HEAD'))
+            self._status.is_reverting = \
+                os.path.exists(os.path.join(self._url, '.git', 'REVERT_HEAD'))
+            self._status.is_bisecting = \
+                os.path.exists(os.path.join(self._url, '.git', 'BISECT_LOG'))
 
             done_cb(success, *args)
         GitCmd(self._url, 'status --porcelain -b -u', done_cb=_cmd_done_cb)
