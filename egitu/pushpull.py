@@ -31,7 +31,8 @@ from efl.elementary.icon import Icon
 from efl.elementary.progressbar import Progressbar
 from efl.elementary.check import Check
 
-from egitu.utils import EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ, FILL_HORIZ
+from egitu.utils import ComboBox, \
+    EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ, FILL_HORIZ
 
 
 class PushPullBase(Popup):
@@ -53,34 +54,35 @@ class PushPullBase(Popup):
         tb.pack(sep, 0, 0, 2, 1)
         sep.show()
 
-        # remote url
+        # remote
         lb = Label(tb, text='Remote', size_hint_align=(0.0, 0.5))
         tb.pack(lb, 0, 1, 1, 1)
         lb.show()
 
-        en = Entry(tb, editable=True, single_line=True, scrollable=True,
-                   size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
-        tb.pack(en, 1, 1, 1, 1)
-        en.show()
-        self.remote_entry = en
+        cb = ComboBox(self, icon=Icon(self, standard='git-remote'))
+        cb.callback_selected_add(self.rbranch_populate)
+        for remote in self.repo.remotes:
+            cb.item_append(remote.name, Icon(cb, standard='git-remote'))
+        tb.pack(cb, 1, 1, 1, 1)
+        cb.show()
+        self.remote_combo = cb
 
         # remote branch
         lb = Label(tb, text='Remote branch', size_hint_align=(0.0, 0.5))
         tb.pack(lb, 0, 2, 1, 1)
         lb.show()
 
-        en = Entry(tb, editable=True, single_line=True, scrollable=True,
-                   size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
-        tb.pack(en, 1, 2, 1, 1)
-        en.show()
-        self.rbranch_entry = en
+        cb = ComboBox(self, icon=Icon(cb, standard='git-branch'))
+        tb.pack(cb, 1, 2, 1, 1)
+        cb.show()
+        self.rbranch_combo = cb
 
         # local branch
         lb = Label(tb, text='Local branch', size_hint_align=(0.0, 0.5))
         tb.pack(lb, 0, 3, 1, 1)
         lb.show()
 
-        en = Entry(tb, editable=False, single_line=True, scrollable=True,
+        en = Entry(tb, disabled=True, single_line=True, scrollable=True,
                    text=repo.current_branch,
                    size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
         tb.pack(en, 1, 3, 1, 1)
@@ -137,12 +139,13 @@ class PushPullBase(Popup):
         self.wheel.hide()
         self.action_btn.disabled = False
         self.close_btn.disabled = False
-    
+
     def autopopulate(self):
         branch = self.repo.current_branch_instance
         if branch.is_tracking:
-            self.remote_entry.text = branch.remote
-            self.rbranch_entry.text = branch.remote_branch
+            self.remote_combo.text = branch.remote
+            self.rbranch_combo.text = branch.remote_branch
+            self.rbranch_populate()
         else:
             self.output_entry.text = '<warning>%s</warning><br>%s' % \
                 ('Warning:', 
@@ -150,9 +153,17 @@ class PushPullBase(Popup):
                  'You must fill the information yourself,<br>'
                  'or setup tracking information in the remote configuration.')
 
+    def rbranch_populate(self, combo=None):
+        self.rbranch_combo.clear()
+        remote = self.remote_combo.text + '/'
+        for branch in self.repo.remote_branches_names:
+            if branch.startswith(remote):
+                icon = Icon(self, standard='git-branch')
+                self.rbranch_combo.item_append(branch[len(remote):], icon)
+
     def _action_btn_cb(self, bt):
-        remote = self.remote_entry.text
-        rbranch = self.rbranch_entry.text
+        remote = self.remote_combo.text
+        rbranch = self.rbranch_combo.text
         lbranch = self.lbranch_entry.text
 
         if not remote:
@@ -193,8 +204,8 @@ class PullPopup(PushPullBase):
     def __init__(self, parent, repo):
         PushPullBase.__init__(self, parent, repo,
                               'Fetch changes (pull)', 'git-pull')
-        self.remote_entry.part_text_set('guide', 'Where to fetch from')
-        self.rbranch_entry.part_text_set('guide', 'The remote branch to fetch')
+        self.remote_combo.guide = 'Where to fetch from'
+        self.rbranch_combo.guide = 'The remote branch to fetch'
         self.action_btn.text = 'Pull'
     
     def action(self, remote, rbranch, lbranch):
@@ -206,8 +217,8 @@ class PushPopup(PushPullBase):
     def __init__(self, parent, repo):
         PushPullBase.__init__(self, parent, repo,
                               'Push changes to the remote', 'git-push')
-        self.remote_entry.part_text_set('guide', 'Where to push to')
-        self.rbranch_entry.part_text_set('guide', 'The remote branch to push to')
+        self.remote_combo.guide = 'Where to push to'
+        self.rbranch_combo.guide = 'The remote branch to push to'
         self.action_btn.text = 'Push'
 
         ck = Check(self, text='dry-run (only simulate the operation)', 

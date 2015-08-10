@@ -35,6 +35,12 @@ from efl.elementary.button import Button
 from efl.elementary.box import Box
 from efl.elementary.progressbar import Progressbar
 from efl.elementary.label import Label
+from efl.elementary.icon import Icon
+from efl.elementary.hover import Hover, ELM_HOVER_AXIS_VERTICAL
+from efl.elementary.list import List
+from efl.elementary.table import Table
+from efl.elementary.background import Background
+from efl.elementary.frame import Frame
 from efl.elementary.entry import Entry, utf8_to_markup, \
     ELM_WRAP_NONE, ELM_WRAP_MIXED
 
@@ -369,6 +375,90 @@ class WaitPopup(Popup):
         lb.show()
 
         self.show()
+
+
+class ComboBox(Entry):
+    def __init__(self, parent, text=None, icon=None):
+        Entry.__init__(self, parent, scrollable=True, single_line=True,
+                       size_hint_expand=EXPAND_BOTH,
+                       size_hint_fill=FILL_BOTH)
+        self.show()
+        if text: self.text = text
+        if icon: self.icon = icon
+
+        ic = Icon(self, standard='arrow-down')
+        ic.size_hint_min = 20, 20 # TODO file a bug for elm on phab
+        ic.callback_clicked_add(self.activate)
+        self.part_content_set('end', ic)
+
+        self._list = List(self)
+        self._list.callback_selected_add(self._list_selected_cb)
+
+        self._hover = Hover(self.parent, target=self)
+
+        self._bg = Background(self, size_hint_expand=EXPAND_BOTH, 
+                        size_hint_fill=FILL_BOTH)
+
+        fr = Frame(self, style='pad_medium',
+                   size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        fr.content = self._list
+        fr.show()
+
+        self._table = Table(self, size_hint_expand=EXPAND_BOTH, 
+                      size_hint_fill=FILL_BOTH)
+        self._table.pack(self._bg, 0, 0, 1, 1)
+        self._table.pack(fr, 0, 0, 1, 1)
+
+        self._selected_func = None
+
+    def callback_selected_add(self, func):
+        self._selected_func = func
+
+    @property
+    def icon(self):
+        return self.part_content_get('icon')
+    @icon.setter
+    def icon(self, icon):
+        icon.size_hint_min = 16, 16 # TODO file a bug for elm on phab
+        self.part_content_set('icon', icon)
+
+    @property
+    def guide(self):
+        self.part_text_get('guide')
+    @guide.setter
+    def guide(self, text):
+        self.part_text_set('guide', text)
+    
+    def item_append(self, label=None, icon=None, end=None):
+        self._list.item_append(label, icon, end)
+
+    def clear(self):
+        self._list.clear()
+
+    def activate(self, source=None):
+        self.focus = False # :/
+        self._list.go()
+
+        # TODO calculate this based on _list and parent size
+        # print(self._list.size)
+        # print(self._list.geometry)
+        self._bg.size_hint_min = 0, 200
+        loc = self._hover.best_content_location_get(ELM_HOVER_AXIS_VERTICAL)
+        self._hover.part_content_set(loc, self._table)
+        self._hover.show()
+        self._table.show()
+        self._bg.show()
+        self._list.show()
+    
+    def dismiss(self):
+        self._hover.dismiss()
+
+    def _list_selected_cb(self, li, it):
+        self.text = it.text
+        it.selected = False
+        self.dismiss()
+        if callable(self._selected_func):
+            self._selected_func(self)
 
 
 class KeyBindings(object):
