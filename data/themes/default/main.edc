@@ -446,6 +446,7 @@ collections {
    IC("git-mod-D", "mod_d.png")
    IC("git-mod-M", "mod_m.png")
    IC("git-mod-R", "mod_r.png")
+   IC("git-mod-U", "mod_u.png")
    IC("git-mod-?", "mod_?.png")
 
 #undef IC
