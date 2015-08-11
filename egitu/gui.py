@@ -42,7 +42,7 @@ from efl.elementary.table import Table
 from efl.elementary.frame import Frame
 from efl.elementary.separator import Separator
 
-from egitu.utils import options, GravatarPict, KeyBindings, ErrorPopup, \
+from egitu.utils import options, GravatarPict, ErrorPopup, \
     recent_history_get, recent_history_push, \
     EXPAND_BOTH, EXPAND_HORIZ, EXPAND_VERT, FILL_BOTH, FILL_HORIZ, FILL_VERT, \
     INFO, HOMEPAGE, AUTHORS, LICENSE, xdg_open
@@ -55,15 +55,12 @@ from egitu.vcs import repo_factory
 from egitu import __version__
 
 
-def LOG(text):
-    print(text)
-    # pass
-
-
 class RepoSelector(Popup):
-    def __init__(self, win, url=None):
-        Popup.__init__(self, win)
-        self.win = win
+    def __init__(self, app):
+        self.app = app
+
+        Popup.__init__(self, app.win)
+        self.callback_block_clicked_add(lambda p: p.delete())
 
         # title
         self.part_text_set('title,text', 'Recent Repositories')
@@ -113,11 +110,8 @@ class RepoSelector(Popup):
         bt.disabled = True
         self.part_content_set('button3', bt)
 
-        if url is not None:
-            self.try_to_load(url)
-        else:
-            self.callback_block_clicked_add(lambda p: p.delete())
-            self.show()
+        #
+        self.show()
 
     def load_btn_cb(self, bt):
         fs = FolderSelector(self)
@@ -126,28 +120,12 @@ class RepoSelector(Popup):
     def fs_done_cb(self, fs, path):
         fs.delete()
         if path and os.path.isdir(path):
-            self.try_to_load(path)
+            self.app.try_to_load(path)
+            self.delete()
 
     def recent_selected_cb(self, li, item):
-        self.try_to_load(item.data['url'])
-
-    def try_to_load(self, path):
-        repo = repo_factory(path)
-        if repo:
-            repo.load_from_url(path, self.load_done_cb, repo)
-        else:
-            self.show()
-
-    def load_done_cb(self, success, repo):
-        if success is True:
-            # save to recent history
-            recent_history_push(repo.url)
-
-            # show the new loaded repo
-            self.win.repo_set(repo)
-            self.delete()
-        else:
-            self.show()
+        self.app.try_to_load(item.data['url'])
+        self.delete()
 
 
 class FolderSelector(Fileselector):
@@ -175,11 +153,11 @@ class FolderSelector(Fileselector):
 
 
 class MainMenuButton(Button):
-    def __init__(self, parent):
-        self.win = parent
+    def __init__(self, app):
+        self.app = app
         self._menu = None
-        Button.__init__(self, parent, text='Menu',
-                        content=Icon(parent, standard='home'))
+        Button.__init__(self, app.win, text='Menu',
+                        content=Icon(app.win, standard='home'))
         self.callback_pressed_add(self._button_pressed_cb)
 
     def _button_pressed_cb(self, btn):
@@ -194,10 +172,10 @@ class MainMenuButton(Button):
         self._menu = m
 
         # main actions
-        m.item_add(None, 'Refresh', 'refresh', self._item_refresh_cb)
-        m.item_add(None, 'Open...', 'folder', self._item_open_cb)
-        m.item_add(None, 'Edit branches...', 'git-branch', self._item_branches_cb)
-        m.item_add(None, 'Edit remotes...', 'git-remote', self._item_remotes_cb)
+        m.item_add(None, 'Refresh', 'refresh', self.app.action_reload_repo)
+        m.item_add(None, 'Open...', 'folder', self.app.action_open)
+        m.item_add(None, 'Edit branches...', 'git-branch', self.app.action_branches)
+        m.item_add(None, 'Edit remotes...', 'git-remote', self.app.action_remotes)
         m.item_separator_add()
 
         # general options
@@ -245,8 +223,8 @@ class MainMenuButton(Button):
 
         # quit item
         m.item_separator_add()
-        m.item_add(None, 'About', 'info', self._item_info_cb)
-        m.item_add(None, 'Quit', 'close', self._item_quit_cb)
+        m.item_add(None, 'About', 'info', self.app.action_about)
+        m.item_add(None, 'Quit', 'close', self.app.action_quit)
 
 
         # show the menu
@@ -254,21 +232,9 @@ class MainMenuButton(Button):
         m.move(x, y + h)
         m.show()
 
-    def _item_refresh_cb(self, menu, item):
-        self.win.refresh()
-
-    def _item_open_cb(self, menu, item):
-        RepoSelector(self.win)
-
-    def _item_branches_cb(self, menu, item):
-        BranchesDialog(self.win.repo, self.win)
-
-    def _item_remotes_cb(self, menu, item):
-        RemotesDialog(self.win.repo, self.win)
-
     def _item_check_opts_cb(self, menu, item, opt):
         setattr(options, opt, not item.content.state)
-        self.win.graph.populate(self.win.repo)
+        self.app.graph_reload()
 
     def _item_gravatar_cb(self, menu, item):
         if options.gravatar_default != item.text:
@@ -277,7 +243,7 @@ class MainMenuButton(Button):
 
     def _item_wrap_line_cb(self, menu, item):
         options.diff_text_wrap = not item.content.state
-        self.win.diff_view.refresh_diff()
+        self.app.win.diff_view.refresh_diff()
 
     def _item_font_face_cb(self, menu, item):
         options.diff_font_face = item.text
@@ -285,13 +251,7 @@ class MainMenuButton(Button):
 
     def _item_font_size_cb(self, menu, item):
         options.diff_font_size = int(item.text)
-        self.win.diff_view.refresh_diff()
-
-    def _item_quit_cb(self, menu, item):
-        elm.exit()
-
-    def _item_info_cb(self, menu, item):
-        InfoWin(self.win)
+        self.app.win.diff_view.refresh_diff()
 
 
 class InfoWin(DialogWindow):
@@ -359,9 +319,9 @@ class InfoWin(DialogWindow):
 
 
 class EditableDescription(Entry):
-    def __init__(self, win):
-        self.win = win
-        Entry.__init__(self, win, single_line=True,
+    def __init__(self, app):
+        self.app = app
+        Entry.__init__(self, app.win, single_line=True,
                        size_hint_weight=EXPAND_HORIZ,
                        size_hint_align=FILL_HORIZ)
         self.callback_clicked_add(self._click_cb)
@@ -396,29 +356,30 @@ class EditableDescription(Entry):
 
     def _done_cb(self, entry, save):
         if save is True:
-            self.win.repo.description_set(self.text, self._description_set_cb)
+            self.app.repo.description_set(self.text, self._description_set_cb)
         else:
             self.text = self.orig_text
         self.go_passive()
 
     def _description_set_cb(self, success):
         # TODO alert if fail
-        self.text = self.win.repo.description
+        self.text = self.app.repo.description
 
 
 class EgituWin(StandardWindow):
-    def __init__(self):
-        self.repo = None
+    def __init__(self, app):
+        self.app = app
         self.branch_selector = None
         self.caption_label = None
         self.status_label = None
         self.graph = None
         self.diff_view = None
 
-        StandardWindow.__init__(self, 'egitu', 'Efl GIT gUi - Egitu')
-        self.autodel_set(True)
+        StandardWindow.__init__(self, 'egitu', 'Efl GIT gUi - Egitu',
+                                size=(800,600), autodel=True)
         self.callback_delete_request_add(lambda o: elm.exit())
 
+    def populate(self):
         # main vertical box
         box = Box(self, size_hint_weight = EXPAND_BOTH)
         self.resize_object_add(box)
@@ -436,12 +397,12 @@ class EgituWin(StandardWindow):
         tb.show()
 
         # main menu button
-        bt = MainMenuButton(self)
+        bt = MainMenuButton(self.app)
         tb.pack(bt, 0, 0, 1, 1)
         bt.show()
 
         # editable description entry
-        self.caption_label = EditableDescription(self)
+        self.caption_label = EditableDescription(self.app)
         tb.pack(self.caption_label, 1, 0, 1, 1)
         self.caption_label.show()
 
@@ -458,13 +419,13 @@ class EgituWin(StandardWindow):
 
         # pull button
         bt = Button(self, text='Pull', content=Icon(self, standard='git-pull'))
-        bt.callback_clicked_add(lambda b: PullPopup(self, self.repo))
+        bt.callback_clicked_add(self.app.action_pull)
         tb.pack(bt, 4, 0, 1, 1)
         bt.show()
 
         # push button
         bt = Button(self, text='Push', content=Icon(self, standard='git-push'))
-        bt.callback_clicked_add(lambda b: PushPopup(self, self.repo))
+        bt.callback_clicked_add(self.app.action_push)
         tb.pack(bt, 5, 0, 1, 1)
         bt.show()
 
@@ -475,7 +436,7 @@ class EgituWin(StandardWindow):
         panes.show()
 
         # the dag graph inside a scroller on the left
-        self.graph = DagGraph(self, self.repo)
+        self.graph = DagGraph(self, self.app)
         fr = Frame(self, style='pad_medium', content=self.graph)
         scr = Scroller(self, content=fr,
                        size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
@@ -483,97 +444,83 @@ class EgituWin(StandardWindow):
         panes.part_content_set('left', scr)
 
         # the diff viewer on the right
-        self.diff_view = DiffViewer(self, self.repo)
+        self.diff_view = DiffViewer(self, self.app)
         self.diff_view.size_hint_weight = EXPAND_BOTH
         self.diff_view.size_hint_align = 0.0, 0.0
         panes.part_content_set('right', self.diff_view)
 
-        # setup keyboard shortcuts
-        binds = KeyBindings(self, verbose=False)
-        binds.bind_add(('Control+r', 'F5'), self._binds_cb_refresh)
-        binds.bind_add('Control+o', self._binds_cb_open)
-        binds.bind_add('Control+q', self._binds_cb_quit)
-        binds.bind_add('Control+b', self._binds_cb_branches)
-        binds.bind_add('Control+p', self._binds_cb_pull)
-        binds.bind_add('Control+Shift+p', self._binds_cb_push)
-
-        self.resize(800, 600)
+        #
         self.show()
 
-    def repo_set(self, repo):
-        self.repo = repo
+    def update_all(self):
         self.update_header()
-        self.graph.populate(repo)
+        self.graph.populate(self.app.repo)
 
     def update_header(self):
+        repo = self.app.repo
+
         # update the branch selector
         try:
             self.branch_selector.clear()
-            for branch in self.repo.branches_names:
-                if branch == self.repo.current_branch:
+            for branch in repo.branches_names:
+                if branch == repo.current_branch:
                     self.branch_selector.item_add(branch, 'arrow_right',
                                                   ELM_ICON_STANDARD)
                 else:
                     self.branch_selector.item_add(branch)
-            self.branch_selector.text = self.repo.current_branch
+            self.branch_selector.text = repo.current_branch
             ic = Icon(self, standard='git-branch')
             self.branch_selector.content = ic
         except:
             self.branch_selector.text = 'Unknown'
 
         # update window title
-        self.title = '%s [%s]' % (self.repo.name, self.repo.current_branch)
+        self.title = '%s [%s]' % (repo.name, repo.current_branch)
 
         # update repo description
-        self.caption_label.text = self.repo.description or \
+        self.caption_label.text = repo.description or \
                                   'Unnamed repository; click to edit.'
 
         # update the status
-        if self.repo.status.is_merging:
+        if repo.status.is_merging:
             text = "<warning>MERGING</warning>"
-        elif self.repo.status.is_cherry:
+        elif repo.status.is_cherry:
             text = "<warning>CHERRY-PICKING</warning>"
-        elif self.repo.status.is_reverting:
+        elif repo.status.is_reverting:
             text = "<warning>REVERTING</warning>"
-        elif self.repo.status.is_bisecting:
+        elif repo.status.is_bisecting:
             text = "<warning>BISECTING</warning>"
-        elif self.repo.status.ahead == 1 and self.repo.status.is_clean:
+        elif repo.status.ahead == 1 and repo.status.is_clean:
             text = '<warning>Ahead by 1 commit</warning>'
-        elif self.repo.status.ahead > 1 and self.repo.status.is_clean:
-            text = '<warning>Ahead by {} commits</warning>'.format(self.repo.status.ahead)
-        elif self.repo.status.is_clean:
+        elif repo.status.ahead > 1 and repo.status.is_clean:
+            text = '<warning>Ahead by {} commits</warning>'.format(repo.status.ahead)
+        elif repo.status.is_clean:
             text = '<success>Status is clean!</success>'
         else:
             text = '<warning>Status is dirty !!!</warning>'
 
         self.status_label.text = text
-        self.status_label.tooltip_text_set(self.repo.status.textual)
+        self.status_label.tooltip_text_set(repo.status.textual)
 
     def branch_selected_cb(self, hoversel, item):
         def _switch_done_cb(success, err_msg=None):
             if success:
                 self.update_header()
-                self.graph.populate(self.repo)
+                self.graph.populate(self.app.repo)
             else:
                 ErrorPopup(self, 'Operation Failed', utf8_to_markup(err_msg))
 
-        self.repo.current_branch_set(item.text, _switch_done_cb)
+        self.app.repo.current_branch_set(item.text, _switch_done_cb)
 
     def show_commit(self, commit):
-        self.diff_view.commit_set(self.repo, commit)
-
-    def refresh(self):
-        def _refresh_done_cb(success):
-            self.update_header()
-            self.graph.populate(self.repo)
-        self.repo.refresh(_refresh_done_cb)
+        self.diff_view.commit_set(commit)
 
     def _binds_cb_refresh(self, src, key, event):
         self.refresh()
         return True
 
     def _binds_cb_open(self, src, key, event):
-        RepoSelector(self)
+        RepoSelector(self.app)
         return True
 
     def _binds_cb_quit(self, src, key, event):
@@ -581,13 +528,13 @@ class EgituWin(StandardWindow):
         return True
 
     def _binds_cb_branches(self, src, key, event):
-        BranchesDialog(self.repo, self)
+        BranchesDialog(self.app, self)
         return True
 
     def _binds_cb_push(self, src, key, event):
-        PushPopup(self, self.repo)
+        PushPopup(self, self.app)
         return True
     
     def _binds_cb_pull(self, src, key, event):
-        PullPopup(self, self.repo)
+        PullPopup(self, self.app)
         return True

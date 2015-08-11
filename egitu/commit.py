@@ -33,9 +33,8 @@ from egitu.utils import DiffedEntry, ErrorPopup, ConfirmPupup, \
 
 
 class DiscardDialog(ConfirmPupup):
-    def __init__(self, repo, win, files=[]):
-        self.win = win
-        self.repo = repo
+    def __init__(self, app, files=[]):
+        self.app = app
         self.files = files
 
         if files:
@@ -44,28 +43,27 @@ class DiscardDialog(ConfirmPupup):
         else:
             msg = 'This will <b>destroy ALL</b> the changes not committed !!!'
 
-        ConfirmPupup.__init__(self, win, msg=msg, ok_cb=self._confirm_cb)
+        ConfirmPupup.__init__(self, app.win, msg=msg, ok_cb=self._confirm_cb)
 
     def _confirm_cb(self):
-        self.repo.discard(self._discard_done_cb, self.files)
+        self.app.repo.discard(self._discard_done_cb, self.files)
 
     def _discard_done_cb(self, success, err_msg=None):
         self.delete()
         if success:
-            self.win.refresh()
+            self.app.win.update_all()
         else:
-            ErrorPopup(self, 'Operation Failed', utf8_to_markup(err_msg))
+            ErrorPopup(self.app.win, 'Operation Failed', utf8_to_markup(err_msg))
 
 
 class CommitDialog(DialogWindow):
-    def __init__(self, repo, win, revert_commit=None, cherrypick_commit=None):
-        self.repo = repo
-        self.win = win
+    def __init__(self, app, revert_commit=None, cherrypick_commit=None):
+        self.app = app
         self.confirmed = False
         self.revert_commit = revert_commit
         self.cherrypick_commit = cherrypick_commit
 
-        DialogWindow.__init__(self, win, 'Egitu', 'Egitu', 
+        DialogWindow.__init__(self, app.win, 'Egitu', 'Egitu', 
                               size=(500,500), autodel=True)
 
         vbox = Box(self, size_hint_weight=EXPAND_BOTH,
@@ -90,7 +88,7 @@ class CommitDialog(DialogWindow):
         if revert_commit or cherrypick_commit:
             ck = Check(vbox, state=True)
             ck.text = 'Automatically commit, in branch: %s' % \
-                      self.repo.current_branch
+                      app.repo.current_branch
             ck.callback_changed_add(lambda c: self.msg_entry.disabled_set(not c.state))
             vbox.pack_end(ck)
             ck.show()
@@ -153,12 +151,12 @@ class CommitDialog(DialogWindow):
 
         # load the diff
         if revert_commit:
-            repo.request_diff(self.diff_done_cb, revert=True,
-                              commit1=revert_commit)
+            app.repo.request_diff(self.diff_done_cb, revert=True,
+                                  commit1=revert_commit)
         elif cherrypick_commit:
-            repo.request_diff(self.diff_done_cb, commit1=cherrypick_commit)
+            app.repo.request_diff(self.diff_done_cb, commit1=cherrypick_commit)
         else:
-            repo.request_diff(self.diff_done_cb, only_staged=True)
+            app.repo.request_diff(self.diff_done_cb, only_staged=True)
 
     def diff_done_cb(self, lines, success):
         self.diff_entry.lines_set(lines)
@@ -170,25 +168,25 @@ class CommitDialog(DialogWindow):
         elif self.revert_commit:
             bt.text = 'Revert'
             self.confirmed = False
-            self.repo.revert(self.commit_done_cb, self.revert_commit,
-                             auto_commit=self.autocommit_chk.state, 
-                             commit_msg=markup_to_utf8(self.msg_entry.text))
+            self.app.repo.revert(self.commit_done_cb, self.revert_commit,
+                                 auto_commit=self.autocommit_chk.state, 
+                                 commit_msg=markup_to_utf8(self.msg_entry.text))
         elif self.cherrypick_commit:
             bt.text = 'Cherry-pick'
             self.confirmed = False
-            self.repo.cherrypick(self.commit_done_cb, self.cherrypick_commit,
-                                 auto_commit=self.autocommit_chk.state, 
-                                 commit_msg=markup_to_utf8(self.msg_entry.text))
+            self.app.repo.cherrypick(self.commit_done_cb, self.cherrypick_commit,
+                                     auto_commit=self.autocommit_chk.state, 
+                                     commit_msg=markup_to_utf8(self.msg_entry.text))
         else:
             bt.text = 'Commit'
             self.confirmed = False
-            self.repo.commit(self.commit_done_cb,
-                             markup_to_utf8(self.msg_entry.text))
+            self.app.repo.commit(self.commit_done_cb,
+                                 markup_to_utf8(self.msg_entry.text))
 
     def commit_done_cb(self, success, err_msg=None):
         if success:
             self.delete()
-            self.win.update_header()
-            self.win.graph.populate(self.repo)
+            self.app.win.update_header()
+            self.app.graph_reload()
         else:
             ErrorPopup(self, 'Operation Failed', utf8_to_markup(err_msg))

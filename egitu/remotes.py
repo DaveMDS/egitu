@@ -38,10 +38,10 @@ from egitu.utils import WaitPopup, ErrorPopup, \
 
 
 class RemotesDialog(DialogWindow):
-    def __init__(self, repo, win):
-        self.repo = repo
+    def __init__(self, app):
+        self.app = app
 
-        DialogWindow.__init__(self, win, 'egitu-remotes', 'Remotes',
+        DialogWindow.__init__(self, app.win, 'egitu-remotes', 'Remotes',
                               autodel=True, size=(600,400))
 
         # main vertical box (inside a padding frame)
@@ -119,7 +119,7 @@ class RemotesDialog(DialogWindow):
         hbox.show()
 
         bt = Button(hbox, text='Add')
-        bt.callback_clicked_add(lambda b: RemoteAddPopup(self, self.repo))
+        bt.callback_clicked_add(lambda b: RemoteAddPopup(self, self.app.repo))
         hbox.pack_end(bt)
         bt.show()
 
@@ -152,7 +152,7 @@ class RemotesDialog(DialogWindow):
         self.info_entry.part_text_set('guide', 'Choose a remote from the list.')
 
         self.remotes_list.clear()
-        for remote in self.repo.remotes:
+        for remote in self.app.repo.remotes:
             self.remotes_list.item_append(remote.name,
                                           Icon(self, standard='git-remote'))
         self.remotes_list.go()
@@ -160,10 +160,10 @@ class RemotesDialog(DialogWindow):
     @property
     def selected_remote(self):
         item = self.remotes_list.selected_item
-        return self.repo.remote_get_by_name(item.text) if item else None
+        return self.app.repo.remote_get_by_name(item.text) if item else None
 
     def _list_selected_cb(self, list, item):
-        remote = self.repo.remote_get_by_name(item.text)
+        remote = self.app.repo.remote_get_by_name(item.text)
         self.url_entry.text = remote.url
         self.fetch_entry.text = remote.fetch
         self.info_entry.text = None
@@ -174,7 +174,7 @@ class RemotesDialog(DialogWindow):
         remote = self.selected_remote
         if remote:
             self.wait_popup = WaitPopup(self, text='Fetching remote info...')
-            self.repo.request_remote_info(self._remote_info_cb, remote.name)
+            self.app.repo.request_remote_info(self._remote_info_cb, remote.name)
 
     def _remote_info_cb(self, success, info, err_msg=None):
         self.wait_popup.delete()
@@ -189,15 +189,15 @@ class RemotesDialog(DialogWindow):
             ErrorPopup(self, title='No remote selected',
                        msg='You must select a remote to delete.')
         else:
-            self.repo.remote_del(self._del_done_cb, item.text)
+            self.app.repo.remote_del(self._del_done_cb, item.text)
 
     def _del_done_cb(self, success, err_msg=None):
         self.restart_dialog()
 
     def _save_url_clicked_cb(self, btn):
-        self.repo.remote_url_set(self._save_done_cb,
-                                 self.selected_remote.name,
-                                 self.url_entry.text)
+        self.app.repo.remote_url_set(self._save_done_cb,
+                                     self.selected_remote.name,
+                                     self.url_entry.text)
 
     def _save_done_cb(self, success, err_msg=None):
         if success:

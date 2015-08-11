@@ -36,8 +36,8 @@ from egitu.utils import ComboBox, \
 
 
 class PushPullBase(Popup):
-    def __init__(self, parent, repo, title, icon_name):
-        self.repo = repo
+    def __init__(self, parent, app, title, icon_name):
+        self.app = app
 
         Popup.__init__(self, parent)
         self.part_text_set('title,text', title)
@@ -61,7 +61,7 @@ class PushPullBase(Popup):
 
         cb = ComboBox(self, icon=Icon(self, standard='git-remote'))
         cb.callback_selected_add(self.rbranch_populate)
-        for remote in self.repo.remotes:
+        for remote in app.repo.remotes:
             cb.item_append(remote.name, Icon(cb, standard='git-remote'))
         tb.pack(cb, 1, 1, 1, 1)
         cb.show()
@@ -83,7 +83,7 @@ class PushPullBase(Popup):
         lb.show()
 
         en = Entry(tb, disabled=True, single_line=True, scrollable=True,
-                   text=repo.current_branch,
+                   text=app.repo.current_branch,
                    size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
         tb.pack(en, 1, 3, 1, 1)
         en.show()
@@ -141,7 +141,7 @@ class PushPullBase(Popup):
         self.close_btn.disabled = False
 
     def autopopulate(self):
-        branch = self.repo.current_branch_instance
+        branch = self.app.repo.current_branch_instance
         if branch.is_tracking:
             self.remote_combo.text = branch.remote
             self.rbranch_combo.text = branch.remote_branch
@@ -156,7 +156,7 @@ class PushPullBase(Popup):
     def rbranch_populate(self, combo=None):
         self.rbranch_combo.clear()
         remote = self.remote_combo.text + '/'
-        for branch in self.repo.remote_branches_names:
+        for branch in self.app.repo.remote_branches_names:
             if branch.startswith(remote):
                 icon = Icon(self, standard='git-branch')
                 self.rbranch_combo.item_append(branch[len(remote):], icon)
@@ -194,28 +194,28 @@ class PushPullBase(Popup):
     def _action_done_cb(self, success, err_msg=None):
         self.stop_pulse()
         if success:
-            self.parent.refresh()
+            self.app.win.update_all()
             self.output_entry.entry_insert('<success>Operation successfully completed.</success><br>')
         else:
             self.output_entry.entry_insert('<failure>Error! Something goes wrong.</failure><br>')
 
 
 class PullPopup(PushPullBase):
-    def __init__(self, parent, repo):
-        PushPullBase.__init__(self, parent, repo,
+    def __init__(self, parent, app):
+        PushPullBase.__init__(self, parent, app,
                               'Fetch changes (pull)', 'git-pull')
         self.remote_combo.guide = 'Where to fetch from'
         self.rbranch_combo.guide = 'The remote branch to fetch'
         self.action_btn.text = 'Pull'
     
     def action(self, remote, rbranch, lbranch):
-        self.repo.pull(self._action_done_cb, self._action_progress_cb,
-                       remote, rbranch, lbranch)
+        self.app.repo.pull(self._action_done_cb, self._action_progress_cb,
+                           remote, rbranch, lbranch)
 
 
 class PushPopup(PushPullBase):
-    def __init__(self, parent, repo):
-        PushPullBase.__init__(self, parent, repo,
+    def __init__(self, parent, app):
+        PushPullBase.__init__(self, parent, app,
                               'Push changes to the remote', 'git-push')
         self.remote_combo.guide = 'Where to push to'
         self.rbranch_combo.guide = 'The remote branch to push to'
@@ -228,6 +228,6 @@ class PushPopup(PushPullBase):
         self.dryrun_chk = ck
 
     def action(self, remote, rbranch, lbranch):
-        self.repo.push(self._action_done_cb, self._action_progress_cb,
-                       remote, rbranch, lbranch, dry=self.dryrun_chk.state)
+        self.app.repo.push(self._action_done_cb, self._action_progress_cb,
+                           remote, rbranch, lbranch, dry=self.dryrun_chk.state)
 

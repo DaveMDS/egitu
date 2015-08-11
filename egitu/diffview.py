@@ -36,8 +36,8 @@ from egitu.commit import CommitDialog, DiscardDialog
 
 
 class DiffViewer(Table):
-    def __init__(self, parent, repo):
-        self.repo = repo
+    def __init__(self, parent, app):
+        self.app = app
         self.commit = None
         self.win = parent
 
@@ -87,31 +87,30 @@ class DiffViewer(Table):
         if 'revert' in buttons:
             bt = Button(self, text='Revert')
             bt.callback_clicked_add(lambda b: \
-                CommitDialog(self.repo, self.win, revert_commit=self.commit))
+                CommitDialog(self.app, revert_commit=self.commit))
             self.action_box.pack_end(bt)
             bt.show()
         if 'cherrypick' in buttons:
             bt = Button(self, text='Cherry-pick')
             bt.callback_clicked_add(lambda b: \
-                CommitDialog(self.repo, self.win, cherrypick_commit=self.commit))
+                CommitDialog(self.app, cherrypick_commit=self.commit))
             self.action_box.pack_end(bt)
             bt.show()
         if 'commit' in buttons:
             bt = Button(self, text='Commit')
             bt.callback_clicked_add(lambda b: \
-                CommitDialog(self.repo, self.win))
+                CommitDialog(self.app))
             self.action_box.pack_end(bt)
             bt.show()
         if 'discard' in buttons:
             bt = Button(self, text='Discard')
             bt.callback_clicked_add(lambda b: \
-                DiscardDialog(self.repo, self.win,
+                DiscardDialog(self.app,
                               [it.text for it in self.diff_list.selected_items]))
             self.action_box.pack_end(bt)
             bt.show()
 
-    def commit_set(self, repo, commit):
-        self.repo = repo
+    def commit_set(self, commit):
         self.commit = commit
 
         self.diff_list.clear()
@@ -125,7 +124,7 @@ class DiffViewer(Table):
             if commit.message:
                 msg = commit.message.strip().replace('\n', '<br>')
                 text += u'<br><br>{}'.format(msg)
-            repo.request_changes(self.changes_done_cb, commit1=commit)
+            self.app.repo.request_changes(self.changes_done_cb, commit1=commit)
             self.update_action_buttons(['revert', 'cherrypick'])
         else:
             # or the fake 'local changes' commit
@@ -137,7 +136,7 @@ class DiffViewer(Table):
         self.picture.email_set(commit.author_email)
 
     def show_local_status(self):
-        sortd = sorted(self.repo.status.changes, key=lambda c: c[2])
+        sortd = sorted(self.app.repo.status.changes, key=lambda c: c[2])
         for mod, staged, name, new_name in sortd:
             icon = Icon(self, standard='git-mod-'+mod)
 
@@ -155,15 +154,15 @@ class DiffViewer(Table):
     def stage_unstage_cb(self, check):
         def stage_unstage_done_cb(success):
             self.win.update_header()
-            for mod, staged, name, new_name in self.repo.status.changes:
+            for mod, staged, name, new_name in self.app.repo.status.changes:
                 if name == check.data['path']:
                     ic = check.data['icon']
                     ic.standard = 'git-mod-' + mod
 
         if check.state is True:
-            self.repo.stage_file(stage_unstage_done_cb, check.data['path'])
+            self.app.repo.stage_file(stage_unstage_done_cb, check.data['path'])
         else:
-            self.repo.unstage_file(stage_unstage_done_cb, check.data['path'])
+            self.app.repo.unstage_file(stage_unstage_done_cb, check.data['path'])
 
     def refresh_diff(self):
         if self.diff_list.selected_item:
@@ -183,7 +182,7 @@ class DiffViewer(Table):
 
     def change_selected_cb(self, li, item):
         mod, path = item.data['change']
-        self.repo.request_diff(self.diff_done_cb, commit1=self.commit, path=path)
+        self.app.repo.request_diff(self.diff_done_cb, commit1=self.commit, path=path)
         self.diff_entry.line_wrap = \
             ELM_WRAP_MIXED if options.diff_text_wrap else ELM_WRAP_NONE
         self.diff_entry.text = '<info>Loading diff, please wait...</info>'

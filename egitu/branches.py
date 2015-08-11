@@ -40,11 +40,10 @@ from egitu.utils import ErrorPopup, \
 
 
 class BranchesDialog(DialogWindow):
-    def __init__(self, repo, win):
-        self.repo = repo
-        self.win = win
+    def __init__(self, app):
+        self.app = app
 
-        DialogWindow.__init__(self, win, 'Egitu-branches', 'Branches',
+        DialogWindow.__init__(self, app.win, 'Egitu-branches', 'Branches',
                               size=(500,500), autodel=True)
 
         # main vertical box (inside a padding frame
@@ -76,7 +75,7 @@ class BranchesDialog(DialogWindow):
         hbox.show()
 
         bt = Button(self, text='Create')
-        bt.callback_clicked_add(lambda b: CreateBranchPopup(self, self.repo))
+        bt.callback_clicked_add(lambda b: CreateBranchPopup(self, app))
         hbox.pack_end(bt)
         bt.show()
 
@@ -103,8 +102,8 @@ class BranchesDialog(DialogWindow):
 
     def populate(self):
         self.branches_list.clear()
-        for bname in self.repo.branches_names:
-            b = self.repo.branches[bname]
+        for bname in self.app.repo.branches_names:
+            b = self.app.repo.branches[bname]
             if b.is_tracking:
                 label = '{} → {}/{}'.format(b.name, b.remote, b.remote_branch)
             else:
@@ -117,14 +116,14 @@ class BranchesDialog(DialogWindow):
     def _delete_btn_cb(self, btn):
         item = self.branches_list.selected_item
         if item:
-            DeleteBranchPopup(self, self.repo, item.data['Branch'])
+            DeleteBranchPopup(self, self.app, item.data['Branch'])
         else:
             ErrorPopup(self, msg='You must select a branch to delete')
 
 
 class CreateBranchPopup(Popup):
-    def __init__(self, parent, repo, branch=None):
-        self.repo = repo
+    def __init__(self, parent, app, branch=None):
+        self.app = app
 
         Popup.__init__(self, parent)
         self.part_text_set('title,text', 'Create a new local branch')
@@ -228,18 +227,18 @@ class CreateBranchPopup(Popup):
 
         # local branches
         if not only_tracking:
-            for bname in self.repo.branches_names:
+            for bname in self.app.repo.branches_names:
                 ic = Icon(self, standard='git-branch')
                 self.rev_list.item_append(bname, ic)
 
         # remote tracking branches
-        for bname in self.repo.remote_branches_names:
+        for bname in self.app.repo.remote_branches_names:
             ic = Icon(self, standard='git-branch')
             self.rev_list.item_append(bname, ic)
 
         # tags
         if not only_tracking:
-            for tag in self.repo.tags:
+            for tag in self.app.repo.tags:
                 self.rev_list.item_append(tag, Icon(self, standard='git-tag'))
 
         self.rev_list.go()
@@ -263,21 +262,21 @@ class CreateBranchPopup(Popup):
             return
         rev = self.rev_list.selected_item.text
 
-        self.repo.branch_create(self._branch_created_cb, name, rev,
-                                track=True if self.type_radio.value else False)
+        self.app.repo.branch_create(self._branch_created_cb, name, rev,
+                                 track=True if self.type_radio.value else False)
 
     def _branch_created_cb(self, success, err_msg=None):
         if success:
             self.parent.populate() # update branches dialog list
-            self.parent.win.update_header() # update main win header
+            self.app.win.update_header() # update main win header
             self.delete()
         else:
             ErrorPopup(self.parent, msg=err_msg)
 
 
 class DeleteBranchPopup(Popup):
-    def __init__(self, parent, repo, branch):
-        self.repo = repo
+    def __init__(self, parent, app, branch):
+        self.app = app
         self.branch = branch
 
         Popup.__init__(self, parent)
@@ -329,13 +328,13 @@ class DeleteBranchPopup(Popup):
         self.show()
 
     def _delete_btn_cb(self, btn):
-        self.repo.branch_delete(self._branch_deleted_cb, self.branch.name,
-                                force=self.force_chk.state)
+        self.app.repo.branch_delete(self._branch_deleted_cb, self.branch.name,
+                                    force=self.force_chk.state)
 
     def _branch_deleted_cb(self, success, err_msg=None):
         if success:
             self.parent.populate() # update branches dialog list
-            self.parent.win.update_header() # update main win header
+            self.app.win.update_header() # update main win header
             self.delete()
         else:
             ErrorPopup(self, msg=err_msg)
