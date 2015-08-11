@@ -89,6 +89,7 @@ Powerfull <b>branches</b> management<br>
 <b>Revert</b> commits<br>
 <b>Cherry-pick</b> commits<br>
 <b>Push/Pull</b> to/from remote repository<br>
+<b>Merge</b> any local branch in the current one<br>
 <b>Discard</b> not committed changes<br>
 Manage repository <b>remotes</b><br>
 Cool <b>Gravatar</b> integration<br>

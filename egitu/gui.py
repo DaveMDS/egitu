@@ -483,7 +483,7 @@ class EgituWin(StandardWindow):
 
         # update the status
         if repo.status.is_merging:
-            text = "<warning>MERGING</warning>"
+            text = "<warning>!! MERGING !!</warning>"
         elif repo.status.is_cherry:
             text = "<warning>CHERRY-PICKING</warning>"
         elif repo.status.is_reverting:

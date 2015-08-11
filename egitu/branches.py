@@ -22,7 +22,7 @@ from __future__ import absolute_import, print_function
 
 from efl.evas import Rectangle
 from efl.elementary.window import DialogWindow
-from efl.elementary.entry import Entry
+from efl.elementary.entry import Entry, utf8_to_markup
 from efl.elementary.box import Box
 from efl.elementary.button import Button
 from efl.elementary.list import List
@@ -42,6 +42,7 @@ from egitu.utils import ErrorPopup, \
 class BranchesDialog(DialogWindow):
     def __init__(self, app):
         self.app = app
+        self.selected_branch = None
 
         DialogWindow.__init__(self, app.win, 'Egitu-branches', 'Branches',
                               size=(500,500), autodel=True)
@@ -64,6 +65,7 @@ class BranchesDialog(DialogWindow):
 
         # list
         li = List(self, size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        li.callback_selected_add(self._list_selected_cb)
         vbox.pack_end(li)
         li.show()
         self.branches_list = li
@@ -80,13 +82,19 @@ class BranchesDialog(DialogWindow):
         bt.show()
 
         bt = Button(self, text='Delete')
-        bt.callback_clicked_add(self._delete_btn_cb)
+        bt.callback_clicked_add(lambda b: DeleteBranchPopup(self, self.app,
+                                                          self.selected_branch))
         hbox.pack_end(bt)
         bt.show()
+        self.delete_btn = bt
 
-        bt = Button(self, text='Rename (TODO)')
+        ic = Icon(self, standard='git-merge')
+        bt = Button(self, text='Merge', content=ic)
+        bt.callback_clicked_add(lambda b: MergeBranchPopup(self, app, 
+                                                         self.selected_branch))
         hbox.pack_end(bt)
         bt.show()
+        self.merge_btn = bt
 
         sep = Separator(self, size_hint_expand=EXPAND_HORIZ)
         hbox.pack_end(sep)
@@ -108,17 +116,111 @@ class BranchesDialog(DialogWindow):
                 label = '{} → {}/{}'.format(b.name, b.remote, b.remote_branch)
             else:
                 label = bname
+            if bname == self.app.repo.current_branch:
+                end = Icon(self, standard='arrow-left')
+                selected = True
+            else:
+                end = None
+                selected = False
             icon = Icon(self, standard='git-branch')
-            it = self.branches_list.item_append(label, icon)
-            it.data['Branch'] = b
-        self.branches_list.go()
+            it = self.branches_list.item_append(label, icon, end)
+            it.selected = selected
 
-    def _delete_btn_cb(self, btn):
-        item = self.branches_list.selected_item
-        if item:
-            DeleteBranchPopup(self, self.app, item.data['Branch'])
+        self.branches_list.go()
+    
+    def _list_selected_cb(self, li, it):
+        self.selected_branch = it.text
+        if self.selected_branch == self.app.repo.current_branch:
+            self.delete_btn.disabled = True
+            self.merge_btn.disabled = True
         else:
-            ErrorPopup(self, msg='You must select a branch to delete')
+            self.delete_btn.disabled = False
+            self.merge_btn.disabled = False
+
+
+class MergeBranchPopup(Popup):
+    def __init__(self, parent, app, branch):
+        self.app = app
+        self.branch = branch
+
+        Popup.__init__(self, parent)
+        self.part_text_set('title,text', 'Merge branch')
+        self.part_content_set('title,icon', Icon(self, standard='git-merge'))
+
+        box = Box(self)
+        self.content = box
+        box.show()
+
+        # sep
+        sep = Separator(self, horizontal=True, size_hint_expand=EXPAND_BOTH)
+        box.pack_end(sep)
+        sep.show()
+
+        # info entry
+        en = Entry(self, editable=False, 
+                   size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        en.text = 'We are going to merge branch:<br><hilight>%s</hilight><br><br>' \
+                  'into current branch:<br><hilight>%s</hilight><br><br>' \
+                  'Note: I will not perform a commit for you, you will need to commit after the merge.' % \
+                  (self.branch, app.repo.current_branch)
+        box.pack_end(en)
+        en.show()
+
+        # fast forward ?
+        rdg = Radio(self, state_value=0, text='Fast Forward when possible',
+                    size_hint_align=(0.0, 0.5))
+        box.pack_end(rdg)
+        rdg.show()
+        self.ff_rdg = rdg
+
+        rd = Radio(self, state_value=1, text='Never Fast Forward',
+                   size_hint_align=(0.0, 0.5))
+        rd.group_add(rdg)
+        box.pack_end(rd)
+        rd.show()
+
+        rd = Radio(self, state_value=2, text='Fast Forward Only',
+                   size_hint_align=(0.0, 0.5))
+        rd.group_add(rdg)
+        box.pack_end(rd)
+        rd.show()
+
+        # sep
+        sep = Separator(self, horizontal=True, size_hint_expand=EXPAND_BOTH)
+        box.pack_end(sep)
+        sep.show()
+
+        # buttons
+        bt = Button(self, text='Close')
+        bt.callback_clicked_add(lambda b: self.delete())
+        self.part_content_set('button1', bt)
+        bt.show()
+
+        ic = Icon(self, standard='git-merge')
+        bt = Button(self, text='Merge', content=ic)
+        bt.callback_clicked_add(self._merge_clicked_cb)
+        self.part_content_set('button2', bt)
+        bt.show()
+
+        #
+        self.show()
+    
+    def _merge_clicked_cb(self, btn):
+        if self.ff_rdg.value == 0:
+            ff = 'ff'
+        elif self.ff_rdg.value == 1:
+            ff = 'no-ff'
+        elif self.ff_rdg.value == 2:
+            ff = 'ff-only'
+        self.app.repo.branch_merge(self._merge_done_cb, self.branch, ff)
+
+    def _merge_done_cb(self, success, err_msg=None):
+        self.app.action_update_header()
+        if success:
+            self.delete()
+            self.app.action_update_dag()
+        else:
+            ErrorPopup(self.parent, msg=utf8_to_markup(err_msg))
 
 
 class CreateBranchPopup(Popup):
@@ -127,8 +229,7 @@ class CreateBranchPopup(Popup):
 
         Popup.__init__(self, parent)
         self.part_text_set('title,text', 'Create a new local branch')
-        self.part_content_set('title,icon',
-                              Icon(self, standard='git-branch'))
+        self.part_content_set('title,icon', Icon(self, standard='git-branch'))
 
         # main table
         # TODO padding should be (4,4) but it seems buggy for colspan > 1
@@ -297,7 +398,7 @@ class DeleteBranchPopup(Popup):
         # label
         en = Entry(self, editable=False,
                    text='%s<br><br><hilight>%s</hilight><br>' % (
-                        'Are you sure you want to delete this branch?', branch.name),
+                        'Are you sure you want to delete this branch?', branch),
                    size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
         box.pack_end(en)
         en.show()
@@ -328,7 +429,7 @@ class DeleteBranchPopup(Popup):
         self.show()
 
     def _delete_btn_cb(self, btn):
-        self.app.repo.branch_delete(self._branch_deleted_cb, self.branch.name,
+        self.app.repo.branch_delete(self._branch_deleted_cb, self.branch,
                                     force=self.force_chk.state)
 
     def _branch_deleted_cb(self, success, err_msg=None):

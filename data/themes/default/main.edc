@@ -441,6 +441,7 @@ collections {
    IC("git-push", "push.png")
    IC("git-remote", "remote.png")
    IC("git-commit", "commit.png")
+   IC("git-merge", "merge.png")
    IC("git-tag", "tag.png")
    IC("git-mod-A", "mod_a.png")
    IC("git-mod-D", "mod_d.png")

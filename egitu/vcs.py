@@ -625,6 +625,20 @@ class Repository(object):
         """
         raise NotImplementedError("branch_delete() not implemented in backend")
 
+    def branch_merge(self, done_cb, name, fast_forward):
+        """
+        Merge the given branch in the current one.
+        
+        Args:
+            done_cb:
+                Function to call when the operation finish.
+                signature: cb(success, err_msg=None)
+            name:
+                The name of the branch to merge
+            fast_forward:
+                Must be one of: 'ff', 'no-ff' or 'ff-only'
+        """
+        raise NotImplementedError("branch_merge() not implemented in backend")
 
 ### Git backend ###############################################################
 class GitCmd(Exe):
@@ -1118,4 +1132,14 @@ class GitBackend(Repository):
                 done_cb(success, '\n'.join(lines))
 
         cmd = 'branch %s %s' % ('-D' if force else '-d', name)
+        GitCmd(self._url, cmd, _cmd_done_cb)
+
+    def branch_merge(self, done_cb, name, fast_forward):
+        def _cmd_done_cb(lines, success):
+            if success:
+                self.refresh(done_cb)
+            else:
+                done_cb(success, '\n'.join(lines))
+
+        cmd = 'merge --no-commit --%s %s' % (fast_forward, name)
         GitCmd(self._url, cmd, _cmd_done_cb)
