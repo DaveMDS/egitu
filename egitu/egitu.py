@@ -22,7 +22,6 @@ from __future__ import absolute_import
 
 import os
 import sys
-import argparse
 
 from efl import elementary as elm
 from efl.elementary.theme import theme_extension_add
@@ -38,7 +37,6 @@ from egitu.pushpull import PullPopup, PushPopup
 
 class EgituApp(object):
     def __init__(self, args):
-
         self.repo = None
         self.win = EgituWin(self)
         self.win.populate()
@@ -53,7 +51,7 @@ class EgituApp(object):
         binds.bind_add('Control+Shift+p', self.action_push)
 
         # try to load a repo, from command-line or cwd (else show the RepoSelector)
-        if not self.try_to_load(args.repo or os.getcwd()):
+        if not self.try_to_load(os.path.abspath(args[0]) if args else os.getcwd()):
             RepoSelector(self)
 
     def try_to_load(self, path):
@@ -107,16 +105,6 @@ class EgituApp(object):
 
 def main():
 
-    # parse command line arguments
-    parser = argparse.ArgumentParser(description='Efl GIT GUI')
-    parser.add_argument('--repo', default=None)
-    # parser.add_argument('integers', metavar='N', type=int, nargs='+',
-                   # help='an integer for the accumulator')
-    # parser.add_argument('--sum', dest='accumulate', action='store_const',
-                   # const=sum, default=max,
-                   # help='sum the integers (default: find the max)')
-    args = parser.parse_args()
-
     # load config and create necessary folders
     options.load()
     if not os.path.exists(config_path):
@@ -127,7 +115,7 @@ def main():
     theme_extension_add(theme_file_get())
 
     # Egitu
-    EgituApp(args)
+    EgituApp(sys.argv[1:])
 
     # enter the mainloop
     elm.run()
