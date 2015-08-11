@@ -189,4 +189,5 @@ class CommitDialog(DialogWindow):
             self.app.action_update_header()
             self.app.action_update_dag()
         else:
+            self.app.action_reload_repo()
             ErrorPopup(self, 'Operation Failed', utf8_to_markup(err_msg))
