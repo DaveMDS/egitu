@@ -73,15 +73,19 @@ class EgituApp(object):
         else:
             RepoSelector(self)
 
-    def graph_reload(self):
-        self.win.graph.populate(self.repo)
 
     def action_reload_repo(self, *args):
         self.repo.refresh(self._reload_done_cb)
     
     def _reload_done_cb(self, success, err_msg=None):
         self.win.update_all()
+
+    def action_update_dag(self, *args):
+        self.win.graph.populate(self.repo)
     
+    def action_update_header(self, *args):
+        self.win.update_header()
+
     def action_open(self, *args):
         RepoSelector(self)
 
@@ -102,6 +106,7 @@ class EgituApp(object):
     
     def action_push(self, *args):
         PushPopup(self.win, self)
+
 
 def main():
 

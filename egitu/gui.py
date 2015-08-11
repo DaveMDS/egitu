@@ -234,7 +234,7 @@ class MainMenuButton(Button):
 
     def _item_check_opts_cb(self, menu, item, opt):
         setattr(options, opt, not item.content.state)
-        self.app.graph_reload()
+        self.app.action_update_dag()
 
     def _item_gravatar_cb(self, menu, item):
         if options.gravatar_default != item.text:

@@ -186,7 +186,7 @@ class CommitDialog(DialogWindow):
     def commit_done_cb(self, success, err_msg=None):
         if success:
             self.delete()
-            self.app.win.update_header()
-            self.app.graph_reload()
+            self.app.action_update_header()
+            self.app.action_update_dag()
         else:
             ErrorPopup(self, 'Operation Failed', utf8_to_markup(err_msg))

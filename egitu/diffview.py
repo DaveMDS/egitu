@@ -153,7 +153,7 @@ class DiffViewer(Table):
 
     def stage_unstage_cb(self, check):
         def stage_unstage_done_cb(success):
-            self.win.update_header()
+            self.app.action_update_header()
             for mod, staged, name, new_name in self.app.repo.status.changes:
                 if name == check.data['path']:
                     ic = check.data['icon']

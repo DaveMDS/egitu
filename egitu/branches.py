@@ -268,7 +268,7 @@ class CreateBranchPopup(Popup):
     def _branch_created_cb(self, success, err_msg=None):
         if success:
             self.parent.populate() # update branches dialog list
-            self.app.win.update_header() # update main win header
+            self.app.action_update_header() # update main win header
             self.delete()
         else:
             ErrorPopup(self.parent, msg=err_msg)
@@ -334,7 +334,7 @@ class DeleteBranchPopup(Popup):
     def _branch_deleted_cb(self, success, err_msg=None):
         if success:
             self.parent.populate() # update branches dialog list
-            self.app.win.update_header() # update main win header
+            self.app.action_update_header() # update main win header
             self.delete()
         else:
             ErrorPopup(self, msg=err_msg)
