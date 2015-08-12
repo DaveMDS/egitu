@@ -27,13 +27,14 @@ import glob
 from datetime import datetime
 from xdg.BaseDirectory import xdg_config_home, xdg_cache_home
 
-from efl.evas import EVAS_HINT_EXPAND, EVAS_HINT_FILL
+from efl.evas import Rectangle, EVAS_HINT_EXPAND, EVAS_HINT_FILL
 from efl.ecore import FileDownload, Exe
 from efl.elementary.photo import Photo
 from efl.elementary.popup import Popup
 from efl.elementary.button import Button
 from efl.elementary.box import Box
 from efl.elementary.progressbar import Progressbar
+from efl.elementary.fileselector import Fileselector
 from efl.elementary.label import Label
 from efl.elementary.icon import Icon
 from efl.elementary.hover import Hover, ELM_HOVER_AXIS_VERTICAL
@@ -43,6 +44,10 @@ from efl.elementary.background import Background
 from efl.elementary.frame import Frame
 from efl.elementary.entry import Entry, utf8_to_markup, \
     ELM_WRAP_NONE, ELM_WRAP_MIXED
+from efl.elementary.window import DialogWindow
+from efl.elementary.separator import Separator
+
+from egitu import __version__
 
 
 EXPAND_BOTH = EVAS_HINT_EXPAND, EVAS_HINT_EXPAND
@@ -484,6 +489,70 @@ class FolderSelector(Fileselector):
 
     def delete(self):
         self.popup.delete()
+
+
+class AboutWin(DialogWindow):
+    def __init__(self, parent):
+        DialogWindow.__init__(self, parent, 'egitu-info', 'Egitu',
+                              autodel=True)
+
+        fr = Frame(self, style='pad_large', size_hint_expand=EXPAND_BOTH,
+                   size_hint_align=FILL_BOTH)
+        self.resize_object_add(fr)
+        fr.show()
+
+        hbox = Box(self, horizontal=True, padding=(12,12))
+        fr.content = hbox
+        hbox.show()
+
+        vbox = Box(self, align=(0.0,0.0), padding=(6,6),
+                   size_hint_expand=EXPAND_VERT, size_hint_fill=FILL_VERT)
+        hbox.pack_end(vbox)
+        vbox.show()
+
+        # icon + version
+        ic = Icon(self, standard='egitu', size_hint_min=(64,64))
+        vbox.pack_end(ic)
+        ic.show()
+
+        lb = Label(self, text='Version: %s' % __version__)
+        vbox.pack_end(lb)
+        lb.show()
+
+        sep = Separator(self, horizontal=True)
+        vbox.pack_end(sep)
+        sep.show()
+
+        # buttons
+        bt = Button(self, text='Egitu', size_hint_fill=FILL_HORIZ)
+        bt.callback_clicked_add(lambda b: self.entry.text_set(INFO))
+        vbox.pack_end(bt)
+        bt.show()
+
+        bt = Button(self, text='Website',size_hint_align=FILL_HORIZ)
+        bt.callback_clicked_add(lambda b: xdg_open(HOMEPAGE))
+        vbox.pack_end(bt)
+        bt.show()
+
+        bt = Button(self, text='Authors', size_hint_align=FILL_HORIZ)
+        bt.callback_clicked_add(lambda b: self.entry.text_set(AUTHORS))
+        vbox.pack_end(bt)
+        bt.show()
+
+        bt = Button(self, text='License', size_hint_align=FILL_HORIZ)
+        bt.callback_clicked_add(lambda b: self.entry.text_set(LICENSE))
+        vbox.pack_end(bt)
+        bt.show()
+
+        # main text
+        self.entry = Entry(self, editable=False, scrollable=True, text=INFO,
+                           size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        self.entry.callback_anchor_clicked_add(lambda e,i: xdg_open(i.name))
+        hbox.pack_end(self.entry)
+        self.entry.show()
+
+        self.resize(400, 200)
+        self.show()
 
 
 class KeyBindings(object):

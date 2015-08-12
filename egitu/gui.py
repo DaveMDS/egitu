@@ -24,12 +24,11 @@ import os
 
 from efl import elementary as elm
 from efl.evas import Rectangle
-from efl.elementary.window import StandardWindow, DialogWindow
+from efl.elementary.window import StandardWindow
 from efl.elementary.box import Box
 from efl.elementary.button import Button
 from efl.elementary.check import Check
 from efl.elementary.entry import Entry, utf8_to_markup
-from efl.elementary.fileselector import Fileselector
 from efl.elementary.hoversel import Hoversel
 from efl.elementary.icon import Icon, ELM_ICON_STANDARD
 from efl.elementary.label import Label
@@ -40,19 +39,15 @@ from efl.elementary.popup import Popup
 from efl.elementary.scroller import Scroller
 from efl.elementary.table import Table
 from efl.elementary.frame import Frame
-from efl.elementary.separator import Separator
 
 from egitu.utils import options, GravatarPict, ErrorPopup, FolderSelector, \
     recent_history_get, recent_history_push, \
-    EXPAND_BOTH, EXPAND_HORIZ, EXPAND_VERT, FILL_BOTH, FILL_HORIZ, FILL_VERT, \
-    INFO, HOMEPAGE, AUTHORS, LICENSE, xdg_open
+    EXPAND_BOTH, EXPAND_HORIZ, EXPAND_VERT, FILL_BOTH, FILL_HORIZ, FILL_VERT
 from egitu.dagview import DagGraph
 from egitu.diffview import DiffViewer
 from egitu.remotes import RemotesDialog
 from egitu.branches import BranchesDialog
 from egitu.pushpull import PullPopup, PushPopup
-from egitu.vcs import repo_factory
-from egitu import __version__
 
 
 class RepoSelector(Popup):
@@ -228,70 +223,6 @@ class MainMenuButton(Button):
     def _item_font_size_cb(self, menu, item):
         options.diff_font_size = int(item.text)
         self.app.win.diff_view.refresh_diff()
-
-
-class InfoWin(DialogWindow):
-    def __init__(self, parent):
-        DialogWindow.__init__(self, parent, 'egitu-info', 'Egitu',
-                              autodel=True)
-
-        fr = Frame(self, style='pad_large', size_hint_expand=EXPAND_BOTH,
-                   size_hint_align=FILL_BOTH)
-        self.resize_object_add(fr)
-        fr.show()
-
-        hbox = Box(self, horizontal=True, padding=(12,12))
-        fr.content = hbox
-        hbox.show()
-
-        vbox = Box(self, align=(0.0,0.0), padding=(6,6),
-                   size_hint_expand=EXPAND_VERT, size_hint_fill=FILL_VERT)
-        hbox.pack_end(vbox)
-        vbox.show()
-
-        # icon + version
-        ic = Icon(self, standard='egitu', size_hint_min=(64,64))
-        vbox.pack_end(ic)
-        ic.show()
-
-        lb = Label(self, text='Version: %s' % __version__)
-        vbox.pack_end(lb)
-        lb.show()
-
-        sep = Separator(self, horizontal=True)
-        vbox.pack_end(sep)
-        sep.show()
-
-        # buttons
-        bt = Button(self, text='Egitu', size_hint_fill=FILL_HORIZ)
-        bt.callback_clicked_add(lambda b: self.entry.text_set(INFO))
-        vbox.pack_end(bt)
-        bt.show()
-
-        bt = Button(self, text='Website',size_hint_align=FILL_HORIZ)
-        bt.callback_clicked_add(lambda b: xdg_open(HOMEPAGE))
-        vbox.pack_end(bt)
-        bt.show()
-
-        bt = Button(self, text='Authors', size_hint_align=FILL_HORIZ)
-        bt.callback_clicked_add(lambda b: self.entry.text_set(AUTHORS))
-        vbox.pack_end(bt)
-        bt.show()
-
-        bt = Button(self, text='License', size_hint_align=FILL_HORIZ)
-        bt.callback_clicked_add(lambda b: self.entry.text_set(LICENSE))
-        vbox.pack_end(bt)
-        bt.show()
-
-        # main text
-        self.entry = Entry(self, editable=False, scrollable=True, text=INFO,
-                           size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
-        self.entry.callback_anchor_clicked_add(lambda e,i: xdg_open(i.name))
-        hbox.pack_end(self.entry)
-        self.entry.show()
-
-        self.resize(400, 200)
-        self.show()
 
 
 class EditableDescription(Entry):

@@ -26,10 +26,10 @@ import sys
 from efl import elementary as elm
 from efl.elementary.theme import theme_extension_add
 from egitu.utils import options, config_path, theme_file_get, KeyBindings
-from egitu.gui import EgituWin, RepoSelector, InfoWin
+from egitu.gui import EgituWin, RepoSelector
 
 from egitu.vcs import repo_factory
-from egitu.utils  import recent_history_push
+from egitu.utils  import recent_history_push, AboutWin
 from egitu.branches import BranchesDialog
 from egitu.remotes import RemotesDialog
 from egitu.pushpull import PullPopup, PushPopup
@@ -93,7 +93,7 @@ class EgituApp(object):
         elm.exit()
 
     def action_about(self, *args):
-        InfoWin(self.win)
+        AboutWin(self.win)
 
     def action_branches(self, *args):
         BranchesDialog(self)
