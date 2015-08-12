@@ -10,6 +10,7 @@ EFL Git user interface
 * Edit repository **description**
 * Change current **branch**
 * Powerfull **branches** management
+* **Clone** local or remote URL
 * **Stage/unstage** files
 * **Commit** staged changes
 * **Revert** commits (optionally autocommit the revert)

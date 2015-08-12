@@ -33,6 +33,7 @@ from egitu.utils  import recent_history_push, AboutWin
 from egitu.branches import BranchesDialog
 from egitu.remotes import RemotesDialog
 from egitu.pushpull import PullPopup, PushPopup
+from egitu.gui import ClonePopup
 
 
 class EgituApp(object):
@@ -49,6 +50,7 @@ class EgituApp(object):
         binds.bind_add('Control+b', self.action_branches)
         binds.bind_add('Control+p', self.action_pull)
         binds.bind_add('Control+Shift+p', self.action_push)
+        binds.bind_add('Control+c', self.action_clone)
 
         # try to load a repo, from command-line or cwd (else show the RepoSelector)
         if not self.try_to_load(os.path.abspath(args[0]) if args else os.getcwd()):
@@ -106,6 +108,9 @@ class EgituApp(object):
     
     def action_push(self, *args):
         PushPopup(self.win, self)
+
+    def action_clone(self, *args):
+        ClonePopup(self.win, self)
 
 
 def main():

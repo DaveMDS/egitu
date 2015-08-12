@@ -89,6 +89,7 @@ View the <b>diff</b> of each revision<br>
 Edit repository <b>description</b><br>
 Change current <b>branch</b><br>
 Powerfull <b>branches</b> management<br>
+<b>Clone</b> local or remote URL<br>
 <b>Stage/unstage</b> files<br>
 <b>Commit</b> staged changes<br>
 <b>Revert</b> commits<br>
@@ -106,6 +107,7 @@ Ctrl+O  open a new repository<br>
 Ctrl+P  Pull<br>
 Ctrl+Shift+P  Push<br>
 Ctrl+B  branches manager<br>
+Ctrl+C  clone<br>
 Ctrl+Q  quit egitu<br>
 </align>
 """

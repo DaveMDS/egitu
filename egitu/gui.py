@@ -28,7 +28,7 @@ from efl.elementary.window import StandardWindow
 from efl.elementary.box import Box
 from efl.elementary.button import Button
 from efl.elementary.check import Check
-from efl.elementary.entry import Entry, utf8_to_markup
+from efl.elementary.entry import Entry, ELM_WRAP_NONE, utf8_to_markup
 from efl.elementary.hoversel import Hoversel
 from efl.elementary.icon import Icon, ELM_ICON_STANDARD
 from efl.elementary.label import Label
@@ -39,6 +39,8 @@ from efl.elementary.popup import Popup
 from efl.elementary.scroller import Scroller
 from efl.elementary.table import Table
 from efl.elementary.frame import Frame
+from efl.elementary.separator import Separator
+from efl.elementary.progressbar import Progressbar
 
 from egitu.utils import options, GravatarPict, ErrorPopup, FolderSelector, \
     recent_history_get, recent_history_push, \
@@ -48,6 +50,7 @@ from egitu.diffview import DiffViewer
 from egitu.remotes import RemotesDialog
 from egitu.branches import BranchesDialog
 from egitu.pushpull import PullPopup, PushPopup
+from egitu.vcs import git_clone
 
 
 class RepoSelector(Popup):
@@ -63,7 +66,7 @@ class RepoSelector(Popup):
 
         # content: recent list
         li = List(self, size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
-        li.callback_activated_add(self.recent_selected_cb)
+        li.callback_activated_add(self._recent_selected_cb)
 
         recents = recent_history_get()
         if recents:
@@ -94,11 +97,11 @@ class RepoSelector(Popup):
 
         # buttons
         bt = Button(self, text='Open')
-        bt.callback_clicked_add(self.load_btn_cb)
+        bt.callback_clicked_add(self._load_btn_cb)
         self.part_content_set('button1', bt)
 
-        bt = Button(self, text='Clone (TODO)')
-        bt.disabled = True
+        bt = Button(self, text='Clone')
+        bt.callback_clicked_add(self._clone_btn_cb)
         self.part_content_set('button2', bt)
 
         bt = Button(self, text='Create (TODO)')
@@ -108,19 +111,170 @@ class RepoSelector(Popup):
         #
         self.show()
 
-    def load_btn_cb(self, bt):
+    def _load_btn_cb(self, bt):
         fs = FolderSelector(self)
-        fs.callback_done_add(self.fs_done_cb)
+        fs.callback_done_add(self._fs_done_cb)
 
-    def fs_done_cb(self, fs, path):
+    def _fs_done_cb(self, fs, path):
         fs.delete()
         if path and os.path.isdir(path):
             self.app.try_to_load(path)
             self.delete()
+    
+    def _clone_btn_cb(self, bt):
+        self.delete()
+        self.app.action_clone()
 
-    def recent_selected_cb(self, li, item):
+    def _recent_selected_cb(self, li, item):
         self.app.try_to_load(item.data['url'])
         self.delete()
+
+
+class ClonePopup(Popup):
+    def __init__(self, parent, app):
+        self.app = app
+
+        Popup.__init__(self, parent)
+
+        # title
+        self.part_text_set('title,text', 'Clone')
+        self.part_content_set('title,icon', Icon(self, standard='egitu'))
+
+        # main table
+        tb = Table(self, padding=(0,4),
+                   size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        self.content = tb
+        tb.show()
+
+        # sep
+        sep = Separator(self, horizontal=True, size_hint_expand=EXPAND_HORIZ)
+        tb.pack(sep, 0, 0, 2, 1)
+        sep.show()
+
+        # url
+        en = Entry(self, single_line=True, scrollable=True,
+                   size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        en.part_text_set('guide', 'Path or URL to clone')
+        tb.pack(en, 0, 1, 2, 1)
+        en.show()
+        self.url_entry = en
+
+        # parent folder
+        en = Entry(self, single_line=True, scrollable=True,
+                   size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        en.part_text_set('guide', 'Parent folder to clone into')
+        tb.pack(en, 0, 2, 1, 1)
+        en.show()
+
+        bt = Button(self, text='', content=Icon(self, standard='folder'))
+        bt.callback_clicked_add(self._folder_clicked_cb)
+        tb.pack(bt, 1, 2, 1, 1)
+        bt.show()
+        self.folder_entry = en
+
+        # shallow check
+        ck = Check(self, text='Shallow (no history and no branches, faster)',
+                   size_hint_expand=EXPAND_BOTH, size_hint_align=(0.0,0.5))
+        tb.pack(ck, 0, 3, 2, 1)
+        ck.show()
+        self.shallow_check = ck
+
+        # output entry
+        en = Entry(self, scrollable=True, editable=False, line_wrap=ELM_WRAP_NONE,
+                   size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        tb.pack(en, 0, 4, 2, 1)
+        en.show()
+        self.output_entry = en
+
+        r = Rectangle(self.evas, size_hint_min=(300,150),
+                      size_hint_expand=EXPAND_BOTH)
+        tb.pack(r, 0, 4, 2, 1)
+
+        pb = Progressbar(self, style='wheel', pulse_mode=True,
+                         size_hint_expand=EXPAND_BOTH)
+        tb.pack(pb, 0, 4, 2, 1)
+        self.wheel = pb
+
+        # sep
+        sep = Separator(self, horizontal=True, size_hint_expand=EXPAND_HORIZ)
+        tb.pack(sep, 0, 5, 2, 1)
+        sep.show()
+
+        # bottons
+        bt = Button(self, text='Close')
+        bt.callback_clicked_add(lambda b: self.delete())
+        self.part_content_set('button1', bt)
+        bt.show()
+        self.close_btn = bt
+
+        bt = Button(self, text='Clone')
+        bt.callback_clicked_add(self._clone_clicked_cb)
+        self.part_content_set('button2', bt)
+        bt.show()
+        self.clone_btn = bt
+
+        #
+        self.show()
+
+    def start_pulse(self):
+        self.output_entry.text = None
+        self.wheel.pulse(True)
+        self.wheel.show()
+        self.clone_btn.disabled = True
+        self.close_btn.disabled = True
+
+    def stop_pulse(self):
+        self.wheel.pulse(False)
+        self.wheel.hide()
+        self.clone_btn.disabled = False
+        self.close_btn.disabled = False
+
+    def error_set(self, text):
+        self.output_entry.text = '<failure>Error</failure><br>%s' % text
+
+    def _folder_clicked_cb(self, btn):
+        fs = FolderSelector(self)
+        fs.callback_done_add(self._fs_done_cb)
+
+    def _fs_done_cb(self, fs, path):
+        fs.delete()
+        if path and os.path.isdir(path):
+            self.folder_entry.text = path
+
+    def _clone_clicked_cb(self, btn):
+        url = self.url_entry.text
+        folder = self.folder_entry.text
+        shallow = self.shallow_check.state
+
+        if not url:
+            self.error_set('Invalid URL')
+            return
+
+        if not folder or not os.path.isdir(folder):
+            self.error_set('Invalid folder')
+            return
+
+        repo_name = url.split('/')[-1].replace('.git', '')
+        folder = os.path.join(folder, repo_name)
+        if os.path.isdir(folder):
+            self.error_set('Repository folder:<br>%s<br>already exists' % folder)
+            return
+
+        self.start_pulse()
+        git_clone(self._clone_done_cb, self._clone_progress_cb,
+                  url, folder, shallow)
+
+    def _clone_progress_cb(self, line):
+        self.output_entry.entry_append(line + '<br>')
+        self.output_entry.cursor_end_set()
+
+    def _clone_done_cb(self, success, folder):
+        self.stop_pulse()
+        if success:
+            self.output_entry.entry_insert('<success>Operation successfully completed.</success><br>')
+            self.app.try_to_load(folder)
+        else:
+            self.output_entry.entry_insert('<failure>Error! Something goes wrong.</failure><br>')
 
 
 class MainMenuButton(Button):
@@ -298,7 +452,7 @@ class EgituWin(StandardWindow):
         box.pack_end(fr)
         fr.show()
 
-        tb = Table(self, padding=(3,3), 
+        tb = Table(self, padding=(3,3),
                    size_hint_weight=EXPAND_HORIZ, size_hint_align=FILL_BOTH)
         fr.content = tb
         tb.show()
@@ -441,7 +595,7 @@ class EgituWin(StandardWindow):
     def _binds_cb_push(self, src, key, event):
         PushPopup(self, self.app)
         return True
-    
+
     def _binds_cb_pull(self, src, key, event):
         PullPopup(self, self.app)
         return True

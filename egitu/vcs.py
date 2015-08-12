@@ -648,14 +648,18 @@ class GitCmd(Exe):
         self.args = args
         self.lines = []
 
-        git_dir = os.path.join(local_path, '.git')
-        real_cmd = 'git --git-dir="%s" --work-tree="%s" %s' % \
-                   (git_dir, local_path, cmd)
+        if local_path:
+            git_dir = os.path.join(local_path, '.git')
+            real_cmd = 'git --git-dir="%s" --work-tree="%s" %s' % \
+                       (git_dir, local_path, cmd)
+        else:
+            real_cmd = 'git %s' % (cmd)
 
         print("=== GIT " + cmd) # just for debug
 
-        Exe.__init__(self, real_cmd, ECORE_EXE_PIPE_READ |
-                     ECORE_EXE_PIPE_ERROR | ECORE_EXE_PIPE_READ_LINE_BUFFERED |
+        Exe.__init__(self, real_cmd, 
+                     ECORE_EXE_PIPE_READ | ECORE_EXE_PIPE_ERROR | 
+                     ECORE_EXE_PIPE_READ_LINE_BUFFERED |
                      ECORE_EXE_PIPE_ERROR_LINE_BUFFERED)
         self.on_data_event_add(self.event_data_cb)
         self.on_error_event_add(self.event_data_cb)
@@ -671,6 +675,32 @@ class GitCmd(Exe):
     def event_del_cb(self, exe, event):
         if callable(self.done_cb):
             self.done_cb(self.lines, (event.exit_code == 0), *self.args)
+
+
+def git_clone(done_cb, progress_cb, url, folder, shallow=False):
+    """
+    Clone the given url in the given folder
+
+    Args:
+        done_cb:
+            Function to call when the operation finish.
+            signature: cb(success, repo_folder)
+        progress_cb:
+            Function to call on each line of output.
+            signature: cb(line)
+        url:
+            Path or url to clone
+        folder:
+            The folder to clone into (must be empty)
+        shallow:
+            If True than no history will be cloned
+    """
+    def _cmd_done_cb(lines, success):
+        done_cb(success, folder)
+
+    cmd = 'clone -v %s %s "%s"' % ('--depth 1' if shallow else '',
+                                   url, folder)
+    GitCmd(None, cmd, _cmd_done_cb, progress_cb)
 
 
 class GitBackend(Repository):
