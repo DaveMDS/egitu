@@ -42,7 +42,7 @@ from efl.elementary.table import Table
 from efl.elementary.frame import Frame
 from efl.elementary.separator import Separator
 
-from egitu.utils import options, GravatarPict, ErrorPopup, \
+from egitu.utils import options, GravatarPict, ErrorPopup, FolderSelector, \
     recent_history_get, recent_history_push, \
     EXPAND_BOTH, EXPAND_HORIZ, EXPAND_VERT, FILL_BOTH, FILL_HORIZ, FILL_VERT, \
     INFO, HOMEPAGE, AUTHORS, LICENSE, xdg_open
@@ -126,30 +126,6 @@ class RepoSelector(Popup):
     def recent_selected_cb(self, li, item):
         self.app.try_to_load(item.data['url'])
         self.delete()
-
-
-class FolderSelector(Fileselector):
-    def __init__(self, parent):
-        Fileselector.__init__(self, parent, is_save=False, folder_only=True,
-                        size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
-        self.path = os.getcwd()
-
-        # table+rect to respect min size :/
-        tb = Table(self, size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
-        r = Rectangle(self.evas, color=(0,0,0,0), size_hint_min=(300,300),
-                      size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
-        tb.pack(r, 0, 0, 1, 1)
-        tb.pack(self, 0, 0, 1, 1)
-
-        self.popup = Popup(parent)
-        self.popup.part_text_set('title,text', 'Choose repository')
-        self.popup.content = tb
-        self.popup.show()
-
-        self.show()
-
-    def delete(self):
-        self.popup.delete()
 
 
 class MainMenuButton(Button):

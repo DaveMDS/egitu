@@ -462,6 +462,30 @@ class ComboBox(Entry):
             self._selected_func(self)
 
 
+class FolderSelector(Fileselector):
+    def __init__(self, parent):
+        Fileselector.__init__(self, parent, is_save=False, folder_only=True,
+                        size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
+        self.path = os.getcwd()
+
+        # table+rect to respect min size :/
+        tb = Table(self, size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
+        r = Rectangle(self.evas, color=(0,0,0,0), size_hint_min=(300,300),
+                      size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
+        tb.pack(r, 0, 0, 1, 1)
+        tb.pack(self, 0, 0, 1, 1)
+
+        self.popup = Popup(parent)
+        self.popup.part_text_set('title,text', 'Choose repository')
+        self.popup.content = tb
+        self.popup.show()
+
+        self.show()
+
+    def delete(self):
+        self.popup.delete()
+
+
 class KeyBindings(object):
     """ A simple class to manage Shortcuts in elm applications
 
