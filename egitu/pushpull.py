@@ -194,7 +194,7 @@ class PushPullBase(Popup):
     def _action_done_cb(self, success, err_msg=None):
         self.stop_pulse()
         if success:
-            self.app.win.update_all()
+            self.app.action_reload_repo()
             self.output_entry.entry_insert('<success>Operation successfully completed.</success><br>')
         else:
             self.output_entry.entry_insert('<failure>Error! Something goes wrong.</failure><br>')
