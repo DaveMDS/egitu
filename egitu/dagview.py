@@ -214,6 +214,11 @@ class DagGraph(Table):
                               self.point_mouse_down_cb, commit)
         p.tooltip_content_cb_set(lambda o,tt:
                 CommitPopup(self, self.repo, commit))
+        try: # added in pyefl 1.16
+            from efl.elementary import ELM_TOOLTIP_ORIENT_RIGHT
+            p.tooltip_orient = ELM_TOOLTIP_ORIENT_RIGHT
+        except:
+            pass
 
         if options.show_message_in_dag is True:
             l = Layout(self, file=(self.themef, 'egitu/graph/msg'))
