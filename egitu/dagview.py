@@ -79,7 +79,7 @@ class DagGraph(Table):
         self._last_date = None
         self._last_date_row = 1
         self._visible_commits = 0
-        self._commits_to_load = 100  # TODO make configurable
+        self._commits_to_load = options.number_of_commits_to_load
 
         self.clear(True)
 

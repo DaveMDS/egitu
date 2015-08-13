@@ -330,6 +330,11 @@ class MainMenuButton(Button):
                         self._item_check_opts_cb, 'show_message_in_dag')
         it.content = Check(self, state=options.show_message_in_dag)
 
+        it_numb = m.item_add(it_dag, 'Number of commits to load')
+        for num in (100, 200, 500, 1000):
+            icon = 'arrow_right' if num == options.number_of_commits_to_load else None
+            m.item_add(it_numb, str(num), icon, self._item_num_commits_cb)
+
         # diff options
         it_diff = m.item_add(None, 'Diff', 'preference')
 
@@ -378,6 +383,10 @@ class MainMenuButton(Button):
     def _item_font_size_cb(self, menu, item):
         options.diff_font_size = int(item.text)
         self.app.action_update_diffview()
+    
+    def _item_num_commits_cb(self, menu, item):
+        options.number_of_commits_to_load = int(item.text)
+        self.app.action_update_dag()
 
 
 class EditableDescription(Entry):
@@ -571,7 +580,6 @@ class EgituWin(StandardWindow):
             text = '<success>Status is clean!</success>'
         else:
             text = '<warning>Status is dirty !!!</warning>'
-
         self.status_label.text = text
         self.status_label.tooltip_text_set(repo.status.textual)
         
