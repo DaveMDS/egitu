@@ -648,12 +648,9 @@ class GitCmd(Exe):
         self.args = args
         self.lines = []
 
-        if local_path:
-            git_dir = os.path.join(local_path, '.git')
-            real_cmd = 'git --git-dir="%s" --work-tree="%s" %s' % \
-                       (git_dir, local_path, cmd)
-        else:
-            real_cmd = 'git %s' % (cmd)
+        git_dir = os.path.join(local_path, '.git')
+        real_cmd = 'git --git-dir="%s" --work-tree="%s" %s' % \
+                   (git_dir, local_path, cmd)
 
         print("=== GIT " + cmd) # just for debug
 
@@ -677,6 +674,40 @@ class GitCmd(Exe):
             self.done_cb(self.lines, (event.exit_code == 0), *self.args)
 
 
+class GitCmdRAW(Exe):
+    def __init__(self, local_path, cmd, done_cb=None, line_cb=None, *args):
+        self.done_cb = done_cb
+        self.line_cb = line_cb
+        self.args = args
+
+        if local_path:
+            git_dir = os.path.join(local_path, '.git')
+            real_cmd = 'git --git-dir="%s" --work-tree="%s" %s' % \
+                       (git_dir, local_path, cmd)
+        else:
+            real_cmd = 'git %s' % (cmd)
+            
+        Exe.__init__(self, real_cmd,
+                     ECORE_EXE_PIPE_READ | ECORE_EXE_PIPE_ERROR)
+        self.on_data_event_add(self.event_data_cb)
+        self.on_error_event_add(self.event_data_cb)
+        self.on_del_event_add(self.event_del_cb)
+        
+    def event_data_cb(self, exe, event):
+        p1 = p2 = 0
+        for c in event.data:
+            if c == '\n' or c == '\r':
+                self.line_cb(event.data[p1:p2].strip(), c)
+                p1 = p2
+            p2 += 1
+        if p1 != p2-1:
+            self.line_cb(event.data[p1:p2].strip(), None)
+    
+    def event_del_cb(self, exe, event):
+        if callable(self.done_cb):
+            self.done_cb((event.exit_code == 0), *self.args)
+
+
 def git_clone(done_cb, progress_cb, url, folder, shallow=False):
     """
     Clone the given url in the given folder
@@ -695,12 +726,12 @@ def git_clone(done_cb, progress_cb, url, folder, shallow=False):
         shallow:
             If True than no history will be cloned
     """
-    def _cmd_done_cb(lines, success):
+    def _cmd_done_cb(success):
         done_cb(success, folder)
 
-    cmd = 'clone -v %s %s "%s"' % ('--depth 1' if shallow else '',
-                                   url, folder)
-    GitCmd(None, cmd, _cmd_done_cb, progress_cb)
+    cmd = 'clone -v --progress %s %s "%s"' % ('--depth 1' if shallow else '',
+                                              url, folder)
+    GitCmdRAW(None, cmd, _cmd_done_cb, progress_cb)
 
 
 class GitBackend(Repository):

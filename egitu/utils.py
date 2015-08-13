@@ -493,6 +493,73 @@ class FolderSelector(Fileselector):
         self.popup.delete()
 
 
+class CommandOutputEntry(Table):
+    def __init__(self, parent, min_size=(0,0)):
+        Table.__init__(self, parent, size_hint_expand=EXPAND_BOTH, 
+                       size_hint_fill=FILL_BOTH)
+        
+        self._entry = Entry(self, scrollable=True, editable=False,
+                            line_wrap=ELM_WRAP_NONE, 
+                            size_hint_expand=EXPAND_BOTH, 
+                            size_hint_fill=FILL_BOTH)
+        # TODO disable clicks in the entry
+
+        self._wheel = Progressbar(self, style='wheel', pulse_mode=True,
+                                  size_hint_expand=EXPAND_BOTH)
+
+        sizer_rect = Rectangle(self.evas, size_hint_min=min_size,
+                               size_hint_expand=EXPAND_BOTH)
+
+        self.pack(sizer_rect,  0, 0, 1, 1)
+        self.pack(self._entry, 0, 0, 1, 1)
+        self.pack(self._wheel, 0, 0, 1, 1)
+
+        self._last_was_carriage = False
+        self._entry.show()
+        self.show()
+
+    @property
+    def text(self):
+        return self._entry.text
+    @text.setter
+    def text(self, text):
+        self._entry.text = text
+
+    def pulse_start(self):
+        self._wheel.pulse(True)
+        self._wheel.show()
+
+    def pulse_stop(self):
+        self._wheel.pulse(False)
+        self._wheel.hide()
+
+    def successfull(self):
+        self._entry.entry_insert('<success>Operation successfully completed.</success><br>')
+    
+    def failure(self):
+        self._entry.entry_insert('<failure>Error! Something goes wrong.</failure><br>')
+    
+    def error_set(self, text):
+        self._entry.text = '<failure>Error:</failure><br>%s' % text
+
+    def append_raw(self, line, sep=None):
+        if self._last_was_carriage is True:
+            self._entry.cursor_selection_begin()
+            self._entry.cursor_line_end_set()
+            self._entry.cursor_selection_end()
+            self._entry.entry_insert('')
+        if sep == '\n':
+            self._entry.entry_append(line + '<br>')
+            self._entry.cursor_end_set()
+            self._last_was_carriage = False
+        elif sep == '\r':
+            self._entry.entry_append(line)
+            self._last_was_carriage = True
+        else:
+            self._entry.entry_append(line)
+            self._last_was_carriage = False
+
+
 class AboutWin(DialogWindow):
     def __init__(self, parent):
         DialogWindow.__init__(self, parent, 'egitu-info', 'Egitu',

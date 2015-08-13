@@ -40,10 +40,9 @@ from efl.elementary.scroller import Scroller
 from efl.elementary.table import Table
 from efl.elementary.frame import Frame
 from efl.elementary.separator import Separator
-from efl.elementary.progressbar import Progressbar
 
 from egitu.utils import options, GravatarPict, ErrorPopup, FolderSelector, \
-    recent_history_get, recent_history_push, \
+    CommandOutputEntry, recent_history_get, recent_history_push, \
     EXPAND_BOTH, EXPAND_HORIZ, EXPAND_VERT, FILL_BOTH, FILL_HORIZ, FILL_VERT
 from egitu.dagview import DagGraph
 from egitu.diffview import DiffViewer
@@ -180,20 +179,10 @@ class ClonePopup(Popup):
         self.shallow_check = ck
 
         # output entry
-        en = Entry(self, scrollable=True, editable=False, line_wrap=ELM_WRAP_NONE,
-                   size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        en = CommandOutputEntry(self, min_size=(400, 150))
         tb.pack(en, 0, 4, 2, 1)
         en.show()
         self.output_entry = en
-
-        r = Rectangle(self.evas, size_hint_min=(300,150),
-                      size_hint_expand=EXPAND_BOTH)
-        tb.pack(r, 0, 4, 2, 1)
-
-        pb = Progressbar(self, style='wheel', pulse_mode=True,
-                         size_hint_expand=EXPAND_BOTH)
-        tb.pack(pb, 0, 4, 2, 1)
-        self.wheel = pb
 
         # sep
         sep = Separator(self, horizontal=True, size_hint_expand=EXPAND_HORIZ)
@@ -216,21 +205,16 @@ class ClonePopup(Popup):
         #
         self.show()
 
-    def start_pulse(self):
-        self.output_entry.text = None
-        self.wheel.pulse(True)
-        self.wheel.show()
+    def op_start(self):
         self.clone_btn.disabled = True
         self.close_btn.disabled = True
+        self.output_entry.text = None
+        self.output_entry.pulse_start()
 
-    def stop_pulse(self):
-        self.wheel.pulse(False)
-        self.wheel.hide()
+    def op_end(self):
+        self.output_entry.pulse_stop()
         self.clone_btn.disabled = False
         self.close_btn.disabled = False
-
-    def error_set(self, text):
-        self.output_entry.text = '<failure>Error</failure><br>%s' % text
 
     def _folder_clicked_cb(self, btn):
         fs = FolderSelector(self)
@@ -247,34 +231,33 @@ class ClonePopup(Popup):
         shallow = self.shallow_check.state
 
         if not url:
-            self.error_set('Invalid URL')
+            self.output_entry.error_set('Invalid URL')
             return
 
         if not folder or not os.path.isdir(folder):
-            self.error_set('Invalid folder')
+            self.output_entry.error_set('Invalid folder')
             return
 
         repo_name = url.split('/')[-1].replace('.git', '')
         folder = os.path.join(folder, repo_name)
         if os.path.isdir(folder):
-            self.error_set('Repository folder:<br>%s<br>already exists' % folder)
+            self.output_entry.error_set('Repository folder:<br>%s<br>already exists' % folder)
             return
 
-        self.start_pulse()
+        self.op_start()
         git_clone(self._clone_done_cb, self._clone_progress_cb,
                   url, folder, shallow)
 
-    def _clone_progress_cb(self, line):
-        self.output_entry.entry_append(line + '<br>')
-        self.output_entry.cursor_end_set()
+    def _clone_progress_cb(self, line, sep):
+        self.output_entry.append_raw(line, sep)
 
     def _clone_done_cb(self, success, folder):
-        self.stop_pulse()
+        self.op_end()
         if success:
-            self.output_entry.entry_insert('<success>Operation successfully completed.</success><br>')
+            self.output_entry.successfull()
             self.app.try_to_load(folder)
         else:
-            self.output_entry.entry_insert('<failure>Error! Something goes wrong.</failure><br>')
+            self.output_entry.failure()
 
 
 class MainMenuButton(Button):
