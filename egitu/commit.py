@@ -20,33 +20,138 @@
 
 from __future__ import absolute_import, print_function
 
-from efl.elementary.entry import Entry, markup_to_utf8, utf8_to_markup, \
-    ELM_WRAP_NONE, ELM_WRAP_MIXED
+import os
+
+from efl.evas import Rectangle
 from efl.elementary.window import DialogWindow
 from efl.elementary.box import Box
 from efl.elementary.panes import Panes
 from efl.elementary.button import Button
 from efl.elementary.check import Check
+from efl.elementary.popup import Popup
+from efl.elementary.icon import Icon
+from efl.elementary.table import Table
+from efl.elementary.separator import Separator
+from efl.elementary.list import List
+from efl.elementary.entry import Entry, markup_to_utf8, utf8_to_markup, \
+    ELM_WRAP_NONE, ELM_WRAP_MIXED
 
-from egitu.utils import DiffedEntry, ErrorPopup, ConfirmPupup, \
+from egitu.utils import DiffedEntry, ErrorPopup, \
     EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ, FILL_HORIZ
 
 
-class DiscardDialog(ConfirmPupup):
-    def __init__(self, app, files=[]):
+class DiscardDialog(Popup):
+    def __init__(self, app):
         self.app = app
-        self.files = files
 
-        if files:
-            msg = 'The following files will be <b>reverted</b> to the last commit:' \
-                  '<br><br><b>%s</b>' % '<br>'.join(files)
+        Popup.__init__(self, app.win)
+        self.part_text_set('title,text', 'Discard local changes')
+        self.part_content_set('title,icon', Icon(self, standard='user-trash'))
+
+        # main table
+        tb = Table(self, padding=(0,4),
+                   size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        self.content = tb
+        tb.show()
+
+        # sep
+        sep = Separator(self, horizontal=True, size_hint_expand=EXPAND_BOTH)
+        tb.pack(sep, 0, 0, 1, 1)
+        sep.show()
+
+        # warning label
+        en = Entry(self, editable=False,
+                   text='<warning>WARNING: This operation is not reversible!</warning><br>' \
+                        'Selected files (or ALL files, if nothing is selected) will be ' \
+                        'reverted to the state of the last commit.',
+                   size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        tb.pack(en, 0, 1, 1, 1)
+        en.show()
+
+        # changes list
+        r = Rectangle(self.evas, size_hint_min=(300,200),
+                      size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        li = List(self, multi_select=True,
+                  size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        li.callback_selected_add(self._list_selection_changed_cb)
+        li.callback_unselected_add(self._list_selection_changed_cb)
+        tb.pack(li, 0, 2, 1, 1)
+        tb.pack(r, 0, 2, 1, 1)
+
+        sortd = sorted(self.app.repo.status.changes, key=lambda c: c[2])
+        for mod, staged, name, new_name in sortd:
+            icon = Icon(self, standard='git-mod-'+mod)
+            check = Check(self, text='', state=staged, disabled=True)
+            label = '{} → {}'.format(name, new_name) if new_name else name
+            it = li.item_append(label, icon, check)
+            it.data['mod'] = mod
+
+        li.go()
+        li.show()
+        self.file_list = li
+
+        # delete untracked check
+        ck = Check(self, text='Also delete untracked files', state=True,
+                   size_hint_expand=EXPAND_BOTH, size_hint_align=(0.0,0.5))
+        tb.pack(ck, 0, 3, 1, 1)
+        ck.show()
+        self.untracked_chk = ck
+
+        # sep
+        sep = Separator(self, horizontal=True, size_hint_expand=EXPAND_BOTH)
+        tb.pack(sep, 0, 4, 1, 1)
+        sep.show()
+
+        # buttons
+        bt = Button(self, text='Close')
+        bt.callback_clicked_add(lambda b: self.delete())
+        self.part_content_set('button1', bt)
+        bt.show()
+
+        bt = Button(self, text="Discard EVERYTHING!",
+                    content=Icon(self, standard='user-trash'))
+        bt.callback_clicked_add(self._confirm_clicked_cb)
+        self.part_content_set('button2', bt)
+        bt.show()
+        self.confirm_btn = bt
+
+        #
+        self.show()
+
+    def _list_selection_changed_cb(self, li, item):
+        if li.selected_items:
+            self.confirm_btn.text = "Discard selected only!"
         else:
-            msg = 'This will <b>destroy ALL</b> the changes not committed !!!'
+            self.confirm_btn.text = "Discard EVERYTHING!"
 
-        ConfirmPupup.__init__(self, app.win, msg=msg, ok_cb=self._confirm_cb)
+    def _confirm_clicked_cb(self, btn):
+        # cache selection list
+        selected_list = self.file_list.selected_items
 
-    def _confirm_cb(self):
-        self.app.repo.discard(self._discard_done_cb, self.files)
+        # delete untracked (if requested)
+        if self.untracked_chk.state == True:
+            # li =
+            for it in selected_list or self.file_list.items:
+                if it.data['mod'] == '?':
+                    full_path = os.path.join(self.app.repo.url, it.text)
+                    try:
+                        os.remove(full_path)
+                    except:
+                        self.delete()
+                        ErrorPopup(self.app.win, 'Cannot delete file', it.text)
+                        return
+
+        # list of selected items (untracked excluded)
+        li = [ it.text for it in selected_list if it.data['mod'] != '?']
+
+        # WARNING, dangerous path, only untracked was selected
+        if len(li) < 1 and len(selected_list) > 0:
+            self.app.action_reload_repo()
+            self.delete()
+            return
+
+        # discard selection or everything if li is empty
+        self.app.repo.discard(self._discard_done_cb, li)
 
     def _discard_done_cb(self, success, err_msg=None):
         self.delete()
@@ -63,7 +168,7 @@ class CommitDialog(DialogWindow):
         self.revert_commit = revert_commit
         self.cherrypick_commit = cherrypick_commit
 
-        DialogWindow.__init__(self, app.win, 'Egitu', 'Egitu', 
+        DialogWindow.__init__(self, app.win, 'Egitu', 'Egitu',
                               size=(500,500), autodel=True)
 
         vbox = Box(self, size_hint_weight=EXPAND_BOTH,
@@ -169,13 +274,13 @@ class CommitDialog(DialogWindow):
             bt.text = 'Revert'
             self.confirmed = False
             self.app.repo.revert(self.commit_done_cb, self.revert_commit,
-                                 auto_commit=self.autocommit_chk.state, 
+                                 auto_commit=self.autocommit_chk.state,
                                  commit_msg=markup_to_utf8(self.msg_entry.text))
         elif self.cherrypick_commit:
             bt.text = 'Cherry-pick'
             self.confirmed = False
             self.app.repo.cherrypick(self.commit_done_cb, self.cherrypick_commit,
-                                     auto_commit=self.autocommit_chk.state, 
+                                     auto_commit=self.autocommit_chk.state,
                                      commit_msg=markup_to_utf8(self.msg_entry.text))
         else:
             bt.text = 'Commit'

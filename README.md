@@ -57,3 +57,12 @@ EFL Git user interface
 ## License ##
 
 GNU General Public License v3 - see COPYING
+
+
+## TODO ##
+
+* Manage staging area
+* Alert before merging a branch without a clean HEAD
+* Improve branches dialog with more branches info
+* Preview/Review of git commands
+* Tags management

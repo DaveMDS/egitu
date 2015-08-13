@@ -97,16 +97,16 @@ class DiffViewer(Table):
             self.action_box.pack_end(bt)
             bt.show()
         if 'commit' in buttons:
-            bt = Button(self, text='Commit')
+            bt = Button(self, text='Commit',
+                        content=Icon(self, standard='git-commit'))
             bt.callback_clicked_add(lambda b: \
                 CommitDialog(self.app))
             self.action_box.pack_end(bt)
             bt.show()
         if 'discard' in buttons:
-            bt = Button(self, text='Discard')
-            bt.callback_clicked_add(lambda b: \
-                DiscardDialog(self.app,
-                              [it.text for it in self.diff_list.selected_items]))
+            bt = Button(self, text='Discard', 
+                        content=Icon(self, standard='user-trash'))
+            bt.callback_clicked_add(lambda b: DiscardDialog(self.app))
             self.action_box.pack_end(bt)
             bt.show()
 
