@@ -57,54 +57,60 @@ class RepoSelector(Popup):
         self.app = app
 
         Popup.__init__(self, app.win)
-        self.callback_block_clicked_add(lambda p: p.delete())
 
         # title
         self.part_text_set('title,text', 'Recent Repositories')
         self.part_content_set('title,icon', Icon(self, standard='egitu'))
 
-        # content: recent list
+
+        # main table
+        tb = Table(self, padding=(0,4), 
+                   size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
+        self.content = tb
+        tb.show()
+
+        # sep
+        sep = Separator(self, horizontal=True, size_hint_expand=EXPAND_BOTH)
+        tb.pack(sep, 0, 0, 1, 1)
+        sep.show()
+
+        # recent list
         li = List(self, size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
-        li.callback_activated_add(self._recent_selected_cb)
+        li.callback_selected_add(self._recent_selected_cb)
 
         recents = recent_history_get()
         if recents:
             for recent_url in recents:
                 path, name = os.path.split(recent_url)
-                item = li.item_append(name)
+                label = '{} → {}'.format(name, path)
+                item = li.item_append(label)
                 item.data['url'] = recent_url
         else:
             item = li.item_append('no recent repository')
             item.disabled = True
         li.show()
 
-        # table+rect to respect min size :/
-        tb = Table(self, size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
         r = Rectangle(self.evas, color=(0,0,0,0), size_hint_min=(200,200),
                       size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
-        tb.pack(r, 0, 0, 1, 1)
-        tb.pack(li, 0, 0, 1, 1)
-        self.content = tb
+        tb.pack(r, 0, 1, 1, 1)
+        tb.pack(li, 0, 1, 1, 1)
 
-        # popup auto-list - not expand well :(
-        # self.size_hint_weight = EXPAND_BOTH
-        # self.size_hint_align = FILL_BOTH
-        # self.size_hint_min = 400, 400
-        # self.item_append('no recent repos', None)
-        # self.item_append('asd2', None)
-        # self.item_append('asd2', None)
+        # sep
+        sep = Separator(self, horizontal=True, size_hint_expand=EXPAND_BOTH)
+        tb.pack(sep, 0, 2, 1, 1)
+        sep.show()
 
         # buttons
-        bt = Button(self, text='Open')
-        bt.callback_clicked_add(self._load_btn_cb)
+        bt = Button(self, text='Close')
+        bt.callback_clicked_add(lambda b: self.delete())
         self.part_content_set('button1', bt)
 
         bt = Button(self, text='Clone')
         bt.callback_clicked_add(self._clone_btn_cb)
         self.part_content_set('button2', bt)
 
-        bt = Button(self, text='Create (TODO)')
-        bt.disabled = True
+        bt = Button(self, text='Open')
+        bt.callback_clicked_add(self._load_btn_cb)
         self.part_content_set('button3', bt)
 
         #
