@@ -77,16 +77,21 @@ class EgituApp(object):
 
 
     def action_reload_repo(self, *args):
-        self.repo.refresh(self._reload_done_cb)
+        if self.repo is not None:
+            self.repo.refresh(self._reload_done_cb)
     
     def _reload_done_cb(self, success, err_msg=None):
         self.win.update_all()
 
     def action_update_dag(self, *args):
-        self.win.graph.populate(self.repo)
+        if self.repo is not None:
+            self.win.graph.populate(self.repo)
     
     def action_update_header(self, *args):
         self.win.update_header()
+
+    def action_update_diffview(self, *args):
+        self.win.diff_view.refresh_diff()
 
     def action_open(self, *args):
         RepoSelector(self)
@@ -98,16 +103,20 @@ class EgituApp(object):
         AboutWin(self.win)
 
     def action_branches(self, *args):
-        BranchesDialog(self)
+        if self.repo is not None:
+            BranchesDialog(self)
     
     def action_remotes(self, *args):
-        RemotesDialog(self)
+        if self.repo is not None:
+            RemotesDialog(self)
     
     def action_pull(self, *args):
-        PullPopup(self.win, self)
+        if self.repo is not None:
+            PullPopup(self.win, self)
     
     def action_push(self, *args):
-        PushPopup(self.win, self)
+        if self.repo is not None:
+            PushPopup(self.win, self)
 
     def action_clone(self, *args):
         ClonePopup(self.win, self)

@@ -293,10 +293,15 @@ class MainMenuButton(Button):
         self._menu = m
 
         # main actions
-        m.item_add(None, 'Refresh', 'refresh', self.app.action_reload_repo)
-        m.item_add(None, 'Open...', 'folder', self.app.action_open)
-        m.item_add(None, 'Edit branches...', 'git-branch', self.app.action_branches)
-        m.item_add(None, 'Edit remotes...', 'git-remote', self.app.action_remotes)
+        disabled = self.app.repo is None
+        m.item_add(None, 'Refresh', 'refresh', 
+                   self.app.action_reload_repo).disabled = disabled
+        m.item_add(None, 'Open...', 'folder',
+                   self.app.action_open)
+        m.item_add(None, 'Edit branches...', 'git-branch', 
+                   self.app.action_branches).disabled = disabled
+        m.item_add(None, 'Edit remotes...', 'git-remote', 
+                   self.app.action_remotes).disabled = disabled
         m.item_separator_add()
 
         # general options
@@ -368,17 +373,18 @@ class MainMenuButton(Button):
 
     def _item_font_face_cb(self, menu, item):
         options.diff_font_face = item.text
-        self.win.diff_view.refresh_diff()
+        self.app.action_update_diffview()
 
     def _item_font_size_cb(self, menu, item):
         options.diff_font_size = int(item.text)
-        self.app.win.diff_view.refresh_diff()
+        self.app.action_update_diffview()
 
 
 class EditableDescription(Entry):
     def __init__(self, app):
         self.app = app
         Entry.__init__(self, app.win, single_line=True,
+                       text='No repository loaded',
                        size_hint_weight=EXPAND_HORIZ,
                        size_hint_align=FILL_HORIZ)
         self.callback_clicked_add(self._click_cb)
@@ -388,7 +394,7 @@ class EditableDescription(Entry):
         self.go_passive()
 
     def _click_cb(self, entry):
-        if not self.editable:
+        if self.app.repo is not None and not self.editable:
             self.go_active()
 
     def go_passive(self):
@@ -469,22 +475,27 @@ class EgituWin(StandardWindow):
         lb.show()
 
         # branch selector
-        self.branch_selector = Hoversel(self, text='none')
+        self.branch_selector = Hoversel(self, text='Branch', disabled=True,
+                                      content=Icon(self, standard='git-branch'))
         self.branch_selector.callback_selected_add(self.branch_selected_cb)
         tb.pack(self.branch_selector, 3, 0, 1, 1)
         self.branch_selector.show()
 
         # pull button
-        bt = Button(self, text='Pull', content=Icon(self, standard='git-pull'))
+        bt = Button(self, text='Pull', disabled=True,
+                    content=Icon(self, standard='git-pull'))
         bt.callback_clicked_add(self.app.action_pull)
         tb.pack(bt, 4, 0, 1, 1)
         bt.show()
+        self.pull_btn = bt
 
         # push button
-        bt = Button(self, text='Push', content=Icon(self, standard='git-push'))
+        bt = Button(self, text='Push', disabled=True,
+                    content=Icon(self, standard='git-push'))
         bt.callback_clicked_add(self.app.action_push)
         tb.pack(bt, 5, 0, 1, 1)
         bt.show()
+        self.push_btn = bt
 
         ### Main content (left + right panes)
         panes = Panes(self, content_left_size = 0.5,
@@ -516,29 +527,34 @@ class EgituWin(StandardWindow):
     def update_header(self):
         repo = self.app.repo
 
+        # update window title
+        self.title = '%s [%s]' % (repo.name, repo.current_branch)
+
+        # update repo description
+        if self.app.repo is None:
+            self.caption_label.text = 'No repository loaded'
+        elif repo.description:
+            self.caption_label.text = repo.description
+        else:
+            self.caption_label.text = 'Unnamed repository; click to edit.'
+
         # update the branch selector
-        try:
+        if self.app.repo is None:
             self.branch_selector.clear()
+            self.branch_selector.text = 'No repository'
+            self.branch_selector.disabled = True
+        else:
+            self.branch_selector.clear()
+            self.branch_selector.disabled = False
             for branch in repo.branches_names:
                 if branch == repo.current_branch:
                     self.branch_selector.item_add(branch, 'arrow_right',
                                                   ELM_ICON_STANDARD)
                 else:
                     self.branch_selector.item_add(branch)
-            self.branch_selector.text = repo.current_branch
-            ic = Icon(self, standard='git-branch')
-            self.branch_selector.content = ic
-        except:
-            self.branch_selector.text = 'Unknown'
+            self.branch_selector.text = repo.current_branch or 'Unknown'
 
-        # update window title
-        self.title = '%s [%s]' % (repo.name, repo.current_branch)
-
-        # update repo description
-        self.caption_label.text = repo.description or \
-                                  'Unnamed repository; click to edit.'
-
-        # update the status
+        # update the status label
         if repo.status.is_merging:
             text = "<warning>!! MERGING !!</warning>"
         elif repo.status.is_cherry:
@@ -558,6 +574,9 @@ class EgituWin(StandardWindow):
 
         self.status_label.text = text
         self.status_label.tooltip_text_set(repo.status.textual)
+        
+        # push/pull buttons
+        self.pull_btn.disabled = self.push_btn.disabled = self.app.repo is None
 
     def branch_selected_cb(self, hoversel, item):
         def _switch_done_cb(success, err_msg=None):
