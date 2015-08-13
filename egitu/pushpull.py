@@ -20,7 +20,6 @@
 
 from __future__ import absolute_import, print_function
 
-from efl.evas import Rectangle
 from efl.elementary.entry import Entry, utf8_to_markup, ELM_WRAP_NONE
 from efl.elementary.button import Button
 from efl.elementary.separator import Separator
@@ -28,10 +27,9 @@ from efl.elementary.popup import Popup
 from efl.elementary.table import Table
 from efl.elementary.label import Label
 from efl.elementary.icon import Icon
-from efl.elementary.progressbar import Progressbar
 from efl.elementary.check import Check
 
-from egitu.utils import ComboBox, \
+from egitu.utils import ComboBox, CommandOutputEntry, \
     EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ, FILL_HORIZ
 
 
@@ -90,21 +88,10 @@ class PushPullBase(Popup):
         self.lbranch_entry = en
 
         # output entry
-        en = Entry(tb, scrollable=True, editable=False, line_wrap=ELM_WRAP_NONE,
-                   size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        en = CommandOutputEntry(self, min_size=(400, 150))
         tb.pack(en, 0, 4, 2, 1)
         en.show()
         self.output_entry = en
-
-        r = Rectangle(tb.evas, size_hint_min=(400,200),
-                      size_hint_expand=EXPAND_BOTH)
-        tb.pack(r, 0, 4, 2, 1)
-
-        # progress wheel
-        pb = Progressbar(self, style='wheel', pulse_mode=True,
-                         size_hint_expand=EXPAND_BOTH)
-        tb.pack(pb, 0, 4, 2, 1)
-        self.wheel = pb
 
         # sep
         sep = Separator(self, horizontal=True, size_hint_expand=EXPAND_BOTH)
@@ -127,16 +114,14 @@ class PushPullBase(Popup):
         self.autopopulate()
         self.show()
 
-    def start_pulse(self):
+    def op_start(self):
         self.output_entry.text = None
-        self.wheel.pulse(True)
-        self.wheel.show()
+        self.output_entry.pulse_start()
         self.action_btn.disabled = True
         self.close_btn.disabled = True
 
-    def stop_pulse(self):
-        self.wheel.pulse(False)
-        self.wheel.hide()
+    def op_end(self):
+        self.output_entry.pulse_stop()
         self.action_btn.disabled = False
         self.close_btn.disabled = False
 
@@ -167,37 +152,33 @@ class PushPullBase(Popup):
         lbranch = self.lbranch_entry.text
 
         if not remote:
-            self.output_entry.text = '<failure>%s</failure><br>%s' % \
-                        ('Error', 'You must specify a remote')
+            self.output_entry.error_set('You must specify a remote')
             return
 
         if not rbranch:
-            self.output_entry.text = '<failure>%s</failure><br>%s' % \
-                        ('Error', 'You must specify a remote branch to use')
+            self.output_entry.error_set('You must specify a remote branch to use')
             return
 
         if not lbranch:
-            self.output_entry.text = '<failure>%s</failure><br>%s' % \
-                        ('Error', 'You must specify a local branch to use')
+            self.output_entry.error_set('You must specify a local branch to use')
             return
         
-        self.start_pulse()
+        self.op_start()
         self.action(remote, rbranch, lbranch)
     
     def action(self, remote, rbranch, lbranch):
         pass # implemented in subclasses
 
-    def _action_progress_cb(self, line):
-        self.output_entry.entry_append(line + '<br>')
-        self.output_entry.cursor_end_set()
+    def _action_progress_cb(self, line, sep):
+        self.output_entry.append_raw(line, sep)
 
-    def _action_done_cb(self, success, err_msg=None):
-        self.stop_pulse()
+    def _action_done_cb(self, success):
+        self.op_end()
         if success:
             self.app.action_reload_repo()
-            self.output_entry.entry_insert('<success>Operation successfully completed.</success><br>')
+            self.output_entry.successfull()
         else:
-            self.output_entry.entry_insert('<failure>Error! Something goes wrong.</failure><br>')
+            self.output_entry.failure()
 
 
 class PullPopup(PushPullBase):

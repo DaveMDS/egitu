@@ -686,7 +686,9 @@ class GitCmdRAW(Exe):
                        (git_dir, local_path, cmd)
         else:
             real_cmd = 'git %s' % (cmd)
-            
+
+        print("=== GIT " + cmd) # just for debug
+
         Exe.__init__(self, real_cmd,
                      ECORE_EXE_PIPE_READ | ECORE_EXE_PIPE_ERROR)
         self.on_data_event_add(self.event_data_cb)
@@ -1160,19 +1162,13 @@ class GitBackend(Repository):
         GitCmd(self._url, cmd, _cmd_done_cb)
 
     def pull(self, done_cb, progress_cb, remote, rbranch, lbranch):
-        def _cmd_done_cb(lines, success):
-            done_cb(success)
-
-        cmd = 'pull %s %s:%s' % (remote, rbranch, lbranch)
-        GitCmd(self._url, cmd, _cmd_done_cb, progress_cb)
+        cmd = 'pull -v --progress %s %s:%s' % (remote, rbranch, lbranch)
+        GitCmdRAW(self._url, cmd, done_cb, progress_cb)
 
     def push(self, done_cb, progress_cb, remote, rbranch, lbranch, dry=False):
-        def _cmd_done_cb(lines, success):
-            done_cb(success)
-
-        cmd = 'push --verbose %s %s %s:%s ' % ('--dry-run' if dry else '',
-                                               remote, lbranch, rbranch)
-        GitCmd(self._url, cmd, _cmd_done_cb, progress_cb)
+        cmd = 'push -v --progress %s %s %s:%s ' % ('--dry-run' if dry else '',
+                                                   remote, lbranch, rbranch)
+        GitCmdRAW(self._url, cmd, done_cb, progress_cb)
 
     def branch_create(self, done_cb, name, revision, track=False):
         def _cmd_done_cb(lines, success):
