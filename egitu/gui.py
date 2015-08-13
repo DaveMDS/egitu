@@ -32,7 +32,7 @@ from efl.elementary.entry import Entry, ELM_WRAP_NONE, utf8_to_markup
 from efl.elementary.hoversel import Hoversel
 from efl.elementary.icon import Icon, ELM_ICON_STANDARD
 from efl.elementary.label import Label
-from efl.elementary.list import List
+from efl.elementary.genlist import Genlist, GenlistItemClass
 from efl.elementary.menu import Menu
 from efl.elementary.panes import Panes
 from efl.elementary.popup import Popup
@@ -62,7 +62,6 @@ class RepoSelector(Popup):
         self.part_text_set('title,text', 'Recent Repositories')
         self.part_content_set('title,icon', Icon(self, standard='egitu'))
 
-
         # main table
         tb = Table(self, padding=(0,4), 
                    size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
@@ -75,22 +74,23 @@ class RepoSelector(Popup):
         sep.show()
 
         # recent list
-        li = List(self, size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
+        itc = GenlistItemClass(item_style='no_icon',
+                               text_get_func=self._gl_text_get)
+
+        li = Genlist(self, homogeneous=True,
+                     size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
         li.callback_selected_add(self._recent_selected_cb)
 
         recents = recent_history_get()
         if recents:
-            for recent_url in recents:
-                path, name = os.path.split(recent_url)
-                label = '{} → {}'.format(name, path)
-                item = li.item_append(label)
-                item.data['url'] = recent_url
+            for path in recents:
+                li.item_append(itc, path)
         else:
-            item = li.item_append('no recent repository')
+            item = li.item_append(itc, None)
             item.disabled = True
         li.show()
 
-        r = Rectangle(self.evas, color=(0,0,0,0), size_hint_min=(200,200),
+        r = Rectangle(self.evas, color=(0,0,0,0), size_hint_min=(300,200),
                       size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
         tb.pack(r, 0, 1, 1, 1)
         tb.pack(li, 0, 1, 1, 1)
@@ -116,6 +116,13 @@ class RepoSelector(Popup):
         #
         self.show()
 
+    def _gl_text_get(self, obj, part, path):
+        if path is None:
+            return 'no recent repository'
+        else:
+            path, name = os.path.split(path)
+            return '{} → {}'.format(name, path)
+
     def _load_btn_cb(self, bt):
         fs = FolderSelector(self)
         fs.callback_done_add(self._fs_done_cb)
@@ -131,7 +138,7 @@ class RepoSelector(Popup):
         self.app.action_clone()
 
     def _recent_selected_cb(self, li, item):
-        self.app.try_to_load(item.data['url'])
+        self.app.try_to_load(item.data)
         self.delete()
 
 
