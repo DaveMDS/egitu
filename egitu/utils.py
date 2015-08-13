@@ -42,7 +42,7 @@ from efl.elementary.list import List
 from efl.elementary.table import Table
 from efl.elementary.background import Background
 from efl.elementary.frame import Frame
-from efl.elementary.entry import Entry, utf8_to_markup, \
+from efl.elementary.entry import Entry, utf8_to_markup, markup_to_utf8, \
     ELM_WRAP_NONE, ELM_WRAP_MIXED
 from efl.elementary.window import DialogWindow
 from efl.elementary.separator import Separator
@@ -64,6 +64,14 @@ config_file = os.path.join(config_path, 'config.pickle')
 recent_file = os.path.join(config_path, 'recent.history')
 install_prefix = script_path[0:script_path.find('/lib/python')]
 data_path = os.path.join(install_prefix, 'share', 'egitu')
+
+# A really ugly way to retrive the main EgituApp instance
+# only used in the 2 GitCmd classes to show the review popup
+_app_instance = None
+def app_instance_set(app):
+    global _app_instance
+    _app_instance = app
+
 
 HOMEPAGE = 'https://github.com/davemds/egitu'
 
@@ -99,6 +107,7 @@ Powerfull <b>branches</b> management<br>
 <b>Discard</b> not committed changes<br>
 Manage repository <b>remotes</b><br>
 Cool <b>Gravatar</b> integration<br>
+Review/Edit all <b>git commands</b> before execution<br>
 <br>
 <br>
 <hilight>Shortcuts</hilight><br>
@@ -149,6 +158,7 @@ class Options(object):
         self.diff_font_face = 'Mono'
         self.diff_font_size = 10
         self.diff_text_wrap = False
+        self.review_git_commands = False
 
     def load(self):
         try:
@@ -561,6 +571,49 @@ class CommandOutputEntry(Table):
         else:
             self._entry.entry_append(line)
             self._last_was_carriage = False
+
+
+class CmdReviewDialog(DialogWindow):
+    def __init__(self, cmd, exec_cb):
+        DialogWindow.__init__(self, _app_instance.win, 'egitu-review',
+                              'Git Command Review', autodel=True, size=(300,50))
+
+        # main table (inside a padding frame)
+        fr = Frame(self, style='default', text='Command to execute',
+                   size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        self.resize_object_add(fr)
+        fr.show()
+
+        tb = Table(self, padding=(6,6),
+                   size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        fr.content = tb
+        tb.show()
+
+        # cmd entry
+        en = Entry(self, single_line=True, scrollable=True, 
+                   text=utf8_to_markup(cmd),
+                   size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        tb.pack(en, 0, 0, 2, 1)
+        en.show()
+
+        # buttons
+        bt = Button(self, text='Close', size_hint_expand=EXPAND_HORIZ, size_hint_fill=FILL_HORIZ)
+        bt.callback_clicked_add(lambda b: self.delete())
+        tb.pack(bt, 0, 1, 1, 1)
+        bt.show()
+
+        bt = Button(self, text='Execute', size_hint_expand=EXPAND_HORIZ, size_hint_fill=FILL_HORIZ)
+        bt.callback_clicked_add(self._exec_clicked_cb, en, exec_cb)
+        tb.pack(bt, 1, 1, 1, 1)
+        bt.show()
+
+        #
+        self.show()
+
+    def _exec_clicked_cb(self, bt, entry, exec_cb):
+        cmd = markup_to_utf8(entry.text)
+        self.delete()
+        exec_cb(cmd)
 
 
 class AboutWin(DialogWindow):

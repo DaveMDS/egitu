@@ -308,8 +308,12 @@ class MainMenuButton(Button):
         it_gen = m.item_add(None, 'General', 'preference')
 
         it = m.item_add(it_gen, 'Use relative dates', None,
-                           self._item_check_opts_cb, 'date_relative')
+                        self._item_check_opts_cb, 'date_relative')
         it.content = Check(self, state=options.date_relative)
+        
+        it = m.item_add(it_gen, 'Review all git commands before execution', None,
+                        self._item_check_opts_cb, 'review_git_commands')
+        it.content = Check(self, state=options.review_git_commands)
 
         it_gravatar = m.item_add(it_gen, 'Gravatar')
         for name in ('mm', 'identicon', 'monsterid', 'wavatar', 'retro'):

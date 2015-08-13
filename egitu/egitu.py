@@ -29,7 +29,7 @@ from egitu.utils import options, config_path, theme_file_get, KeyBindings
 from egitu.gui import EgituWin, RepoSelector
 
 from egitu.vcs import repo_factory
-from egitu.utils  import recent_history_push, AboutWin
+from egitu.utils  import recent_history_push, app_instance_set, AboutWin
 from egitu.branches import BranchesDialog
 from egitu.remotes import RemotesDialog
 from egitu.pushpull import PullPopup, PushPopup
@@ -134,7 +134,8 @@ def main():
     theme_extension_add(theme_file_get())
 
     # Egitu
-    EgituApp(sys.argv[1:])
+    app = EgituApp(sys.argv[1:])
+    app_instance_set(app) # Ugly :/
 
     # enter the mainloop
     elm.run()

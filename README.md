@@ -19,6 +19,7 @@ EFL Git user interface
 * **Merge** any local branch in the current one
 * **Discard** not committed changes (checkout <files> or reset --HARD)
 * Manage repository **remotes**
+* Review/Edit all **git commands** before execution (for advanced users)
 * Cool **Gravatar** integration
 
 ![Screenshot1](https://github.com/davemds/egitu/blob/master/data/screenshots/screenshot1.jpg)
@@ -64,5 +65,5 @@ GNU General Public License v3 - see COPYING
 * Manage staging area
 * Alert before merging a branch without a clean HEAD
 * Improve branches dialog with more branches info
-* Preview/Review of git commands
 * Tags management
+* status label: show ahead + status (on 2 lines?)

@@ -641,19 +641,33 @@ class Repository(object):
         raise NotImplementedError("branch_merge() not implemented in backend")
 
 ### Git backend ###############################################################
+from egitu.utils import options, CmdReviewDialog
+
+CMD_TO_REVIEW = ('commit', 'pull', 'push', 'revert', 'checkout', 'rm', 'add',
+    'reset', 'commit', 'merge', 'branch', 'cherry-pick', 'clone',
+    'remote add', 'remote remove', 'remote set-url')
+CMD_TO_EXCLUDE = ('branch -a')
+
 class GitCmd(Exe):
     def __init__(self, local_path, cmd, done_cb=None, line_cb=None, *args):
+        self.local_path = local_path
         self.done_cb = done_cb
         self.line_cb = line_cb
         self.args = args
         self.lines = []
 
-        git_dir = os.path.join(local_path, '.git')
+        if options.review_git_commands and \
+           cmd.startswith(CMD_TO_REVIEW) and not cmd.startswith(CMD_TO_EXCLUDE):
+            CmdReviewDialog(cmd, self.start)
+        else:
+            self.start(cmd)
+
+    def start(self, cmd):
+        git_dir = os.path.join(self.local_path, '.git')
         real_cmd = 'git --git-dir="%s" --work-tree="%s" %s' % \
-                   (git_dir, local_path, cmd)
-
-        print("=== GIT " + cmd) # just for debug
-
+                   (git_dir, self.local_path, cmd)
+        
+        print("=== GIT " + cmd)
         Exe.__init__(self, real_cmd, 
                      ECORE_EXE_PIPE_READ | ECORE_EXE_PIPE_ERROR | 
                      ECORE_EXE_PIPE_READ_LINE_BUFFERED |
@@ -676,14 +690,22 @@ class GitCmd(Exe):
 
 class GitCmdRAW(Exe):
     def __init__(self, local_path, cmd, done_cb=None, line_cb=None, *args):
+        self.local_path = local_path
         self.done_cb = done_cb
         self.line_cb = line_cb
         self.args = args
 
-        if local_path:
-            git_dir = os.path.join(local_path, '.git')
+        if options.review_git_commands and \
+           cmd.startswith(CMD_TO_REVIEW) and not cmd.startswith(CMD_TO_EXCLUDE):
+            CmdReviewDialog(cmd, self.start)
+        else:
+            self.start(cmd)
+    
+    def start(self, cmd):
+        if self.local_path:
+            git_dir = os.path.join(self.local_path, '.git')
             real_cmd = 'git --git-dir="%s" --work-tree="%s" %s' % \
-                       (git_dir, local_path, cmd)
+                       (git_dir, self.local_path, cmd)
         else:
             real_cmd = 'git %s' % (cmd)
 
