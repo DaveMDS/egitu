@@ -502,20 +502,20 @@ class CommandOutputEntry(Table):
                             line_wrap=ELM_WRAP_NONE, 
                             size_hint_expand=EXPAND_BOTH, 
                             size_hint_fill=FILL_BOTH)
-        # TODO disable clicks in the entry
 
         self._wheel = Progressbar(self, style='wheel', pulse_mode=True,
                                   size_hint_expand=EXPAND_BOTH)
 
-        sizer_rect = Rectangle(self.evas, size_hint_min=min_size,
-                               size_hint_expand=EXPAND_BOTH)
+        self._rect = Rectangle(self.evas, size_hint_min=min_size,
+                               size_hint_expand=EXPAND_BOTH, color=(0,0,0,0))
 
-        self.pack(sizer_rect,  0, 0, 1, 1)
         self.pack(self._entry, 0, 0, 1, 1)
+        self.pack(self._rect,  0, 0, 1, 1)
         self.pack(self._wheel, 0, 0, 1, 1)
 
         self._last_was_carriage = False
         self._entry.show()
+        self._rect.show()
         self.show()
 
     @property
@@ -526,10 +526,12 @@ class CommandOutputEntry(Table):
         self._entry.text = text
 
     def pulse_start(self):
+        self._rect.repeat_events = False
         self._wheel.pulse(True)
         self._wheel.show()
 
     def pulse_stop(self):
+        self._rect.repeat_events = True
         self._wheel.pulse(False)
         self._wheel.hide()
 
