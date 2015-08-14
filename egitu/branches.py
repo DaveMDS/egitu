@@ -77,7 +77,8 @@ class BranchesDialog(DialogWindow):
         vbox.pack_end(hbox)
         hbox.show()
 
-        bt = Button(self, text='Create')
+        ic = Icon(self, standard='git-branch')
+        bt = Button(self, text='Create', content=ic)
         bt.callback_clicked_add(lambda b: CreateBranchPopup(self, app))
         hbox.pack_end(bt)
         bt.show()
@@ -159,12 +160,16 @@ class MergeBranchPopup(Popup):
         sep.show()
 
         # info entry
-        en = Entry(self, editable=False, 
+        text = 'We are going to merge branch:<br><hilight>%s</hilight><br><br>' \
+               'into current branch:<br><hilight>%s</hilight><br><br>' \
+               '<info>Note:</info> No commit will be performed, ' \
+               'you will need to manually commit after the merge.' % \
+                (self.branch, app.repo.current_branch.name)
+        if not app.repo.status.is_clean:
+            text += '<br><br><warning>Warning:</warning> The current status is not clean, ' \
+                    'I suggested to only merge in a clean status, or you can make a mess.'
+        en = Entry(self, editable=False, text=text,
                    size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
-        en.text = 'We are going to merge branch:<br><hilight>%s</hilight><br><br>' \
-                  'into current branch:<br><hilight>%s</hilight><br><br>' \
-                  'Note: I will not perform a commit for you, you will need to commit after the merge.' % \
-                  (self.branch, app.repo.current_branch.name)
         box.pack_end(en)
         en.show()
 
