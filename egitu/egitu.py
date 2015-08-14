@@ -29,7 +29,8 @@ from egitu.utils import options, config_path, theme_file_get, KeyBindings
 from egitu.gui import EgituWin, RepoSelector
 
 from egitu.vcs import repo_factory
-from egitu.utils  import recent_history_push, app_instance_set, AboutWin
+from egitu.utils  import recent_history_push, app_instance_set, \
+    AboutWin, ErrorPopup
 from egitu.branches import BranchesDialog
 from egitu.remotes import RemotesDialog
 from egitu.pushpull import PullPopup, PushPopup
@@ -75,6 +76,14 @@ class EgituApp(object):
         else:
             RepoSelector(self)
 
+    def checkout_ref(self, ref):
+        self.repo.current_branch_set(ref, self._checkout_done_cb)
+
+    def _checkout_done_cb(self, success, err_msg=None):
+        if success:
+            self.win.update_all()
+        else:
+            ErrorPopup(self.win, 'Operation Failed', utf8_to_markup(err_msg))
 
     def action_reload_repo(self, *args):
         if self.repo is not None:

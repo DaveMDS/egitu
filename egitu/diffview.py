@@ -84,6 +84,12 @@ class DiffViewer(Table):
 
     def update_action_buttons(self, buttons):
         self.action_box.clear()
+        if 'checkout' in buttons:
+            bt = Button(self, text='Checkout')
+            bt.callback_clicked_add(lambda b: \
+                self.app.checkout_ref(self.commit.sha))
+            self.action_box.pack_end(bt)
+            bt.show()
         if 'revert' in buttons:
             bt = Button(self, text='Revert')
             bt.callback_clicked_add(lambda b: \
@@ -125,7 +131,7 @@ class DiffViewer(Table):
                 msg = commit.message.strip().replace('\n', '<br>')
                 text += u'<br><br>{}'.format(msg)
             self.app.repo.request_changes(self.changes_done_cb, commit1=commit)
-            self.update_action_buttons(['revert', 'cherrypick'])
+            self.update_action_buttons(['checkout', 'revert', 'cherrypick'])
         else:
             # or the fake 'local changes' commit
             text = '<bigger><b>Local changes</b></bigger>'

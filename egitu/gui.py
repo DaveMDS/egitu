@@ -562,11 +562,8 @@ class EgituWin(StandardWindow):
             self.branch_selector.clear()
             self.branch_selector.disabled = False
             for branch in repo.branches:
-                if branch.is_current:
-                    self.branch_selector.item_add(branch.name, 'arrow_right',
-                                                  ELM_ICON_STANDARD)
-                else:
-                    self.branch_selector.item_add(branch.name)
+                ic = 'arrow-right' if branch.is_current else 'git-branch'
+                self.branch_selector.item_add(branch.name, ic, ELM_ICON_STANDARD)
             if repo.status.head_detached:
                 if repo.status.head_to_tag:
                     ic = Icon(self.branch_selector, standard='git-tag')
@@ -606,14 +603,7 @@ class EgituWin(StandardWindow):
         self.pull_btn.disabled = self.push_btn.disabled = self.app.repo is None
 
     def branch_selected_cb(self, hoversel, item):
-        def _switch_done_cb(success, err_msg=None):
-            if success:
-                self.update_header()
-                self.graph.populate(self.app.repo)
-            else:
-                ErrorPopup(self, 'Operation Failed', utf8_to_markup(err_msg))
-
-        self.app.repo.current_branch_set(item.text, _switch_done_cb)
+        self.app.checkout_ref(item.text)
 
     def show_commit(self, commit):
         self.diff_view.commit_set(commit)
