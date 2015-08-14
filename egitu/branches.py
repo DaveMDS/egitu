@@ -81,9 +81,10 @@ class BranchesDialog(DialogWindow):
         hbox.pack_end(bt)
         bt.show()
 
-        bt = Button(self, text='Delete')
+        ic = Icon(self, standard='user-trash')
+        bt = Button(self, text='Delete', content=ic)
         bt.callback_clicked_add(lambda b: DeleteBranchPopup(self, self.app,
-                                                          self.selected_branch))
+                                                    self.selected_branch.name))
         hbox.pack_end(bt)
         bt.show()
         self.delete_btn = bt
@@ -91,7 +92,7 @@ class BranchesDialog(DialogWindow):
         ic = Icon(self, standard='git-merge')
         bt = Button(self, text='Merge', content=ic)
         bt.callback_clicked_add(lambda b: MergeBranchPopup(self, app, 
-                                                         self.selected_branch))
+                                                    self.selected_branch.name))
         hbox.pack_end(bt)
         bt.show()
         self.merge_btn = bt
@@ -123,13 +124,14 @@ class BranchesDialog(DialogWindow):
                 selected = False
             icon = Icon(self, standard='git-branch')
             it = self.branches_list.item_append(label, icon, end)
+            it.data['Branch'] = b
             it.selected = selected
 
         self.branches_list.go()
     
     def _list_selected_cb(self, li, it):
-        self.selected_branch = it.text
-        if self.selected_branch == self.app.repo.current_branch.name:
+        self.selected_branch = it.data['Branch']
+        if self.selected_branch.is_current:
             self.delete_btn.disabled = True
             self.merge_btn.disabled = True
         else:
@@ -327,9 +329,9 @@ class CreateBranchPopup(Popup):
 
         # local branches
         if not only_tracking:
-            for bname in self.app.repo.branches_names:
+            for b in self.app.repo.branches:
                 ic = Icon(self, standard='git-branch')
-                self.rev_list.item_append(bname, ic)
+                self.rev_list.item_append(b.name, ic)
 
         # remote tracking branches
         for bname in self.app.repo.remote_branches_names:
@@ -380,9 +382,9 @@ class DeleteBranchPopup(Popup):
         self.branch = branch
 
         Popup.__init__(self, parent)
-        self.part_text_set('title,text', 'Branch deletion')
+        self.part_text_set('title,text', 'Delete branch')
         self.part_content_set('title,icon',
-                              Icon(self, standard='git-branch'))
+                              Icon(self, standard='user-trash'))
 
         # main vertical box
         box = Box(self)
