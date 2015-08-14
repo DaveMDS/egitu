@@ -81,7 +81,7 @@ class PushPullBase(Popup):
         lb.show()
 
         en = Entry(tb, disabled=True, single_line=True, scrollable=True,
-                   text=app.repo.current_branch,
+                   text=app.repo.current_branch.name,
                    size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
         tb.pack(en, 1, 3, 1, 1)
         en.show()
@@ -126,7 +126,7 @@ class PushPullBase(Popup):
         self.close_btn.disabled = False
 
     def autopopulate(self):
-        branch = self.app.repo.current_branch_instance
+        branch = self.app.repo.current_branch
         if branch.is_tracking:
             self.remote_combo.text = branch.remote
             self.rbranch_combo.text = branch.remote_branch

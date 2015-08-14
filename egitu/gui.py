@@ -541,7 +541,7 @@ class EgituWin(StandardWindow):
         repo = self.app.repo
 
         # update window title
-        self.title = '%s [%s]' % (repo.name, repo.current_branch)
+        self.title = '%s [%s]' % (repo.name, repo.current_branch.name)
 
         # update repo description
         if self.app.repo is None:
@@ -559,13 +559,16 @@ class EgituWin(StandardWindow):
         else:
             self.branch_selector.clear()
             self.branch_selector.disabled = False
-            for branch in repo.branches_names:
-                if branch == repo.current_branch:
-                    self.branch_selector.item_add(branch, 'arrow_right',
+            for branch in repo.branches:
+                if branch.is_current:
+                    self.branch_selector.item_add(branch.name, 'arrow_right',
                                                   ELM_ICON_STANDARD)
                 else:
-                    self.branch_selector.item_add(branch)
-            self.branch_selector.text = repo.current_branch or 'Unknown'
+                    self.branch_selector.item_add(branch.name)
+            if repo.current_branch:
+                self.branch_selector.text = repo.current_branch.name
+            else:
+                self.branch_selector.text = 'Unknown'
 
         # update the status label
         if repo.status.is_merging:

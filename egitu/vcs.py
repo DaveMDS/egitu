@@ -88,10 +88,11 @@ class Status(object):
 
 
 class Branch(object):
-    def __init__(self, name, remote=None, remote_branch=None):
+    def __init__(self, name, remote=None, remote_branch=None, is_current=False):
         self.name = name
         self.remote = remote
         self.remote_branch = remote_branch
+        self.is_current = is_current
 
     @property
     def is_tracking(self):
@@ -225,22 +226,12 @@ class Repository(object):
     @property
     def current_branch(self):
         """
-        The name of the current branch.
+        The current branch (Branch instance).
 
         NOTE: This property is cached, you need to call the refresh() function
         to actually read the value from the repo.
         """
         raise NotImplementedError("current_branch not implemented in backend")
-
-    @property 
-    def current_branch_instance(self):
-        """
-        The current branch (Branch class instance)
-        
-        NOTE: This property is cached, you need to call the refresh() function
-        to actually read the value from the repo.
-        """
-        raise NotImplementedError("current_branch_instance not implemented in backend")
 
     def current_branch_set(self, branch, done_cb, *args):
         """
@@ -261,23 +252,11 @@ class Repository(object):
     @property
     def branches(self):
         """
-        Dict of local Branch instances present in the repository.
-
-        key = branch name
-        value = Branch instance
+        The list of local branches (Branch instance) present in the repository.
 
         NOTE: This property is cached, you need to call the refresh() function.
         """
         raise NotImplementedError("branches not implemented in backend")
-
-    @property
-    def branches_names(self):
-        """
-        List of all the local branches name present in the repository.
-
-        NOTE: This property is cached, you need to call the refresh() function.
-        """
-        raise NotImplementedError("branches_names not implemented in backend")
 
     @property
     def remote_branches_names(self):
@@ -764,10 +743,10 @@ class GitBackend(Repository):
         self._name = ""
         self._description = ""
         self._status = None
-        self._current_branch = ""
-        self._branches = {}
-        self._tags = []
+        self._current_branch = None
+        self._branches = []
         self._remote_branches = []
+        self._tags = []
         self._remotes = []
 
     def check_url(self, url):
@@ -807,10 +786,9 @@ class GitBackend(Repository):
 
     def refresh(self, done_cb, *args):
         ops = [self._fetch_status, self._fetch_status_text,
-               self._fetch_branches, self._fetch_local_config,
-               self._fetch_tags]
+               self._fetch_branches_and_tags, self._fetch_local_config]
         self._status = Status()
-        
+
         def _multi_done_cb(success):
             if len(ops) > 0:
                 func = ops.pop(0)
@@ -836,7 +814,6 @@ class GitBackend(Repository):
                     self._status.ahead = int(''.join([s for s in spl[1] if s.isdigit()]))
                 except:
                     self._status.ahead = 0
-            self._current_branch =  branch
 
             # parse the list of changed files
             for line in lines:
@@ -878,34 +855,43 @@ class GitBackend(Repository):
             done_cb(success, *args)
         GitCmd(self._url, 'status', done_cb=_cmd_done_cb)
 
-    def _fetch_branches(self, done_cb, *args):
+    def _fetch_branches_and_tags(self, done_cb, *args):
+        def _cmd_line_cb(line):
+            objtype, head, refname, upstream = line.split('|')
+            # tags
+            if refname.startswith('refs/tags/'):
+                self._tags.append(refname[10:]) # remove 'ref/tags/'
+            # local branches
+            elif refname.startswith('refs/heads/'):
+                bname = refname[11:] # remove 'refs/heads/'
+                b = Branch(bname, is_current=(head == '*'))
+                if upstream:
+                    split = upstream.split('/')
+                    b.remote = split[2]
+                    b.remote_branch = '/'.join(split[3:])
+                if b.is_current:
+                    self._current_branch =  b
+                self._branches.append(b)
+            # remote branches
+            elif refname.startswith('refs/remotes'):
+                self._remote_branches.append(refname[13:]) # remove'refs/remotes/'
+
         def _cmd_done_cb(lines, success):
-            self._branches.clear()
-            del self._remote_branches[:]
-            for branch in lines:
-                if ' -> ' in branch:
-                    continue # do we need those ?
-                if branch.startswith('  remotes/'):
-                    self._remote_branches.append(branch[10:]) # remove '  remotes/'
-                else:
-                    bname = branch[2:] if branch.startswith('* ') else branch
-                    bname = bname.strip()
-                    self._branches[bname] = Branch(bname)
             done_cb(success, *args)
 
-        GitCmd(self._url, 'branch -a', _cmd_done_cb)
+        self._current_branch = None
+        del self._branches[:]
+        del self._remote_branches[:]
+        del self._tags[:]
+        cmd = 'for-each-ref --format="%(objecttype)|%(HEAD)|%(refname)|%(upstream)"'
+        GitCmd(self._url, cmd, _cmd_done_cb, _cmd_line_cb)
 
     def _fetch_local_config(self, done_cb, *args):
         def _cmd_done_cb(lines, success):
             for line in lines:
                 key, val = line.split(' ', 1)
                 key, name, prop = key.split('.')
-                if key == 'branch':
-                    if prop == 'remote':
-                        self._branches[name].remote = val
-                    elif prop == 'merge':
-                        self._branches[name].remote_branch = val[11:] # remove 'refs/head/'
-                elif key == 'remote':
+                if key == 'remote':
                     r = self.remote_get_by_name(name) 
                     if not r:
                         r = Remote(name)
@@ -916,14 +902,8 @@ class GitBackend(Repository):
             done_cb(success, *args)
 
         del self._remotes[:]
-        cmd = 'config --local --get-regexp "branch.|remote."'
+        cmd = 'config --local --get-regexp "remote."'
         GitCmd(self._url, cmd, _cmd_done_cb)
-
-    def _fetch_tags(self, done_cb, *args):
-        def _cmd_done_cb(lines, success):
-            self._tags = lines
-            done_cb(success, *args)
-        GitCmd(self._url, 'tag', _cmd_done_cb)
 
     @property
     def url(self):
@@ -955,13 +935,10 @@ class GitBackend(Repository):
     def current_branch(self):
         return self._current_branch
 
-    @property
-    def current_branch_instance(self):
-        return self._branches[self._current_branch]
-
     def current_branch_set(self, branch, done_cb, *args):
         def _cmd_done_cb(lines, success):
             if success:
+                # TODO really need to refresh?
                 self.refresh(done_cb, *args)
             else:
                 done_cb(success, '\n'.join(lines))
@@ -972,10 +949,6 @@ class GitBackend(Repository):
     @property
     def branches(self):
         return self._branches
-    
-    @property
-    def branches_names(self):
-        return sorted(self._branches.keys())
 
     @property
     def remote_branches_names(self):

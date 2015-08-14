@@ -110,13 +110,12 @@ class BranchesDialog(DialogWindow):
 
     def populate(self):
         self.branches_list.clear()
-        for bname in self.app.repo.branches_names:
-            b = self.app.repo.branches[bname]
+        for b in self.app.repo.branches:
             if b.is_tracking:
                 label = '{} → {}/{}'.format(b.name, b.remote, b.remote_branch)
             else:
-                label = bname
-            if bname == self.app.repo.current_branch:
+                label = b.name
+            if b.is_current:
                 end = Icon(self, standard='arrow-left')
                 selected = True
             else:
@@ -130,7 +129,7 @@ class BranchesDialog(DialogWindow):
     
     def _list_selected_cb(self, li, it):
         self.selected_branch = it.text
-        if self.selected_branch == self.app.repo.current_branch:
+        if self.selected_branch == self.app.repo.current_branch.name:
             self.delete_btn.disabled = True
             self.merge_btn.disabled = True
         else:
@@ -162,7 +161,7 @@ class MergeBranchPopup(Popup):
         en.text = 'We are going to merge branch:<br><hilight>%s</hilight><br><br>' \
                   'into current branch:<br><hilight>%s</hilight><br><br>' \
                   'Note: I will not perform a commit for you, you will need to commit after the merge.' % \
-                  (self.branch, app.repo.current_branch)
+                  (self.branch, app.repo.current_branch.name)
         box.pack_end(en)
         en.show()
 
