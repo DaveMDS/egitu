@@ -21,6 +21,7 @@
 from __future__ import absolute_import, print_function
 
 import os
+import time
 from datetime import datetime
 
 from efl.ecore import Exe, ECORE_EXE_PIPE_READ, ECORE_EXE_PIPE_ERROR, \
@@ -768,23 +769,30 @@ class GitBackend(Repository):
         os.chdir(url) # to make git diff works :/
         self.refresh(done_cb, *args)
 
-    """
-    Old ASYNC refresh implementation
     def refresh(self, done_cb, *args):
+        """ Async implementation, all commands spawned at the same time """
+        print('\n======== Refreshing repo =========================')
+        startup_time = time.time()
+
         def _multi_done_cb(success, *args):
             self._op_count -= 1
             if self._op_count == 0:
+                print('======== Refreshing done in %.3f seconds ========\n' % \
+                      (time.time() - startup_time))
                 done_cb(True, *args)
 
         self._status = Status()
         self._op_count = 4
         self._fetch_status(_multi_done_cb, *args)
         self._fetch_status_text(_multi_done_cb, *args)
-        self._fetch_branches(_multi_done_cb, *args)
-        self._fetch_tags(_multi_done_cb, *args)
-    """
+        self._fetch_branches_and_tags(_multi_done_cb, *args)
+        self._fetch_local_config(_multi_done_cb, *args)
 
+    """
     def refresh(self, done_cb, *args):
+        "" Sync implementation, one command after the other ""
+        print('\n======== Refreshing repo =========================')
+        startup_time = time.time()
         ops = [self._fetch_status, self._fetch_status_text,
                self._fetch_branches_and_tags, self._fetch_local_config]
         self._status = Status()
@@ -794,9 +802,12 @@ class GitBackend(Repository):
                 func = ops.pop(0)
                 func(_multi_done_cb)
             else:
+                print('======== Refreshing done in %.3f seconds ========\n' % \
+                      (time.time() - startup_time))
                 done_cb(True, *args)
 
         _multi_done_cb(True)
+    """
 
     def _fetch_status(self, done_cb, *args):
         def _cmd_done_cb(lines, success):
