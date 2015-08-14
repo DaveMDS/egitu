@@ -74,8 +74,15 @@ class Commit(object):
 class Status(object):
     def __init__(self):
         self.ahead = 0
+        self.behind = 0
         self.textual = ''
+        self.current_branch = None
         self.changes = [] # list of tuples: (mod, staged, path, new_path=None)
+
+        # HEAD status
+        self.head_detached = False
+        self.head_to_tag = None
+        self.head_to_commit = None
 
         # special statuses
         self.is_merging = False
@@ -86,6 +93,15 @@ class Status(object):
     @property
     def is_clean(self):
         return (len(self.changes) == 0)
+    
+    @property
+    def head_describe(self):
+        if self.head_detached is True:
+            return 'detached from %s' % (self.head_to_tag or self.head_to_commit[:7])
+        elif self.current_branch is not None:
+            return self.current_branch.name
+        else:
+            return 'Unknown'
 
 
 class Branch(object):
@@ -223,16 +239,6 @@ class Repository(object):
         to actually read the value from the repo.
         """
         raise NotImplementedError("status() not implemented in backend")
-
-    @property
-    def current_branch(self):
-        """
-        The current branch (Branch instance).
-
-        NOTE: This property is cached, you need to call the refresh() function
-        to actually read the value from the repo.
-        """
-        raise NotImplementedError("current_branch not implemented in backend")
 
     def current_branch_set(self, branch, done_cb, *args):
         """
@@ -744,7 +750,6 @@ class GitBackend(Repository):
         self._name = ""
         self._description = ""
         self._status = None
-        self._current_branch = None
         self._branches = []
         self._remote_branches = []
         self._tags = []
@@ -773,6 +778,10 @@ class GitBackend(Repository):
         """ Async implementation, all commands spawned at the same time """
         print('\n======== Refreshing repo =========================')
         startup_time = time.time()
+        
+        self._status = Status()
+        sha = open(os.path.join(self._url,'.git','HEAD')).read().strip()
+        self._status.head_to_commit = sha
 
         def _multi_done_cb(success, *args):
             self._op_count -= 1
@@ -781,12 +790,12 @@ class GitBackend(Repository):
                       (time.time() - startup_time))
                 done_cb(True, *args)
 
-        self._status = Status()
-        self._op_count = 4
+        self._op_count = 5
         self._fetch_status(_multi_done_cb, *args)
         self._fetch_status_text(_multi_done_cb, *args)
         self._fetch_branches_and_tags(_multi_done_cb, *args)
         self._fetch_local_config(_multi_done_cb, *args)
+        self._fetch_head_tag(_multi_done_cb, *args)
 
     """
     def refresh(self, done_cb, *args):
@@ -815,16 +824,18 @@ class GitBackend(Repository):
                 done_cb(False)
                 return
 
-            # parse the first line (current branch + ahead)
-            branch = lines.pop(0)[3:]
-            if '...' in branch:
-                spl = branch.split('...')
-                branch = spl[0]
-                try:
-                    # hmm, this seems wrong. What if the branch name contain some numbers?
-                    self._status.ahead = int(''.join([s for s in spl[1] if s.isdigit()]))
-                except:
-                    self._status.ahead = 0
+            # parse the first line (branch info)
+            # ex: "## master"
+            # ex: "## master...origin/master"
+            # ex  "## master...origin/master [ahead 1]"
+            # ex: "## HEAD (nessun branch)"
+            line = lines.pop(0)[3:]
+            if line.startswith('HEAD'):
+                self._status.head_detached = True
+            elif '[ahead' in line:
+                self._status.ahead = int(line.split('[ahead')[1][:-1])
+            elif '[behind' in line:
+                self._status.behind = int(line.split('[behind')[1][:-1])
 
             # parse the list of changed files
             for line in lines:
@@ -846,7 +857,7 @@ class GitBackend(Repository):
                 elif line[0] == 'R': # renamed
                     name, new_name = fname.split(' -> ')
                     self._status.changes.append(('R', True, name, new_name))
-            
+
             # special statuses
             self._status.is_merging = \
                 os.path.exists(os.path.join(self._url, '.git', 'MERGE_HEAD'))
@@ -866,6 +877,15 @@ class GitBackend(Repository):
             done_cb(success, *args)
         GitCmd(self._url, 'status', done_cb=_cmd_done_cb)
 
+    def _fetch_head_tag(self, done_cb, *args):
+        def _cmd_done_cb(lines, success):
+            if success:
+                self._status.head_to_tag = lines[0]
+            done_cb(success, *args)
+
+        cmd = 'describe --tags --exact-match HEAD'
+        GitCmd(self._url, cmd, done_cb=_cmd_done_cb)
+
     def _fetch_branches_and_tags(self, done_cb, *args):
         def _cmd_line_cb(line):
             objtype, head, refname, upstream = line.split('|')
@@ -881,7 +901,7 @@ class GitBackend(Repository):
                     b.remote = split[2]
                     b.remote_branch = '/'.join(split[3:])
                 if b.is_current:
-                    self._current_branch =  b
+                    self.status.current_branch = b
                 self._branches.append(b)
             # remote branches
             elif refname.startswith('refs/remotes'):
@@ -890,7 +910,6 @@ class GitBackend(Repository):
         def _cmd_done_cb(lines, success):
             done_cb(success, *args)
 
-        self._current_branch = None
         del self._branches[:]
         del self._remote_branches[:]
         del self._tags[:]
@@ -941,10 +960,6 @@ class GitBackend(Repository):
     @property
     def status(self):
         return self._status
-
-    @property
-    def current_branch(self):
-        return self._current_branch
 
     def current_branch_set(self, branch, done_cb, *args):
         def _cmd_done_cb(lines, success):

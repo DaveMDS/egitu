@@ -193,7 +193,7 @@ class CommitDialog(DialogWindow):
         if revert_commit or cherrypick_commit:
             ck = Check(vbox, state=True)
             ck.text = 'Automatically commit, in branch: %s' % \
-                      app.repo.current_branch.name
+                      app.repo.status.current_branch.name
             ck.callback_changed_add(lambda c: self.msg_entry.disabled_set(not c.state))
             vbox.pack_end(ck)
             ck.show()

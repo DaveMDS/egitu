@@ -490,7 +490,7 @@ class EgituWin(StandardWindow):
         self.status_label = lb
 
         # branch selector
-        self.branch_selector = Hoversel(self, text='Branch', disabled=True,
+        self.branch_selector = Hoversel(self, text='HEAD', disabled=True,
                                       content=Icon(self, standard='git-branch'))
         self.branch_selector.callback_selected_add(self.branch_selected_cb)
         tb.pack(self.branch_selector, 3, 0, 1, 1)
@@ -543,7 +543,7 @@ class EgituWin(StandardWindow):
         repo = self.app.repo
 
         # update window title
-        self.title = '%s [%s]' % (repo.name, repo.current_branch.name)
+        self.title = '%s (%s)' % (repo.name, repo.status.head_describe)
 
         # update repo description
         if self.app.repo is None:
@@ -567,32 +567,40 @@ class EgituWin(StandardWindow):
                                                   ELM_ICON_STANDARD)
                 else:
                     self.branch_selector.item_add(branch.name)
-            if repo.current_branch:
-                self.branch_selector.text = repo.current_branch.name
+            if repo.status.head_detached:
+                if repo.status.head_to_tag:
+                    ic = Icon(self.branch_selector, standard='git-tag')
+                else:
+                    ic = Icon(self.branch_selector, standard='git-commit')
             else:
-                self.branch_selector.text = 'Unknown'
+                ic = Icon(self.branch_selector, standard='git-branch')
+            self.branch_selector.content = ic
+            self.branch_selector.text = repo.status.head_describe
 
         # update the status label
-        if repo.status.is_merging:
+        status = repo.status
+        if status.is_merging:
             text = "<warning>!! MERGING !!</warning>"
-        elif repo.status.is_cherry:
+        elif status.is_cherry:
             text = "<warning>!! CHERRY-PICKING !!</warning>"
-        elif repo.status.is_reverting:
+        elif status.is_reverting:
             text = "<warning>!! REVERTING !!</warning>"
-        elif repo.status.is_bisecting:
+        elif status.is_bisecting:
             text = "<warning>!! BISECTING !!</warning>"
-        elif repo.status.is_clean:
+        elif status.is_clean:
             text = '<success>Status is clean!</success>'
         else:
             text = '<warning>Status is dirty!</warning>'
 
-        if repo.status.ahead == 1:
-            text += '<br><warning>Ahead by 1 commit</warning>'
-        elif repo.status.ahead > 1:
-            text += '<br><warning>Ahead by {} commits</warning>'.format(repo.status.ahead)
-
+        if status.ahead > 0:
+            text += '<br><info>Ahead by {} {}</info>'.format(
+                status.ahead, 'commit' if status.ahead == 1 else 'commits')
+        if status.behind > 0:
+            text += '<br><info>Behind by {} {}</info>'.format(
+                status.behind, 'commit' if status.behind == 1 else 'commits')
+        
         self.status_label.text = text
-        self.status_label.tooltip_text_set(repo.status.textual)
+        self.status_label.tooltip_text_set(status.textual)
         
         # push/pull buttons
         self.pull_btn.disabled = self.push_btn.disabled = self.app.repo is None

@@ -164,7 +164,7 @@ class MergeBranchPopup(Popup):
                'into current branch:<br><hilight>%s</hilight><br><br>' \
                '<info>Note:</info> No commit will be performed, ' \
                'you will need to manually commit after the merge.' % \
-                (self.branch, app.repo.current_branch.name)
+                (self.branch, app.repo.status.current_branch.name)
         if not app.repo.status.is_clean:
             text += '<br><br><warning>Warning:</warning> The current status is not clean, ' \
                     'I suggested to only merge in a clean status, or you can make a mess.'

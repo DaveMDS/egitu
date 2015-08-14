@@ -63,5 +63,6 @@ GNU General Public License v3 - see COPYING
 ## TODO ##
 
 * Manage staging area
-* Improve branches dialog with more branches info
 * Tags management
+* Blame
+* Improve branches dialog with more branches info
