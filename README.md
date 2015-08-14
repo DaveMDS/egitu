@@ -66,4 +66,3 @@ GNU General Public License v3 - see COPYING
 * Alert before merging a branch without a clean HEAD
 * Improve branches dialog with more branches info
 * Tags management
-* status label: show ahead + status (on 2 lines?)

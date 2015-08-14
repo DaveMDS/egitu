@@ -483,9 +483,11 @@ class EgituWin(StandardWindow):
         self.caption_label.show()
 
         # status label + button
-        self.status_label = lb = Entry(self, single_line=True, editable=False)
+        lb = Entry(self, editable=False, line_wrap=ELM_WRAP_NONE)
+        lb.text_style_user_push("DEFAULT='align=center'")
         tb.pack(lb, 2, 0, 1, 1)
         lb.show()
+        self.status_label = lb
 
         # branch selector
         self.branch_selector = Hoversel(self, text='Branch', disabled=True,
@@ -574,19 +576,21 @@ class EgituWin(StandardWindow):
         if repo.status.is_merging:
             text = "<warning>!! MERGING !!</warning>"
         elif repo.status.is_cherry:
-            text = "<warning>CHERRY-PICKING</warning>"
+            text = "<warning>!! CHERRY-PICKING !!</warning>"
         elif repo.status.is_reverting:
-            text = "<warning>REVERTING</warning>"
+            text = "<warning>!! REVERTING !!</warning>"
         elif repo.status.is_bisecting:
-            text = "<warning>BISECTING</warning>"
-        elif repo.status.ahead == 1 and repo.status.is_clean:
-            text = '<warning>Ahead by 1 commit</warning>'
-        elif repo.status.ahead > 1 and repo.status.is_clean:
-            text = '<warning>Ahead by {} commits</warning>'.format(repo.status.ahead)
+            text = "<warning>!! BISECTING !!</warning>"
         elif repo.status.is_clean:
             text = '<success>Status is clean!</success>'
         else:
-            text = '<warning>Status is dirty !!!</warning>'
+            text = '<warning>Status is dirty!</warning>'
+
+        if repo.status.ahead == 1:
+            text += '<br><warning>Ahead by 1 commit</warning>'
+        elif repo.status.ahead > 1:
+            text += '<br><warning>Ahead by {} commits</warning>'.format(repo.status.ahead)
+
         self.status_label.text = text
         self.status_label.tooltip_text_set(repo.status.textual)
         
