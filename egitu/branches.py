@@ -26,6 +26,7 @@ from efl.elementary.entry import Entry, utf8_to_markup
 from efl.elementary.box import Box
 from efl.elementary.button import Button
 from efl.elementary.list import List
+from efl.elementary.genlist import Genlist, GenlistItemClass
 from efl.elementary.separator import Separator
 from efl.elementary.frame import Frame
 from efl.elementary.popup import Popup
@@ -289,7 +290,11 @@ class CreateBranchPopup(Popup):
         tb.pack(r, 0, 3, 2, 1)
 
         # TODO: use genlist to speedup population
-        li = List(self, size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        self.itc = GenlistItemClass(item_style='one_icon',
+                                    text_get_func=self._gl_text_get,
+                                    content_get_func=self._gl_content_get)
+        li = Genlist(self, homogeneous=True,
+                     size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
         li.callback_selected_add(self._revision_selected_cb)
         fr.content = li
         li.show()
@@ -330,20 +335,27 @@ class CreateBranchPopup(Popup):
         # local branches
         if not only_tracking:
             for b in self.app.repo.branches:
-                ic = Icon(self, standard='git-branch')
-                self.rev_list.item_append(b.name, ic)
+                item_data = (b.name, 'git-branch')
+                self.rev_list.item_append(self.itc, item_data)
 
         # remote tracking branches
         for bname in self.app.repo.remote_branches:
-            ic = Icon(self, standard='git-branch')
-            self.rev_list.item_append(bname, ic)
+            item_data = (bname, 'git-branch')
+            self.rev_list.item_append(self.itc, item_data)
 
         # tags
         if not only_tracking:
             for tag in self.app.repo.tags:
-                self.rev_list.item_append(tag, Icon(self, standard='git-tag'))
+                item_data = (tag, 'git-tag')
+                self.rev_list.item_append(self.itc, item_data)
 
-        self.rev_list.go()
+    def _gl_text_get(self, li, part, item_data):
+        label, icon = item_data
+        return label
+
+    def _gl_content_get(self, li, part, item_data):
+        label, icon = item_data
+        return Icon(li, standard=icon)
 
     def _type_radio_changed_cb(self, chk):
         self.populate(only_tracking=True if chk.state_value else False)
