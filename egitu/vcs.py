@@ -240,13 +240,13 @@ class Repository(object):
         """
         raise NotImplementedError("status() not implemented in backend")
 
-    def current_branch_set(self, branch, done_cb, *args):
+    def checkout(self, ref, done_cb, *args):
         """
-        Change the current branch of the repo.
+        Move the HEAD to the given ref
 
         Args:
-            branch:
-                The name of the branch to switch to.
+            ref:
+                Can be any git ref (branch, tag or commit sha)
             done_cb:
                 Function to call when the operation finish.
                 Signature: cb(success, err_msg=None, *args)
@@ -254,7 +254,7 @@ class Repository(object):
                 All the others arguments passed will be given back in
                 the done_cb callback function.
         """
-        raise NotImplementedError("current_branch_set() not implemented in backend")
+        raise NotImplementedError("checkout() not implemented in backend")
 
     @property
     def branches(self):
@@ -961,7 +961,7 @@ class GitBackend(Repository):
     def status(self):
         return self._status
 
-    def current_branch_set(self, branch, done_cb, *args):
+    def checkout(self, branch, done_cb, *args):
         def _cmd_done_cb(lines, success):
             if success:
                 self.refresh(done_cb, *args)

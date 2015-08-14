@@ -77,7 +77,7 @@ class EgituApp(object):
             RepoSelector(self)
 
     def checkout_ref(self, ref):
-        self.repo.current_branch_set(ref, self._checkout_done_cb)
+        self.repo.checkout(ref, self._checkout_done_cb)
 
     def _checkout_done_cb(self, success, err_msg=None):
         if success:
