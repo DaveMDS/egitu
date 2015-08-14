@@ -141,7 +141,7 @@ class PushPullBase(Popup):
     def rbranch_populate(self, combo=None):
         self.rbranch_combo.clear()
         remote = self.remote_combo.text + '/'
-        for branch in self.app.repo.remote_branches_names:
+        for branch in self.app.repo.remote_branches:
             if branch.startswith(remote):
                 icon = Icon(self, standard='git-branch')
                 self.rbranch_combo.item_append(branch[len(remote):], icon)

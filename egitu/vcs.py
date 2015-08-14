@@ -259,13 +259,13 @@ class Repository(object):
         raise NotImplementedError("branches not implemented in backend")
 
     @property
-    def remote_branches_names(self):
+    def remote_branches(self):
         """
         List of remote branches names.
 
         NOTE: This property is cached, you need to call the refresh() function.
         """
-        raise NotImplementedError("remote_branches_names not implemented in backend")
+        raise NotImplementedError("remote_branches not implemented in backend")
 
     @property
     def tags(self):
@@ -938,7 +938,6 @@ class GitBackend(Repository):
     def current_branch_set(self, branch, done_cb, *args):
         def _cmd_done_cb(lines, success):
             if success:
-                # TODO really need to refresh?
                 self.refresh(done_cb, *args)
             else:
                 done_cb(success, '\n'.join(lines))
@@ -951,7 +950,7 @@ class GitBackend(Repository):
         return self._branches
 
     @property
-    def remote_branches_names(self):
+    def remote_branches(self):
         return self._remote_branches
 
     @property

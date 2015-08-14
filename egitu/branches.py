@@ -334,7 +334,7 @@ class CreateBranchPopup(Popup):
                 self.rev_list.item_append(b.name, ic)
 
         # remote tracking branches
-        for bname in self.app.repo.remote_branches_names:
+        for bname in self.app.repo.remote_branches:
             ic = Icon(self, standard='git-branch')
             self.rev_list.item_append(bname, ic)
 
