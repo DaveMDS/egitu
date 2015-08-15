@@ -448,29 +448,35 @@ class Repository(object):
         """
         raise NotImplementedError("remote_url_set() not implemented in backend")
 
-    def stage_file(self, done_cb, path):
+    def stage_file(self, done_cb, path, *args):
         """
         Add a file to the staging area.
 
         Args:
             done_cb:
                 Function to call when the operation finish.
-                Signature: cb(success)
+                Signature: cb(success, *args)
             path:
                 The path of the file to put in staged area.
+            args:
+                All the others arguments passed will be given back in
+                the done_cb callback function.
         """
         raise NotImplementedError("stage_file() not implemented in backend")
 
-    def unstage_file(self, done_cb, path):
+    def unstage_file(self, done_cb, path, *args):
         """
         Remove a file from the staging area.
 
         Args:
             done_cb:
                 Function to call when the operation finish.
-                Signature: cb(success)
+                Signature: cb(success, *args)
             path:
                 The path of the file to remove from the staged area.
+            args:
+                All the others arguments passed will be given back in
+                the done_cb callback function.
         """
         raise NotImplementedError("unstage_file() not implemented in backend")
 
@@ -1130,22 +1136,23 @@ class GitBackend(Repository):
         cmd = 'remote set-url %s %s' % (name, new_url)
         GitCmd(self._url, cmd, _cmd_done_cb)
 
-    def stage_file(self, done_cb, path):
+    def stage_file(self, done_cb, path, *args):
         def _cmd_done_cb(lines, success):
-            self.refresh(done_cb)
-        mod = None
+            self.refresh(done_cb, *args)
+
         for _mod, _staged, _path, _new_path in self._status.changes:
-            if _path == path: mod = _mod
-        if mod == 'D':
-            cmd = 'rm ' + path
-        else:
-            cmd = 'add ' + path
+            if _path == path: 
+                mod = _mod
+                break
+
+        cmd = '%s "%s"' % ('rm' if mod == 'D' else 'add', path)
         GitCmd(self._url, cmd, _cmd_done_cb)
 
-    def unstage_file(self, done_cb, path):
+    def unstage_file(self, done_cb, path, *args):
         def _cmd_done_cb(lines, success):
-            self.refresh(done_cb)
-        cmd = 'reset HEAD ' + path
+            self.refresh(done_cb, *args)
+
+        cmd = 'reset HEAD "%s"' % path
         GitCmd(self._url, cmd, _cmd_done_cb)
 
     def commit(self, done_cb, msg):

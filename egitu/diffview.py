@@ -23,12 +23,13 @@ from __future__ import absolute_import, print_function
 from efl.elementary.entry import Entry, ELM_WRAP_NONE, ELM_WRAP_MIXED
 from efl.elementary.icon import Icon
 from efl.elementary.image import Image
-from efl.elementary.list import List, ELM_OBJECT_SELECT_MODE_ALWAYS
 from efl.elementary.panes import Panes
 from efl.elementary.table import Table
 from efl.elementary.check import Check
 from efl.elementary.button import Button
 from efl.elementary.box import Box
+from efl.elementary.genlist import Genlist, GenlistItemClass, \
+    ELM_OBJECT_SELECT_MODE_ALWAYS
 
 from egitu.utils import options, format_date, GravatarPict, DiffedEntry, \
     EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ, FILL_HORIZ
@@ -72,15 +73,33 @@ class DiffViewer(Table):
         panes.show()
 
         # file list
-        self.diff_list = List(self, select_mode=ELM_OBJECT_SELECT_MODE_ALWAYS,
-                              size_hint_weight=EXPAND_BOTH,
-                              size_hint_align=FILL_BOTH)
-        self.diff_list.callback_selected_add(self.change_selected_cb)
+        self.itc = GenlistItemClass(item_style='default',
+                                    text_get_func=self._gl_text_get,
+                                    content_get_func=self._gl_content_get)
+        self.diff_list = Genlist(self, homogeneous=True,
+                                 select_mode=ELM_OBJECT_SELECT_MODE_ALWAYS,
+                                 size_hint_weight=EXPAND_BOTH,
+                                 size_hint_align=FILL_BOTH)
+        self.diff_list.callback_selected_add(self._list_selected_cb)
         panes.part_content_set('left', self.diff_list)
 
         # diff entry
         self.diff_entry = DiffedEntry(self)
         panes.part_content_set('right', self.diff_entry)
+
+    def _gl_text_get(self, li, part, item_data):
+        mod, staged, name, new_name = item_data
+        return '{} → {}'.format(name, new_name) if new_name else name
+    
+    def _gl_content_get(self, li, part, item_data):
+        mod, staged, name, new_name = item_data
+        if part == 'elm.swallow.icon':
+            return Icon(self, standard='git-mod-'+mod)
+        elif part == 'elm.swallow.end' and staged is not None:
+            ck = Check(self, state=staged, propagate_events=False)
+            ck.callback_changed_add(self._stage_unstage_check_cb)
+            ck.data['path'] = name
+            return ck
 
     def update_action_buttons(self, buttons):
         self.action_box.clear()
@@ -130,7 +149,7 @@ class DiffViewer(Table):
             if commit.message:
                 msg = commit.message.strip().replace('\n', '<br>')
                 text += u'<br><br>{}'.format(msg)
-            self.app.repo.request_changes(self.changes_done_cb, commit1=commit)
+            self.app.repo.request_changes(self._changes_done_cb, commit1=commit)
             self.update_action_buttons(['checkout', 'revert', 'cherrypick'])
         else:
             # or the fake 'local changes' commit
@@ -142,56 +161,49 @@ class DiffViewer(Table):
         self.picture.email_set(commit.author_email)
 
     def show_local_status(self):
-        sortd = sorted(self.app.repo.status.changes, key=lambda c: c[2])
-        for mod, staged, name, new_name in sortd:
-            icon = Icon(self, standard='git-mod-'+mod)
-
-            check = Check(self, text='', state=staged)
-            check.callback_changed_add(self.stage_unstage_cb)
-            check.data['path'] = name
-            check.data['icon'] = icon
-
-            label = '{} → {}'.format(name, new_name) if new_name else name
-            it = self.diff_list.item_append(label, icon, check)
-            it.data['change'] = mod, new_name or name
-
-        self.diff_list.go()
-
-    def stage_unstage_cb(self, check):
-        def stage_unstage_done_cb(success):
-            self.app.action_update_header()
-            for mod, staged, name, new_name in self.app.repo.status.changes:
-                if name == check.data['path']:
-                    ic = check.data['icon']
-                    ic.standard = 'git-mod-' + mod
-
-        if check.state is True:
-            self.app.repo.stage_file(stage_unstage_done_cb, check.data['path'])
-        else:
-            self.app.repo.unstage_file(stage_unstage_done_cb, check.data['path'])
+        for change in sorted(self.app.repo.status.changes, key=lambda c: c[2]):
+            mod, staged, name, new_name = change
+            self.diff_list.item_append(self.itc, change)
 
     def refresh_diff(self):
         if self.diff_list.selected_item:
-            self.change_selected_cb(self.diff_list, self.diff_list.selected_item)
+            self._list_selected_cb(self.diff_list, self.diff_list.selected_item)
 
-    def changes_done_cb(self, success, lines):
+    def _stage_unstage_check_cb(self, check):
+        path = check.data['path']
+        if check.state is True:
+            self.app.repo.stage_file(self._stage_unstage_done_cb, path, path)
+        else:
+            self.app.repo.unstage_file(self._stage_unstage_done_cb, path, path)
+
+    def _stage_unstage_done_cb(self, success, path):
+            self.app.action_update_header()
+            
+            # TODO redo all this logic without using it.data_set()
+            for mod, staged, name, new_name in self.app.repo.status.changes:
+                if name == path:
+                    new_item_data = (mod, staged, name, new_name)
+                    break
+            
+            for i in range(self.diff_list.items_count):
+                it = self.diff_list.nth_item_get(i)
+                if it.data[2] == path:
+                    it.data = new_item_data
+                    it.update()
+                    break
+
+    def _changes_done_cb(self, success, lines):
         for mod, name, new_name in lines:
-            if mod in ('M', 'A', 'D', 'R'):
-                icon = Icon(self, standard='git-mod-'+mod)
-                label = '{} → {}'.format(name, new_name) if new_name else name
-                it = self.diff_list.item_append(label, icon)
-            else:
-                it = self.diff_list.item_append('[{}] {}'.format(mod, name))
-            it.data['change'] = mod, name
+            item_data = (mod, None, name, new_name)
+            self.diff_list.item_append(self.itc, item_data)
         self.diff_list.first_item.selected = True
-        self.diff_list.go()
 
-    def change_selected_cb(self, li, item):
-        mod, path = item.data['change']
-        self.app.repo.request_diff(self.diff_done_cb, commit1=self.commit, path=path)
+    def _list_selected_cb(self, li, item):
+        mod, staged, name, new_name = item.data
+        self.app.repo.request_diff(self._diff_done_cb, commit1=self.commit, path=name)
         self.diff_entry.line_wrap = \
             ELM_WRAP_MIXED if options.diff_text_wrap else ELM_WRAP_NONE
         self.diff_entry.text = '<info>Loading diff, please wait...</info>'
 
-    def diff_done_cb(self, lines, success):
+    def _diff_done_cb(self, lines, success):
         self.diff_entry.lines_set(lines)
