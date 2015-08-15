@@ -51,10 +51,8 @@ class CommitPopup(Table):
 
         text = u'<name>{}</name>  <b>{}</b>  {}<br><br>{}'.format(commit.sha[:9],
                 commit.author, format_date(commit.commit_date), commit.title)
-        en = Entry(self, text=text)
-        en.line_wrap = ELM_WRAP_NONE
-        en.size_hint_weight = EXPAND_BOTH
-        en.size_hint_align = FILL_BOTH
+        en = Entry(self, text=text, line_wrap=ELM_WRAP_NONE,
+                   size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
         self.pack(en, 1, 0, 1, 1)
         en.show()
 
@@ -86,7 +84,6 @@ class DagGraph(Table):
         # create the first fake commit (local changes)
         if not self.repo.status.is_clean:
             c = Commit()
-            c.title = "Local changes"
             c.tags = ['Local changes']
             self.point_add(c, 1, 0)
             # self.connection_add(1, 1, 1, 2)
@@ -210,21 +207,15 @@ class DagGraph(Table):
 
     def point_add(self, commit, col, row):
         p = Layout(self, file=(self.themef,'egitu/graph/item'))
-        p.signal_callback_add("mouse,down,*", "base",
-                              self.point_mouse_down_cb, commit)
-        p.tooltip_content_cb_set(lambda o,tt:
-                CommitPopup(self, self.repo, commit))
+        p.on_mouse_down_add(self.point_mouse_down_cb, commit)
+        if commit.title is not None:
+            p.tooltip_content_cb_set(lambda o,tt:
+                                     CommitPopup(self, self.repo, commit))
         try: # added in pyefl 1.16
             from efl.elementary import ELM_TOOLTIP_ORIENT_RIGHT
             p.tooltip_orient = ELM_TOOLTIP_ORIENT_RIGHT
         except:
             pass
-
-        if options.show_message_in_dag is True:
-            l = Layout(self, file=(self.themef, 'egitu/graph/msg'))
-            l.text_set('msg.text', commit.title)
-            p.box_append('refs.box', l)
-            l.show()
 
         for head in commit.heads:
             if head == 'HEAD':
@@ -245,6 +236,12 @@ class DagGraph(Table):
         for tag in commit.tags:
             l = Layout(self, file=(self.themef, 'egitu/graph/tag'))
             l.text_set('tag.text', tag)
+            p.box_append('refs.box', l)
+            l.show()
+
+        if options.show_message_in_dag is True and commit.title is not None:
+            l = Layout(self, file=(self.themef, 'egitu/graph/msg'))
+            l.text_set('msg.text', commit.title)
             p.box_append('refs.box', l)
             l.show()
 
@@ -281,5 +278,5 @@ class DagGraph(Table):
 
         return l
 
-    def point_mouse_down_cb(self, obj, signal, source, commit):
+    def point_mouse_down_cb(self, obj, event, commit):
         self.win.show_commit(commit)

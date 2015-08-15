@@ -1,22 +1,33 @@
+
+#define DBG_SHOW(_PART, _R, _G, _B) \
+   part { name: "dbg_show"_PART; \
+      type: RECT; mouse_events: 0; \
+      description { state: "default" 0.0; \
+         rel1.to: _PART; rel2.to: _PART; \
+         color: _R _G _B 50; } }
+
+#define SHOW(_PART) DBG_SHOW(_PART, 50, 0, 0)
+
+
 images {
    image: "graph_tag_bg.png" COMP;
    image: "graph_label_bg.png" COMP;
-   image: "graph_text_bg.png" COMP;
    image: "graph_point.png" COMP;
    image: "graph_head.png" COMP;
    image: "graph_conn_vert.png" COMP;
    image: "graph_conn_vert_fork.png" COMP;
    image: "graph_conn_vert_merge.png" COMP;
 }
+
 collections {
 
    group { name: "egitu/graph/item";
       parts {
-         part { name: "base"; type: RECT; // also used from c as event catcher
+         part { name: "base"; type: RECT;
             description { state: "default" 0.0;
                min: 20 20;
                max: 20 20;
-               color: 80 0 0 0;
+               color: 0 0 0 0;
             }
          }
          part { name: "point"; type: IMAGE;
@@ -50,90 +61,13 @@ collections {
                
             }
          }
-         program { source: "base"; signal: "mouse,in";
-            action: STATE_SET "hover" 0.0;
-            transition: BOUNCE 0.5 0.5 3;
-            target: "point";
-         }
-         program { source: "base"; signal: "mouse,out";
-            action: STATE_SET "default" 0.0;
-            transition: BOUNCE 0.5 0.5 3;
-            target: "point";
-         }
-         program { source: "egitu"; signal: "head,show";
-            action: STATE_SET "visible" 0.0;
-            target: "head";
-         }
-         program { source: "egitu"; signal: "head,hide";
-            action: STATE_SET "default" 0.0;
-            target: "head";
-         }
-         
-         part { name: "label_bg"; type: IMAGE;
-            description { state: "default" 0.0;
-               visible: 0;
-               image {
-                  normal: "graph_text_bg.png";
-                  border:7 7 4 4;
-               }
-            }
-            description { state: "visible" 0.0;
-               inherit: "default" 0.0;
-               visible: 1;
-               rel1 {
-                  to: "label.text";
-                  offset: -6 0;
-               }
-               rel2 {
-                  to: "label.text";
-                  offset: 6 0;
-               }
-            }
-         }
-         part { name: "label.text"; type: TEXT;
-            description { state: "default" 0.0;
-               visible: 0;
-               rel1 {
-                  to: "base";
-                  relative: 1.0 0.0;
-                  offset: 10 0;
-               }
-               rel2 {
-                  to: "base";
-                  relative: 1.0 1.0;
-               }
-               align: 0.0 0.5;
-               text {
-                  font: "Sans";
-                  size: 10;
-                  min: 1 1;
-               }
-            }
-            description { state: "visible" 0.0;
-               inherit: "default" 0.0;
-               visible: 1;
-            }
-         }
-         program { source: "egitu"; signal: "label,hide";
-            action: STATE_SET "default" 0.0;
-            target: "label.text";
-            target: "label_bg";
-         }
-         program { source: "egitu"; signal: "label,show";
-            action: STATE_SET "visible" 0.0;
-            target: "label.text";
-            target: "label_bg";
-         }
-
          part { name: "refs.box"; type: BOX;
             description { state: "default" 0.0;
                rel1 {
-                  to: "label_bg";
                   relative: 1.0 0.0;
                   offset: 9 0;
                }
                rel2 {
-                  to: "label_bg";
                   relative: 1.0 1.0;
                }
                box {
@@ -142,8 +76,32 @@ collections {
                }
             }
          }
-      }
+         program { source: "base"; signal: "mouse,in";
+            filter: "head" "default";
+            action: STATE_SET "hover" 0.0;
+            transition: BOUNCE 0.5 0.5 3;
+            target: "point";
+         }
+         program { source: "base"; signal: "mouse,out";
+            filter: "head" "default";
+            action: STATE_SET "default" 0.0;
+            transition: BOUNCE 0.5 0.5 3;
+            target: "point";
+         }
+         program { source: "egitu"; signal: "head,show";
+            sequence {
+               action: STATE_SET "visible" 0.0;
+               target: "head";
 
+               action: STATE_SET "hover" 0.0;
+               target: "point";
+            }
+         }
+         program { source: "egitu"; signal: "head,hide";
+            action: STATE_SET "default" 0.0;
+            target: "head";
+         }
+      }
    }
 
    group { name: "egitu/graph/tag";
@@ -171,6 +129,7 @@ collections {
                   font: "Sans";
                   size: 10;
                   min: 1 1;
+                  ellipsis: -1;
                }
                
             }
@@ -205,6 +164,7 @@ collections {
                   font: "Sans";
                   size: 10;
                   min: 1 1;
+                  ellipsis: -1;
                }
             }
             description { state: "visible" 0.0;
@@ -217,31 +177,14 @@ collections {
 
    group { name: "egitu/graph/msg";
       parts {
-         part { name: "bg"; type: IMAGE;
-            description { state: "default" 0.0;
-               rel1 {
-                  to: "msg.text";
-                  offset: -6 -1;
-               }
-               rel2 {
-                  to: "msg.text";
-                  offset: 6 1;
-               }
-               image {
-                  normal: "graph_text_bg.png";
-                  border:7 7 4 4;
-               }
-            }
-         }
          part { name: "msg.text"; type: TEXT;
+            effect: SHADOW;
             description { state: "default" 0.0;
-               rel1 {
-                  offset: 6 0;
-               }
                text {
                   font: "Sans";
                   size: 10;
                   min: 1 1;
+                  ellipsis: -1;
                }
             }
             description { state: "visible" 0.0;
@@ -361,66 +304,6 @@ collections {
                   rotation.center: "rot_center";
                   rotation.z: 90;
                }
-            }
-         }
-      }
-   }
-
-   group { name: "egitu/graph/popup";
-      parts {
-         part { name: "base"; type: RECT;
-            description { state: "default" 0.0;
-               min: 20 20;
-               color: 0 0 80 255;
-               rel1.to: "sha.text";
-               rel2.to: "title.text";
-            }
-         }
-         part { name: "image"; type: RECT;
-            description { state: "default" 0.0;
-               min: 50 50;
-               max: 50 50;
-               align: 0.0 0.0;
-               color: 255 0 80 255;
-               
-            }
-         }
-         part { name: "sha.text"; type: TEXT;
-            description { state: "default" 0.0;
-               text {
-                  font: "Sans";
-                  size: 10;
-                  min: 1 1;
-               }
-               
-            }
-         }
-         part { name: "author.text"; type: TEXT;
-            description { state: "default" 0.0;
-               rel1.to: "sha.text";
-               rel2.to: "sha.text";
-               rel1.relative: 0.0 1.0;
-               rel2.relative: 1.0 2.0;
-               text {
-                  font: "Sans";
-                  size: 10;
-                  min: 1 1;
-               }
-               
-            }
-         }
-         part { name: "title.text"; type: TEXT;
-            description { state: "default" 0.0;
-               rel1.to: "author.text";
-               rel2.to: "author.text";
-               rel1.relative: 0.0 1.0;
-               rel2.relative: 1.0 2.0;
-               text {
-                  font: "Sans";
-                  size: 10;
-                  min: 1 1;
-               }
-               
             }
          }
       }
