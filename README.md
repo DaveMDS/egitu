@@ -18,6 +18,7 @@ EFL Git user interface
 * **Push/Pull** to/from remote repository
 * **Merge** any local branch in the current one
 * **Discard** not committed changes (checkout <files> or reset --HARD)
+* Add/Remove/Checkout **Tags**
 * Manage repository **remotes**
 * Review/Edit all **git commands** before execution (for advanced users)
 * Cool **Gravatar** integration
@@ -63,6 +64,5 @@ GNU General Public License v3 - see COPYING
 ## TODO ##
 
 * Manage staging area
-* Tags management
 * Blame
 * Improve branches dialog with more branches info

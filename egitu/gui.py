@@ -298,9 +298,11 @@ class MainMenuButton(Button):
                    self.app.action_reload_repo).disabled = disabled
         m.item_add(None, 'Open...', 'folder',
                    self.app.action_open)
-        m.item_add(None, 'Edit branches...', 'git-branch', 
+        m.item_add(None, 'Branches...', 'git-branch', 
                    self.app.action_branches).disabled = disabled
-        m.item_add(None, 'Edit remotes...', 'git-remote', 
+        m.item_add(None, 'Tags...', 'git-tag', 
+                   self.app.action_tags).disabled = disabled
+        m.item_add(None, 'Remotes...', 'git-remote', 
                    self.app.action_remotes).disabled = disabled
         m.item_separator_add()
 

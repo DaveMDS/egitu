@@ -32,6 +32,7 @@ from egitu.vcs import repo_factory
 from egitu.utils  import recent_history_push, app_instance_set, \
     AboutWin, ErrorPopup
 from egitu.branches import BranchesDialog
+from egitu.tags import TagsDialog
 from egitu.remotes import RemotesDialog
 from egitu.pushpull import PullPopup, PushPopup
 from egitu.gui import ClonePopup
@@ -52,6 +53,7 @@ class EgituApp(object):
         binds.bind_add('Control+p', self.action_pull)
         binds.bind_add('Control+Shift+p', self.action_push)
         binds.bind_add('Control+c', self.action_clone)
+        binds.bind_add('Control+t', self.action_tags)
 
         # try to load a repo, from command-line or cwd (else show the RepoSelector)
         if not self.try_to_load(os.path.abspath(args[0]) if args else os.getcwd()):
@@ -92,6 +94,10 @@ class EgituApp(object):
     def _reload_done_cb(self, success, err_msg=None):
         self.win.update_all()
 
+    def action_update_all(self, *args):
+        self.action_update_header()
+        self.action_update_dag()
+        
     def action_update_dag(self, *args):
         if self.repo is not None:
             self.win.graph.populate(self.repo)
@@ -114,7 +120,11 @@ class EgituApp(object):
     def action_branches(self, *args):
         if self.repo is not None:
             BranchesDialog(self)
-    
+
+    def action_tags(self, *args):
+        if self.repo is not None:
+            TagsDialog(self.win, self)
+
     def action_remotes(self, *args):
         if self.repo is not None:
             RemotesDialog(self)

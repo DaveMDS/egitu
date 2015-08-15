@@ -105,19 +105,23 @@ Powerfull <b>branches</b> management<br>
 <b>Push/Pull</b> to/from remote repository<br>
 <b>Merge</b> any local branch in the current one<br>
 <b>Discard</b> not committed changes<br>
+Add/Remove/Checkout <b>Tags</b><br>
 Manage repository <b>remotes</b><br>
 Cool <b>Gravatar</b> integration<br>
 Review/Edit all <b>git commands</b> before execution<br>
 <br>
 <br>
 <hilight>Shortcuts</hilight><br>
-Ctrl+R  (or F5) refresh the repo<br>
-Ctrl+O  open a new repository<br>
-Ctrl+P  Pull<br>
+<code>
+Ctrl+R (F5)   Refresh<br>
+Ctrl+O        Open<br>
+Ctrl+P        Pull<br>
 Ctrl+Shift+P  Push<br>
-Ctrl+B  branches manager<br>
-Ctrl+C  clone<br>
-Ctrl+Q  quit egitu<br>
+Ctrl+B        Branches<br>
+Ctrl+T        Tags<br>
+Ctrl+C        Clone<br>
+Ctrl+Q        Quit<br>
+</code>
 </align>
 """
 

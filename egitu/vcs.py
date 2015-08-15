@@ -626,11 +626,24 @@ class Repository(object):
         """
         raise NotImplementedError("branch_merge() not implemented in backend")
 
+    def tag_delete(self, done_cb, name):
+        """
+        Delete the given tag.
+
+        Args:
+            done_cb:
+                Function to call when the operation finish.
+                signature: cb(success, err_msg=None)
+            name:
+                The name of the tag to delete
+        """
+        raise NotImplementedError("tag_delete() not implemented in backend")
+
 ### Git backend ###############################################################
 from egitu.utils import options, CmdReviewDialog
 
 CMD_TO_REVIEW = ('commit', 'pull', 'push', 'revert', 'checkout', 'rm', 'add',
-    'reset', 'commit', 'merge', 'branch', 'cherry-pick', 'clone',
+    'reset', 'commit', 'merge', 'branch', 'cherry-pick', 'clone', 'tag',
     'remote add', 'remote remove', 'remote set-url')
 CMD_TO_EXCLUDE = ('branch -a')
 
@@ -1220,3 +1233,12 @@ class GitBackend(Repository):
 
         cmd = 'merge --no-commit --%s %s' % (fast_forward, name)
         GitCmd(self._url, cmd, _cmd_done_cb)
+
+    def tag_delete(self, done_cb, name):
+        def _cmd_done_cb(lines, success):
+            if success:
+                self.refresh(done_cb)
+            else:
+                done_cb(success, '\n'.join(lines))
+
+        GitCmd(self._url, 'tag --delete %s' % name, _cmd_done_cb)
