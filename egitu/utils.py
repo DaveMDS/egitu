@@ -228,7 +228,7 @@ def format_date(d):
 
     diff = datetime.now() - d
     s = diff.seconds
-    if diff.days > 2 or diff.days < 0:
+    if diff.days > 30 or diff.days < 0:
         return d.strftime(options.date_format)
     elif diff.days == 1:
         return '1 day ago'
