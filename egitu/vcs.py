@@ -646,6 +646,23 @@ class Repository(object):
         """
         raise NotImplementedError("tag_delete() not implemented in backend")
 
+    def tag_create(self, done_cb, name, annotated=True, msg=None):
+        """
+        Create a new tag
+
+        Args:
+            done_cb:
+                Function to call when the operation finish.
+                signature: cb(success, err_msg=None)
+            name:
+                The name of the tag to create
+            annotated:
+                If True create an annotated tag, a lightweight otherwise
+            msg:
+                Message for the annotated tag
+        """
+        raise NotImplementedError("tag_create() not implemented in backend")
+
 ### Git backend ###############################################################
 from egitu.utils import options, CmdReviewDialog
 
@@ -1248,4 +1265,17 @@ class GitBackend(Repository):
             else:
                 done_cb(success, '\n'.join(lines))
 
-        GitCmd(self._url, 'tag --delete %s' % name, _cmd_done_cb)
+        GitCmd(self._url, 'tag --delete "%s"' % name, _cmd_done_cb)
+
+    def tag_create(self, done_cb, name, annotated=True, msg=None):
+        def _cmd_done_cb(lines, success):
+            if success:
+                self.refresh(done_cb)
+            else:
+                done_cb(success, '\n'.join(lines))
+
+        if annotated:
+            cmd = 'tag -a "%s" -m "%s"' % (name, msg)
+        else:
+            cmd = 'tag "%s"' % (name)
+        GitCmd(self._url, cmd, _cmd_done_cb)

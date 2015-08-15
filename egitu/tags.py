@@ -20,14 +20,18 @@
 
 from __future__ import absolute_import, print_function
 
+from efl.evas import Rectangle
 from efl.elementary.entry import Entry, utf8_to_markup, ELM_WRAP_NONE
 from efl.elementary.window import DialogWindow
 from efl.elementary.box import Box
+from efl.elementary.table import Table
 from efl.elementary.button import Button
 from efl.elementary.separator import Separator
 from efl.elementary.frame import Frame
 from efl.elementary.genlist import Genlist, GenlistItemClass
 from efl.elementary.icon import Icon
+from efl.elementary.popup import Popup
+from efl.elementary.radio import Radio
 
 from egitu.utils import ErrorPopup, \
     EXPAND_BOTH, EXPAND_HORIZ, EXPAND_VERT, FILL_BOTH, FILL_HORIZ, FILL_VERT
@@ -74,8 +78,8 @@ class TagsDialog(DialogWindow):
         hbox.show()
 
 
-        bt = Button(self, text='Create (TODO)', content=Icon(self, standard='git-tag'))
-        # bt.callback_clicked_add(lambda b: self.delete())
+        bt = Button(self, text='Create', content=Icon(self, standard='git-tag'))
+        bt.callback_clicked_add(lambda b: CreateTagPopup(self, self.app))
         hbox.pack_end(bt)
         bt.show()
 
@@ -145,4 +149,117 @@ class TagsDialog(DialogWindow):
             self.populate()
         else:
             ErrorPopup(self, 'Delete Failed', utf8_to_markup(err_msg))
+
+
+class CreateTagPopup(Popup):
+    def __init__(self, parent, app):
+        self.app = app
+
+        Popup.__init__(self, parent)
+        self.part_text_set('title,text', 'Create tag')
+        self.part_content_set('title,icon', Icon(self, standard='git-tag'))
+
+        # main vertical box
+        tb = Table(self, padding=(4,4),
+                    size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        self.content = tb
+        tb.show()
+
+        # sep
+        sep = Separator(self, horizontal=True, size_hint_expand=EXPAND_BOTH)
+        tb.pack(sep, 0, 0, 2, 1)
+        sep.show()
+
+        # tag name
+        en = Entry(self, single_line=True, scrollable=True,
+                   size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        en.part_text_set('guide', 'Type the tag name, ex: v1.15.0')
+        en.callback_changed_user_add(self._something_changed_cb)
+        tb.pack(en, 0, 1, 2, 1)
+        en.show()
+        self.name_entry  = en
+
+        # annotated or light
+        rdg = Radio(self, state_value=1, value=1, text='Annotated',
+                    size_hint_expand=EXPAND_BOTH)
+        rdg.callback_changed_add(self._annotated_radio_changed_cb)
+        rdg.callback_changed_add(self._something_changed_cb)
+        tb.pack(rdg, 0, 2, 1, 1)
+        rdg.show()
+        self.annotated_radio  = rdg
+
+        rd = Radio(self, state_value=0, text='Lightweight',
+                   size_hint_expand=EXPAND_BOTH)
+        rd.callback_changed_add(self._annotated_radio_changed_cb)
+        rd.callback_changed_add(self._something_changed_cb)
+        rd.group_add(rdg)
+        tb.pack(rd, 1, 2, 1, 1)
+        rd.show()
+
+        # message entry
+        en = Entry(self, scrollable=True,
+                   size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        en.part_text_set('guide', 'Type a message for the tag')
+        en.callback_changed_user_add(self._something_changed_cb)
+
+        r = Rectangle(self.evas, size_hint_min=(200,150),
+                      size_hint_expand=EXPAND_BOTH)
+        tb.pack(r, 0, 3, 2, 1)
+        tb.pack(en, 0, 3, 2, 1)
+        en.show()
+        self.msg_entry  = en
+
+        # buttons
+        sep = Separator(self, horizontal=True, size_hint_expand=EXPAND_BOTH)
+        tb.pack(sep, 0, 4, 2, 1)
+        sep.show()
+
+        bt = Button(self, text='Cancel')
+        bt.callback_clicked_add(lambda b: self.delete())
+        self.part_content_set('button1', bt)
+        bt.show()
+
+        bt = Button(self, text='Create', disabled=True,
+                    content=Icon(self, standard='git-tag'))
+        bt.callback_clicked_add(self._create_clicked_cb)
+        self.part_content_set('button2', bt)
+        bt.show()
+        self.create_btn = bt
+
+        #
+        self.name_entry.focus = True
+        self.show()
+
+    def _something_changed_cb(self, obj):
+        disable = False
+        if self.annotated_radio.value == 1:
+            if not self.msg_entry.text or not self.name_entry.text:
+                disable = True
+        else:
+            if not self.name_entry.text:
+                disable = True
+        self.create_btn.disabled = disable
+
+    def _annotated_radio_changed_cb(self, radio):
+        if radio.value == 1:
+            self.msg_entry.disabled = False
+            self.msg_entry.text = None
+        else:
+            self.msg_entry.disabled = True
+            self.msg_entry.text = 'No message needed for lightweight tags'
+
+    def _create_clicked_cb(self, btn):
+        name = self.name_entry.text
+        annotated = True if self.annotated_radio.value == 1 else False
+        msg = self.msg_entry.text
+
+        self.app.repo.tag_create(self._create_done_cb, name, annotated, msg)
+
+    def _create_done_cb(self, success, err_msg=None):
+        if success:
+            self.app.action_update_all()
+            self.parent.populate()
+            self.delete()
+        else:
+            ErrorPopup(self.parent, err_msg)
 
