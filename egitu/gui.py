@@ -332,9 +332,13 @@ class MainMenuButton(Button):
                         self._item_check_opts_cb, 'show_remotes_in_dag')
         it.content = Check(self, state=options.show_remotes_in_dag)
 
-        it = m.item_add(it_dag, 'Show commit messagges', None,
+        it = m.item_add(it_dag, 'Show messages', None,
                         self._item_check_opts_cb, 'show_message_in_dag')
         it.content = Check(self, state=options.show_message_in_dag)
+        
+        it = m.item_add(it_dag, 'Show authors', None,
+                        self._item_check_opts_cb, 'show_author_in_dag')
+        it.content = Check(self, state=options.show_author_in_dag)
 
         it_numb = m.item_add(it_dag, 'Number of commits to load')
         for num in (100, 200, 500, 1000):

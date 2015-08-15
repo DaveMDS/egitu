@@ -176,13 +176,16 @@ collections {
    }
 
    group { name: "egitu/graph/msg";
+      styles {
+         style { name: "msg_style";
+            base: "font=Sans font_size=10 color=#ffffff style=shadow,bottom shadow_color=#00000080 wrap=none";
+         }
+      }
       parts {
-         part { name: "msg.text"; type: TEXT;
-            effect: SHADOW;
+         part { name: "msg.text"; type: TEXTBLOCK;
             description { state: "default" 0.0;
                text {
-                  font: "Sans";
-                  size: 10;
+                  style: "msg_style";
                   min: 1 1;
                   ellipsis: -1;
                }

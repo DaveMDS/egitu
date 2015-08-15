@@ -245,12 +245,23 @@ class DagGraph(Table):
             l.text_set('tag.text', tag)
             p.box_append('refs.box', l)
             l.show()
-
-        if options.show_message_in_dag is True and commit.title is not None:
-            l = Layout(self, file=(self.themef, 'egitu/graph/msg'))
-            l.text_set('msg.text', commit.title)
-            p.box_append('refs.box', l)
-            l.show()
+        
+        if commit.title is not None:
+            if options.show_message_in_dag and options.show_author_in_dag:
+                text = '<b>{}</b>: {}'.format(utf8_to_markup(commit.author),
+                                              utf8_to_markup(commit.title))
+            elif options.show_author_in_dag:
+                text = '<b>{}</b>'.format(utf8_to_markup(commit.author))
+            elif options.show_message_in_dag:
+                text = utf8_to_markup(commit.title)
+            else:
+                text = None
+            
+            if text:
+                l = Layout(self, file=(self.themef, 'egitu/graph/msg'))
+                l.text_set('msg.text', text)
+                p.box_append('refs.box', l)
+                l.show()
 
         self.pack(p, col, row, 1, 1)
         p.show()
