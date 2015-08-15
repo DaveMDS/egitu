@@ -126,7 +126,7 @@ class TagsDialog(DialogWindow):
 
     def _checkout_clicked_cb(self, btn):
         tag = self.tags_list.selected_item.data
-        self.app.repo.checkout(tag, self._checkout_done_cb)
+        self.app.repo.checkout(self._checkout_done_cb, tag)
 
     def _checkout_done_cb(self, success, err_msg=None):
         if success:

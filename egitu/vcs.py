@@ -240,16 +240,16 @@ class Repository(object):
         """
         raise NotImplementedError("status() not implemented in backend")
 
-    def checkout(self, ref, done_cb, *args):
+    def checkout(self, done_cb, ref, *args):
         """
         Move the HEAD to the given ref
 
         Args:
-            ref:
-                Can be any git ref (branch, tag or commit sha)
             done_cb:
                 Function to call when the operation finish.
                 Signature: cb(success, err_msg=None, *args)
+            ref:
+                Can be any git ref (branch, tag or commit sha)
             args:
                 All the others arguments passed will be given back in
                 the done_cb callback function.
@@ -974,14 +974,14 @@ class GitBackend(Repository):
     def status(self):
         return self._status
 
-    def checkout(self, branch, done_cb, *args):
+    def checkout(self, done_cb, ref, *args):
         def _cmd_done_cb(lines, success):
             if success:
                 self.refresh(done_cb, *args)
             else:
                 done_cb(success, '\n'.join(lines))
 
-        cmd = "checkout %s" % (branch)
+        cmd = "checkout %s" % (ref)
         GitCmd(self._url, cmd, _cmd_done_cb)
 
     @property

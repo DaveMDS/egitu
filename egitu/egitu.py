@@ -80,7 +80,7 @@ class EgituApp(object):
             RepoSelector(self)
 
     def checkout_ref(self, ref):
-        self.repo.checkout(ref, self._checkout_done_cb)
+        self.repo.checkout(self._checkout_done_cb, ref)
 
     def _checkout_done_cb(self, success, err_msg=None):
         if success:
