@@ -42,7 +42,7 @@ from efl.elementary.frame import Frame
 from efl.elementary.separator import Separator
 
 from egitu.utils import options, GravatarPict, ErrorPopup, FolderSelector, \
-    CommandOutputEntry, recent_history_get, recent_history_push, \
+    CommandOutputEntry, recent_history_get, recent_history_push, format_date, \
     EXPAND_BOTH, EXPAND_HORIZ, EXPAND_VERT, FILL_BOTH, FILL_HORIZ, FILL_VERT
 from egitu.dagview import DagGraph
 from egitu.diffview import DiffViewer
@@ -273,6 +273,70 @@ class ClonePopup(Popup):
             self.output_entry.failure()
 
 
+class StashSavePopup(Popup):
+    def __init__(self, parent, app):
+        self.app = app
+
+        Popup.__init__(self, parent)
+        self.part_text_set('title,text', 'Save current status')
+        self.part_content_set('title,icon', Icon(self, standard='git-stash'))
+
+        # main vertical box
+        box = Box(self, size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        self.content = box
+        box.show()
+
+        # separator
+        sep = Separator(self, horizontal=True, size_hint_expand=EXPAND_HORIZ)
+        box.pack_end(sep)
+        sep.show()
+
+        # description
+        en = Entry(self, single_line=True, scrollable=True,
+                   size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        en.part_text_set('guide', 'Stash description (or empty for the default)')
+        en.text = 'WIP on ' + app.repo.status.head_describe
+        box.pack_end(en)
+        en.show()
+
+        # include untracked
+        ck = Check(self, text='Include untracked files', state=True,
+                   size_hint_expand=EXPAND_HORIZ, size_hint_align=(0.0,0.5))
+        box.pack_end(ck)
+        ck.show()
+
+        # separator
+        sep = Separator(self, horizontal=True, size_hint_expand=EXPAND_HORIZ)
+        box.pack_end(sep)
+        sep.show()
+
+        # buttons
+        bt = Button(self, text='Close')
+        bt.callback_clicked_add(lambda b: self.delete())
+        self.part_content_set('button1', bt)
+        bt.show()
+
+        bt = Button(self, text='Stash', content=Icon(self, standard='git-stash'))
+        bt.callback_clicked_add(self._stash_clicked_cb, en, ck)
+        self.part_content_set('button2', bt)
+        bt.show()
+
+        # focus to the entry and show
+        en.select_all()
+        en.focus = True
+        self.show()
+
+    def _stash_clicked_cb(self, btn, entry, check):
+        self.app.repo.stash_save(self._stash_done_cb, entry.text, check.state)
+
+    def _stash_done_cb(self, success, err_msg=None):
+        self.delete()
+        if success:
+            self.app.action_update_all()
+        else:
+            ErrorPopup(self.app.win, msg=err_msg)
+
+
 class MainMenuButton(Button):
     def __init__(self, app):
         self.app = app
@@ -304,9 +368,31 @@ class MainMenuButton(Button):
                    self.app.action_tags).disabled = disabled
         m.item_add(None, 'Remotes...', 'git-remote', 
                    self.app.action_remotes).disabled = disabled
-        m.item_separator_add()
+
+        # stash menu
+        it_stash = m.item_add(None, 'Stash...', 'git-stash')
+        it_stash.disabled = disabled
+        if not disabled:
+            m.item_add(it_stash, 'Save', 'git-stash', self.app.action_stash_save)
+            m.item_separator_add(it_stash)
+            if len(self.app.repo.stash) > 0:
+                for si in self.app.repo.stash:
+                    subit = m.item_add(it_stash, si.desc)
+                    label = '{} - {}'.format(si.ref, format_date(si.ts))
+                    m.item_add(subit, label).disabled = True
+                    m.item_separator_add(subit)
+                    m.item_add(subit, 'Show (TODO)')
+                    m.item_add(subit, 'Apply (TODO)')
+                    m.item_add(subit, 'Pop (TODO)')
+                    m.item_add(subit, 'Branch (TODO)')
+                    m.item_add(subit, 'Drop (TODO)', 'user-trash')
+                m.item_separator_add(it_stash)
+                m.item_add(it_stash, 'Clear (TODO)', 'user-trash')
+            else:
+                m.item_add(it_stash, 'Nothing stashed so far').disabled = True
 
         # general options
+        m.item_separator_add()
         it_gen = m.item_add(None, 'General', 'preference')
 
         it = m.item_add(it_gen, 'Use relative dates', None,

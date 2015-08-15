@@ -124,6 +124,14 @@ class Remote(object):
         self.fetch = fetch
 
 
+class StashItem(object):
+    def __init__(self, sha, ref, desc, ts):
+        self.sha = sha    # afc5244009b92b1a95a7354a1a7dcaf6678fb3d6|
+        self.ref = ref    # stash@{0}
+        self.desc = desc  # On master: WIP on master
+        self.ts = int(ts) # timestamp
+
+
 ### Base class for backends ###################################################
 class Repository(object):
 
@@ -284,6 +292,16 @@ class Repository(object):
         to actually read the list from the repo.
         """
         raise NotImplementedError("tags not implemented in backend")
+
+    @property
+    def stash(self):
+        """
+        The list of stashed items (StashItem instances).
+
+        NOTE: This property is cached, you need to call the refresh() function
+        to actually read the list from the repo.
+        """
+        raise NotImplementedError("stash not implemented in backend")
 
     def request_commits(self, done_cb, prog_cb, max_count=100, skip=0):
         """
@@ -663,13 +681,28 @@ class Repository(object):
         """
         raise NotImplementedError("tag_create() not implemented in backend")
 
+    def stash_save(self, done_cb, msg=None, include_untracked=False):
+        """
+        Save the current state in the stash.
+        
+        Args:
+            done_cb:
+                Function to call when the operation finish.
+                signature: cb(success, err_msg=None)
+            msg:
+                Description of the stashed stuff
+            include_untracked:
+                ...really need to explain? (bool)
+        """
+        raise NotImplementedError("stash_save() not implemented in backend")
+
 ### Git backend ###############################################################
 from egitu.utils import options, CmdReviewDialog
 
 CMD_TO_REVIEW = ('commit', 'pull', 'push', 'revert', 'checkout', 'rm', 'add',
     'reset', 'commit', 'merge', 'branch', 'cherry-pick', 'clone', 'tag',
-    'remote add', 'remote remove', 'remote set-url')
-CMD_TO_EXCLUDE = ('branch -a')
+    'stash', 'remote add', 'remote remove', 'remote set-url')
+CMD_TO_EXCLUDE = ('branch -a', 'stash list')
 
 class GitCmd(Exe):
     def __init__(self, local_path, cmd, done_cb=None, line_cb=None, *args):
@@ -791,6 +824,7 @@ class GitBackend(Repository):
         self._remote_branches = []
         self._tags = []
         self._remotes = []
+        self._stash = []
 
     def check_url(self, url):
         if url and os.path.isdir(os.path.join(url, '.git')):
@@ -823,16 +857,17 @@ class GitBackend(Repository):
         def _multi_done_cb(success, *args):
             self._op_count -= 1
             if self._op_count == 0:
-                print('======== Refreshing done in %.3f seconds ========\n' % \
+                print('======== Refresh done in %.3f seconds ===========\n' % \
                       (time.time() - startup_time))
                 done_cb(True, *args)
 
-        self._op_count = 5
+        self._op_count = 6
         self._fetch_status(_multi_done_cb, *args)
         self._fetch_status_text(_multi_done_cb, *args)
         self._fetch_branches_and_tags(_multi_done_cb, *args)
         self._fetch_local_config(_multi_done_cb, *args)
         self._fetch_head_tag(_multi_done_cb, *args)
+        self._fetch_stash(_multi_done_cb, *args)
 
     """
     def refresh(self, done_cb, *args):
@@ -840,7 +875,8 @@ class GitBackend(Repository):
         print('\n======== Refreshing repo =========================')
         startup_time = time.time()
         ops = [self._fetch_status, self._fetch_status_text,
-               self._fetch_branches_and_tags, self._fetch_local_config]
+               self._fetch_branches_and_tags, self._fetch_local_config,
+               self._fetch_stash]
         self._status = Status()
 
         def _multi_done_cb(success):
@@ -848,7 +884,7 @@ class GitBackend(Repository):
                 func = ops.pop(0)
                 func(_multi_done_cb)
             else:
-                print('======== Refreshing done in %.3f seconds ========\n' % \
+                print('======== Refresh done in %.3f seconds ===========\n' % \
                       (time.time() - startup_time))
                 done_cb(True, *args)
 
@@ -950,7 +986,18 @@ class GitBackend(Repository):
         del self._branches[:]
         del self._remote_branches[:]
         del self._tags[:]
+        del self._stash[:]
         cmd = 'for-each-ref --format="%(objecttype)|%(HEAD)|%(refname)|%(upstream)"'
+        GitCmd(self._url, cmd, _cmd_done_cb, _cmd_line_cb)
+
+    def _fetch_stash(self, done_cb, *args):
+        def _cmd_line_cb(line):
+            self._stash.append(StashItem(*line.split('|')))# sha, ref, desc, ts
+
+        def _cmd_done_cb(lines, success):
+            done_cb(success, *args)
+
+        cmd = 'stash list --format="%H|%gd|%gs|%ct"'
         GitCmd(self._url, cmd, _cmd_done_cb, _cmd_line_cb)
 
     def _fetch_local_config(self, done_cb, *args):
@@ -1019,6 +1066,10 @@ class GitBackend(Repository):
     @property
     def tags(self):
         return self._tags
+
+    @property
+    def stash(self):
+        return self._stash
 
     def request_commits(self, done_cb, prog_cb, max_count=100, skip=0):
 
@@ -1279,3 +1330,14 @@ class GitBackend(Repository):
         else:
             cmd = 'tag "%s"' % (name)
         GitCmd(self._url, cmd, _cmd_done_cb)
+
+    def _common_done_cb(self, lines, success, user_cb):
+        if success:
+            self.refresh(user_cb)
+        else:
+            user_cb(success, '\n'.join(lines))
+
+    def stash_save(self, done_cb, msg=None, include_untracked=False):
+        cmd = 'stash save %s %s' % (
+              '--include-untracked' if include_untracked else '', msg or '')
+        GitCmd(self._url, cmd, self._common_done_cb, None, done_cb)

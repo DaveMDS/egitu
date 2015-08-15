@@ -35,7 +35,7 @@ from egitu.branches import BranchesDialog
 from egitu.tags import TagsDialog
 from egitu.remotes import RemotesDialog
 from egitu.pushpull import PullPopup, PushPopup
-from egitu.gui import ClonePopup
+from egitu.gui import ClonePopup, StashSavePopup
 
 
 class EgituApp(object):
@@ -55,6 +55,7 @@ class EgituApp(object):
         binds.bind_add('Control+Shift+p', self.action_push)
         binds.bind_add('Control+c', self.action_clone)
         binds.bind_add('Control+t', self.action_tags)
+        binds.bind_add('Control+s', self.action_stash_save)
 
         # try to load a repo, from command-line or cwd (else show the RepoSelector)
         if not self.try_to_load(os.path.abspath(args[0]) if args else os.getcwd()):
@@ -141,6 +142,9 @@ class EgituApp(object):
     def action_clone(self, *args):
         ClonePopup(self.win, self)
 
+    def action_stash_save(self, *args):
+        if self.repo is not None:
+            StashSavePopup(self.win, self)
 
 def main():
 

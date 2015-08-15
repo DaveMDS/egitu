@@ -121,6 +121,7 @@ Ctrl+Shift+P  Push<br>
 Ctrl+B        Branches<br>
 Ctrl+T        Tags<br>
 Ctrl+C        Clone<br>
+Ctrl+S        Stash save<br>
 Ctrl+Q        Quit<br>
 </code>
 </align>
@@ -224,6 +225,8 @@ def recent_history_push(path):
 def format_date(d):
     if d is None:
         return ''
+    if isinstance(d, int):
+        d = datetime.fromtimestamp(d)
     if options.date_relative is False:
         return d.strftime(options.date_format)
 
