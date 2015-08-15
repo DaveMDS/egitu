@@ -48,7 +48,7 @@ class BranchesDialog(DialogWindow):
         DialogWindow.__init__(self, app.win, 'Egitu-branches', 'Branches',
                               size=(500,500), autodel=True)
 
-        # main vertical box (inside a padding frame
+        # main vertical box (inside a padding frame)
         vbox = Box(self, padding=(0, 6), size_hint_weight=EXPAND_BOTH,
                    size_hint_align=FILL_BOTH)
         fr = Frame(self, style='pad_medium', size_hint_weight=EXPAND_BOTH)
@@ -58,9 +58,9 @@ class BranchesDialog(DialogWindow):
         vbox.show()
 
         # title
-        en = Entry(self, editable=False,
-                   text='<title><align=center>%s</align></title>' % 'Local branches',
-                   size_hint_expand=EXPAND_HORIZ, size_hint_fill=FILL_HORIZ)
+        en = Entry(self, editable=False, single_line=True,
+                   text='<title>%s</title>' % 'Local branches',
+                   size_hint_expand=EXPAND_HORIZ)
         vbox.pack_end(en)
         en.show()
 
@@ -93,7 +93,7 @@ class BranchesDialog(DialogWindow):
 
         ic = Icon(self, standard='git-merge')
         bt = Button(self, text='Merge', content=ic)
-        bt.callback_clicked_add(lambda b: MergeBranchPopup(self, app, 
+        bt.callback_clicked_add(lambda b: MergeBranchPopup(self, app,
                                                     self.selected_branch.name))
         hbox.pack_end(bt)
         bt.show()
@@ -130,7 +130,7 @@ class BranchesDialog(DialogWindow):
             it.selected = selected
 
         self.branches_list.go()
-    
+
     def _list_selected_cb(self, li, it):
         self.selected_branch = it.data['Branch']
         if self.selected_branch.is_current:
@@ -211,7 +211,7 @@ class MergeBranchPopup(Popup):
 
         #
         self.show()
-    
+
     def _merge_clicked_cb(self, btn):
         if self.ff_rdg.value == 0:
             ff = 'ff'
