@@ -20,7 +20,8 @@
 
 from __future__ import absolute_import, print_function
 
-from efl.elementary.entry import Entry, ELM_WRAP_NONE, ELM_WRAP_MIXED
+from efl.elementary.entry import Entry, utf8_to_markup, \
+    ELM_WRAP_NONE, ELM_WRAP_MIXED
 from efl.elementary.icon import Icon
 from efl.elementary.image import Image
 from efl.elementary.panes import Panes
@@ -150,12 +151,18 @@ class DiffViewer(Table):
 
         if commit.sha:
             # a real commit
-            text = u'<name>{0}</name>  <b>{1}</b>  {2}<br>' \
-                '<bigger><b>{3}</b></bigger>'.format(commit.sha[:9],
-                commit.author, format_date(commit.commit_date), commit.title)
+            line1 = '<name>{}</name>  <b>{}</b>  {}<br>'.format(commit.sha[:9],
+                     commit.author, format_date(commit.commit_date))
+            line2 = line3 = line4 = ''
+            if commit.committer != commit.author:
+                line2 = '<name>Committed by:</name> <b>{}</b><br>'.format(
+                         commit.committer)
+            if commit.title:
+                line3 = '<bigger><b>{}</b></bigger><br>'.format(
+                        utf8_to_markup(commit.title.strip()))
             if commit.message:
-                msg = commit.message.strip().replace('\n', '<br>')
-                text += u'<br><br>{}'.format(msg)
+                line4 = '<br>{}'.format(utf8_to_markup(commit.message.strip()))
+            text = line1 + line2 + line3 + line4
             self.app.repo.request_changes(self._changes_done_cb, commit1=commit)
             self.update_action_buttons(['checkout', 'revert', 'cherrypick'])
         else:

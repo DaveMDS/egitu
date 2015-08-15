@@ -46,12 +46,13 @@ def repo_factory(url):
 
 class Commit(object):
     def __init__(self):
-        self.sha = ""
-        self.author = ""
-        self.author_email = ""
-        self.committer = ""
-        self.title = ""
-        self.message = ""
+        self.sha = ''
+        self.author = ''
+        self.author_email = ''
+        self.committer = ''
+        self.committer_email = ''
+        self.title = ''
+        self.message = ''
         self.commit_date = None
         self.parents = []
         self.heads = []
@@ -1015,8 +1016,9 @@ class GitBackend(Repository):
 
         def _parse_commit(buf):
             c = Commit()
-            (c.sha, c.parents, c.author, c.author_email, c.commit_date,
-                c.title, c.message, refs) = buf.split(chr(0x00))
+            (c.sha, c.parents, c.author, c.author_email, c.committer,
+             c.committer_email,c.commit_date, 
+             c.title, c.message, refs) = buf.split(chr(0x00))
             if c.parents:
                 c.parents = c.parents.split(' ')
             if c.commit_date:
@@ -1039,11 +1041,13 @@ class GitBackend(Repository):
                         LOG("UNKNOWN REF: %s" % ref)
             prog_cb(c)
 
-        # fmt = 'format:{"sha":"%H", "parents":"%P", "author":"%an",
-        #                "author_email":"%ae", "commit_ts":%ct, "title":"%s",
+        # fmt = 'format:{"sha":"%H", "parents":"%P", 
+        #                "author":"%an", "author_email":"%ae",
+        #                "committer":"%cn", "committer_email":"%ce", 
+        #                "commit_ts":%ct, "title":"%s",
         #                "body": "%b", "refs":"%d"}'
         # Use ascii char 00 as field separator and char 03 as commits separator
-        fmt = '%x00'.join(('%H','%P','%an','%ae','%ct','%s','%b','%d')) + '%x03'
+        fmt = '%x00'.join(('%H','%P','%an','%ae','%cn','%ce','%ct','%s','%b','%d')) + '%x03'
         cmd = "log --pretty='tformat:%s' --decorate=full --all -n %d" % (fmt, max_count)
         if skip > 0: cmd += ' --skip %d' % skip
         GitCmd(self._url, cmd, _cmd_done_cb, _cmd_line_cb, list())

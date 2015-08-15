@@ -26,7 +26,7 @@ from datetime import datetime
 
 from efl.edje import Edje
 from efl.elementary.button import Button
-from efl.elementary.entry import Entry, ELM_WRAP_NONE
+from efl.elementary.entry import Entry, utf8_to_markup, ELM_WRAP_NONE
 from efl.elementary.table import Table
 from efl.elementary.layout import Layout
 
@@ -49,8 +49,14 @@ class CommitPopup(Table):
         self.pack(pic, 0, 0, 1, 1)
         pic.show()
 
-        text = u'<name>{}</name>  <b>{}</b>  {}<br><br>{}'.format(commit.sha[:9],
-                commit.author, format_date(commit.commit_date), commit.title)
+        if commit.committer != commit.author:
+            committed = '<name>Committed by:</name> <b>{}</b><br>'.format(
+                        commit.committer)
+        else:
+            committed = ''
+        text = '<name>{}</name>  <b>{}</b>  {}<br>{}<br>{}'.format(
+                commit.sha[:9], commit.author, format_date(commit.commit_date), 
+                committed, utf8_to_markup(commit.title))
         en = Entry(self, text=text, line_wrap=ELM_WRAP_NONE,
                    size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
         self.pack(en, 1, 0, 1, 1)
