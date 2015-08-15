@@ -88,11 +88,18 @@ class DiffViewer(Table):
         panes.part_content_set('right', self.diff_entry)
 
     def _gl_text_get(self, li, part, item_data):
-        mod, staged, name, new_name = item_data
-        return '{} → {}'.format(name, new_name) if new_name else name
-    
+        if isinstance(item_data, tuple): # in real commits
+            mod, staged, name, new = item_data
+        else: # in local changes (item_data is the path)
+            mod, staged, name, new = self.app.repo.status.changes[item_data]
+        return '{} → {}'.format(name, new) if new else name
+
     def _gl_content_get(self, li, part, item_data):
-        mod, staged, name, new_name = item_data
+        if isinstance(item_data, tuple): # in real commits
+            mod, staged, name, new = item_data
+        else: # in local changes (item_data is the path)
+            mod, staged, name, new = self.app.repo.status.changes[item_data]
+
         if part == 'elm.swallow.icon':
             return Icon(self, standard='git-mod-'+mod)
         elif part == 'elm.swallow.end' and staged is not None:
@@ -129,7 +136,7 @@ class DiffViewer(Table):
             self.action_box.pack_end(bt)
             bt.show()
         if 'discard' in buttons:
-            bt = Button(self, text='Discard', 
+            bt = Button(self, text='Discard',
                         content=Icon(self, standard='user-trash'))
             bt.callback_clicked_add(lambda b: DiscardDialog(self.app))
             self.action_box.pack_end(bt)
@@ -161,9 +168,8 @@ class DiffViewer(Table):
         self.picture.email_set(commit.author_email)
 
     def show_local_status(self):
-        for change in sorted(self.app.repo.status.changes, key=lambda c: c[2]):
-            mod, staged, name, new_name = change
-            self.diff_list.item_append(self.itc, change)
+        for path in sorted(self.app.repo.status.changes):
+            self.diff_list.item_append(self.itc, path)
 
     def refresh_diff(self):
         if self.diff_list.selected_item:
@@ -178,19 +184,7 @@ class DiffViewer(Table):
 
     def _stage_unstage_done_cb(self, success, path):
             self.app.action_update_header()
-            
-            # TODO redo all this logic without using it.data_set()
-            for mod, staged, name, new_name in self.app.repo.status.changes:
-                if name == path:
-                    new_item_data = (mod, staged, name, new_name)
-                    break
-            
-            for i in range(self.diff_list.items_count):
-                it = self.diff_list.nth_item_get(i)
-                if it.data[2] == path:
-                    it.data = new_item_data
-                    it.update()
-                    break
+            self.diff_list.realized_items_update()
 
     def _changes_done_cb(self, success, lines):
         for mod, name, new_name in lines:
@@ -199,7 +193,11 @@ class DiffViewer(Table):
         self.diff_list.first_item.selected = True
 
     def _list_selected_cb(self, li, item):
-        mod, staged, name, new_name = item.data
+        if isinstance(item.data, tuple): # in real commits
+            mod, staged, name, new = item.data
+        else: # in local changes (item_data is the path)
+            mod, staged, name, new = self.app.repo.status.changes[item.data]
+
         self.app.repo.request_diff(self._diff_done_cb, commit1=self.commit, path=name)
         self.diff_entry.line_wrap = \
             ELM_WRAP_MIXED if options.diff_text_wrap else ELM_WRAP_NONE

@@ -77,7 +77,7 @@ class Status(object):
         self.behind = 0
         self.textual = ''
         self.current_branch = None
-        self.changes = [] # list of tuples: (mod, staged, path, new_path=None)
+        self.changes = {} # key: 'path' val: (mod, staged, path, new_path=None)
 
         # HEAD status
         self.head_detached = False
@@ -860,22 +860,22 @@ class GitBackend(Repository):
             for line in lines:
                 fname = line[3:]
                 if line[0] == '?':   # untracked (added not staged)
-                    self._status.changes.append(('?', False, fname, None))
+                    self._status.changes[fname] = ('?', False, fname, None)
                 elif line[0] == 'A': # added and staged
-                    self._status.changes.append(('A', True, fname, None))
+                    self._status.changes[fname] = ('A', True, fname, None)
                 elif line[0] == 'D': # deleted and staged
-                    self._status.changes.append(('D', True, fname, None))
+                    self._status.changes[fname] = ('D', True, fname, None)
                 elif line[1] == 'D': # deleted not staged
-                    self._status.changes.append(('D', False, fname, None))
+                    self._status.changes[fname] = ('D', False, fname, None)
                 elif line[0] == 'M': # modified and staged
-                    self._status.changes.append(('M', True, fname, None))
+                    self._status.changes[fname] = ('M', True, fname, None)
                 elif line[1] == 'M': # modified not staged
-                    self._status.changes.append(('M', False, fname, None))
+                    self._status.changes[fname] = ('M', False, fname, None)
                 elif line[0] == 'U': # unmerged
-                    self._status.changes.append(('U', False, fname, None))
+                    self._status.changes[fname] = ('U', False, fname, None)
                 elif line[0] == 'R': # renamed
                     name, new_name = fname.split(' -> ')
-                    self._status.changes.append(('R', True, name, new_name))
+                    self._status.changes[name] = ('R', True, name, new_name)
 
             # special statuses
             self._status.is_merging = \
@@ -1140,12 +1140,8 @@ class GitBackend(Repository):
         def _cmd_done_cb(lines, success):
             self.refresh(done_cb, *args)
 
-        for _mod, _staged, _path, _new_path in self._status.changes:
-            if _path == path: 
-                mod = _mod
-                break
-
-        cmd = '%s "%s"' % ('rm' if mod == 'D' else 'add', path)
+        _mod, _staged, _path, _new = self._status.changes[path]
+        cmd = '%s "%s"' % ('rm' if _mod == 'D' else 'add', path)
         GitCmd(self._url, cmd, _cmd_done_cb)
 
     def unstage_file(self, done_cb, path, *args):

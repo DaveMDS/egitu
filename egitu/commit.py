@@ -78,8 +78,8 @@ class DiscardDialog(Popup):
         tb.pack(li, 0, 2, 1, 1)
         tb.pack(r, 0, 2, 1, 1)
 
-        sortd = sorted(self.app.repo.status.changes, key=lambda c: c[2])
-        for mod, staged, name, new_name in sortd:
+        for path in sorted(self.app.repo.status.changes):
+            mod, staged, name, new_name = self.app.repo.status.changes[path]
             icon = Icon(self, standard='git-mod-'+mod)
             check = Check(self, text='', state=staged, disabled=True)
             label = '{} → {}'.format(name, new_name) if new_name else name
