@@ -113,6 +113,7 @@ Review/Edit all <b>git commands</b> before execution<br>
 <br>
 <hilight>Shortcuts</hilight><br>
 <code>
+F1            About<br>
 Ctrl+R (F5)   Refresh<br>
 Ctrl+O        Open<br>
 Ctrl+P        Pull<br>

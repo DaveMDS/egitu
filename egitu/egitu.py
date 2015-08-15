@@ -46,6 +46,7 @@ class EgituApp(object):
 
         # setup keyboard shortcuts
         binds = KeyBindings(self.win, verbose=False)
+        binds.bind_add('F1', self.action_about)
         binds.bind_add(('Control+r', 'F5'), self.action_reload_repo)
         binds.bind_add('Control+o', self.action_open)
         binds.bind_add('Control+q', self.action_quit)
