@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Egitu.  If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 from efl.elementary.entry import Entry, utf8_to_markup, ELM_WRAP_NONE
 from efl.elementary.window import DialogWindow
