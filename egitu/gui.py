@@ -373,7 +373,12 @@ class MainMenuButton(Button):
         it_stash = m.item_add(None, 'Stash...', 'git-stash')
         it_stash.disabled = disabled
         if not disabled:
-            m.item_add(it_stash, 'Save', 'git-stash', self.app.action_stash_save)
+            if self.app.repo.status.is_clean:
+                m.item_add(it_stash, 'Nothing to save, status is clean',
+                           'git-stash').disabled = True
+            else:
+                m.item_add(it_stash, 'Save', 'git-stash',
+                           self.app.action_stash_save)
             m.item_separator_add(it_stash)
             if len(self.app.repo.stash) > 0:
                 for si in self.app.repo.stash:
