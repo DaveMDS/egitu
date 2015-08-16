@@ -50,6 +50,7 @@ from egitu.diffview import DiffViewer
 from egitu.remotes import RemotesDialog
 from egitu.branches import BranchesDialog
 from egitu.pushpull import PullPopup, PushPopup
+from egitu.stash import StashMenu
 from egitu.vcs import git_clone
 
 
@@ -274,147 +275,6 @@ class ClonePopup(Popup):
             self.output_entry.failure()
 
 
-class StashSavePopup(Popup):
-    def __init__(self, parent, app):
-        self.app = app
-
-        Popup.__init__(self, parent)
-        self.part_text_set('title,text', 'Save current status')
-        self.part_content_set('title,icon', Icon(self, standard='git-stash'))
-
-        # main vertical box
-        box = Box(self, size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
-        self.content = box
-        box.show()
-
-        # separator
-        sep = Separator(self, horizontal=True, size_hint_expand=EXPAND_HORIZ)
-        box.pack_end(sep)
-        sep.show()
-
-        # description
-        en = Entry(self, single_line=True, scrollable=True,
-                   size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
-        en.part_text_set('guide', 'Stash description (or empty for the default)')
-        en.text = 'WIP on ' + app.repo.status.head_describe
-        box.pack_end(en)
-        en.show()
-
-        # include untracked
-        ck = Check(self, text='Include untracked files', state=True,
-                   size_hint_expand=EXPAND_HORIZ, size_hint_align=(0.0,0.5))
-        box.pack_end(ck)
-        ck.show()
-
-        # separator
-        sep = Separator(self, horizontal=True, size_hint_expand=EXPAND_HORIZ)
-        box.pack_end(sep)
-        sep.show()
-
-        # buttons
-        bt = Button(self, text='Close')
-        bt.callback_clicked_add(lambda b: self.delete())
-        self.part_content_set('button1', bt)
-        bt.show()
-
-        bt = Button(self, text='Stash', content=Icon(self, standard='git-stash'))
-        bt.callback_clicked_add(self._stash_clicked_cb, en, ck)
-        self.part_content_set('button2', bt)
-        bt.show()
-
-        # focus to the entry and show
-        en.select_all()
-        en.focus = True
-        self.show()
-
-    def _stash_clicked_cb(self, btn, entry, check):
-        self.app.repo.stash_save(self._stash_done_cb, entry.text, check.state)
-
-    def _stash_done_cb(self, success, err_msg=None):
-        self.delete()
-        if success:
-            self.app.action_update_all()
-        else:
-            ErrorPopup(self.app.win, msg=err_msg)
-
-class StashDialog(DialogWindow):
-    def __init__(self, parent, app, stash):
-        self.app = app
-        self.stash = stash
-
-        DialogWindow.__init__(self, app.win, 'Egitu-stash', stash.ref,
-                              size=(500,500), autodel=True)
-
-        # main vertical box (inside a padding frame)
-        vbox = Box(self, padding=(0, 6), size_hint_weight=EXPAND_BOTH,
-                   size_hint_align=FILL_BOTH)
-        fr = Frame(self, style='pad_medium', size_hint_weight=EXPAND_BOTH)
-        self.resize_object_add(fr)
-        fr.content = vbox
-        fr.show()
-        vbox.show()
-
-        # title
-        en = Entry(self, editable=False, scrollable=False,
-                   text='<subtitle>{}</><br><name>Created: </name>{}'.format(
-                         stash.desc, format_date(stash.ts)),
-                   size_hint_expand=EXPAND_HORIZ, size_hint_fill=FILL_HORIZ)
-        vbox.pack_end(en)
-        en.show()
-
-        
-        # diff entry
-        self.diff_entry = DiffedEntry(self)
-        vbox.pack_end(self.diff_entry)
-        self.diff_entry.show()
-
-        # buttons
-        sep = Separator(self, horizontal=True, size_hint_expand=EXPAND_HORIZ)
-        vbox.pack_end(sep)
-        sep.show()
-
-        hbox = Box(self, horizontal=True,
-                   size_hint_expand=EXPAND_HORIZ, size_hint_fill=FILL_BOTH)
-        vbox.pack_end(hbox)
-        hbox.show()
-
-        bt = Button(self, text='Apply (TODO)')
-        # bt.callback_clicked_add( ... )
-        hbox.pack_end(bt)
-        bt.show()
-
-        bt = Button(self, text='Pop (TODO)')
-        # bt.callback_clicked_add( ... )
-        hbox.pack_end(bt)
-        bt.show()
-
-        bt = Button(self, text='Branch (TODO)', content=Icon(self, standard='git-branch'))
-        # bt.callback_clicked_add( ... )
-        hbox.pack_end(bt)
-        bt.show()
-
-        bt = Button(self, text='Drop (TODO)', content=Icon(self, standard='user-trash'))
-        # bt.callback_clicked_add( ... )
-        hbox.pack_end(bt)
-        bt.show()
-
-
-        sep = Separator(self, size_hint_expand=EXPAND_HORIZ)
-        hbox.pack_end(sep)
-
-        bt = Button(self, text='Close')
-        bt.callback_clicked_add(lambda b: self.delete())
-        hbox.pack_end(bt)
-        bt.show()
-
-        # request the diff and show the dialog
-        self.app.repo.stash_request_diff(self._diff_done_cb, stash)
-        self.show()
-
-    def _diff_done_cb(self, lines, success):
-        self.diff_entry.lines_set(lines)
-
-
 class MainMenuButton(Button):
     def __init__(self, app):
         self.app = app
@@ -448,23 +308,7 @@ class MainMenuButton(Button):
                    self.app.action_remotes).disabled = disabled
 
         # stash menu
-        it_stash = m.item_add(None, 'Stash...', 'git-stash')
-        it_stash.disabled = disabled
-        if not disabled:
-            if self.app.repo.status.is_clean:
-                m.item_add(it_stash, 'Nothing to save, status is clean',
-                           'git-stash').disabled = True
-            else:
-                m.item_add(it_stash, 'Save', 'git-stash',
-                           self.app.action_stash_save)
-            m.item_separator_add(it_stash)
-            if len(self.app.repo.stash) > 0:
-                for si in self.app.repo.stash:
-                    m.item_add(it_stash, si.desc, None, self._stash_show_cb, si)
-                m.item_separator_add(it_stash)
-                m.item_add(it_stash, 'Clear', 'user-trash', self._stash_clear_cb)
-            else:
-                m.item_add(it_stash, 'Nothing stashed so far').disabled = True
+        StashMenu(m, self.app)
 
         # general options
         m.item_separator_add()
@@ -559,20 +403,6 @@ class MainMenuButton(Button):
         options.number_of_commits_to_load = int(item.text)
         self.app.action_update_dag()
 
-    def _stash_clear_cb(self, menu, item):
-        t = 'This will delete ALL your stashed stuff<br>' \
-            '<warning>WARNING: this operation is irreversible!</warning>'
-        ConfirmPupup(self.app.win, msg=t, ok_cb=self._stash_clear_confirmed_cb)
-
-    def _stash_clear_confirmed_cb(self):
-        self.app.repo.stash_clear(self._stash_clear_done_cb)
-
-    def _stash_clear_done_cb(self, success, err_msg=None):
-        if not success:
-            ErrorPopup(self.app.win, msg=err_msg)
-
-    def _stash_show_cb(self, menu, item, stash_item):
-        StashDialog(self.app.win, self.app, stash_item)
 
 class EditableDescription(Entry):
     def __init__(self, app):

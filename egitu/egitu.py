@@ -35,7 +35,8 @@ from egitu.branches import BranchesDialog
 from egitu.tags import TagsDialog
 from egitu.remotes import RemotesDialog
 from egitu.pushpull import PullPopup, PushPopup
-from egitu.gui import ClonePopup, StashSavePopup
+from egitu.stash import StashSavePopup
+from egitu.gui import ClonePopup
 
 
 class EgituApp(object):
