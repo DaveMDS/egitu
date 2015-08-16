@@ -30,7 +30,7 @@ from efl.elementary.check import Check
 from efl.elementary.button import Button
 from efl.elementary.box import Box
 from efl.elementary.genlist import Genlist, GenlistItemClass, \
-    ELM_OBJECT_SELECT_MODE_ALWAYS
+    ELM_OBJECT_SELECT_MODE_ALWAYS, ELM_LIST_COMPRESS
 
 from egitu.utils import options, format_date, GravatarPict, DiffedEntry, \
     EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ, FILL_HORIZ
@@ -77,7 +77,7 @@ class DiffViewer(Table):
         self.itc = GenlistItemClass(item_style='default',
                                     text_get_func=self._gl_text_get,
                                     content_get_func=self._gl_content_get)
-        self.diff_list = Genlist(self, homogeneous=True,
+        self.diff_list = Genlist(self, homogeneous=True, mode=ELM_LIST_COMPRESS,
                                  select_mode=ELM_OBJECT_SELECT_MODE_ALWAYS,
                                  size_hint_weight=EXPAND_BOTH,
                                  size_hint_align=FILL_BOTH)
