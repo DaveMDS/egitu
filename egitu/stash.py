@@ -33,7 +33,8 @@ from efl.elementary.icon import Icon
 from efl.elementary.popup import Popup
 from efl.elementary.separator import Separator
 
-from egitu.utils import ErrorPopup, ConfirmPupup, DiffedEntry, format_date, \
+from egitu.utils import ErrorPopup, ConfirmPupup, RequestPopup, \
+    DiffedEntry, format_date, \
     EXPAND_BOTH, EXPAND_HORIZ, EXPAND_VERT, FILL_BOTH, FILL_HORIZ, FILL_VERT
 
 
@@ -141,22 +142,23 @@ class StashDialog(DialogWindow):
         vbox.pack_end(hbox)
         hbox.show()
 
-        bt = Button(self, text='Restore (apply)')
+        bt = Button(self, text='Apply')
         bt.callback_clicked_add(self._apply_clicked_cb)
         hbox.pack_end(bt)
         bt.show()
 
-        bt = Button(self, text='Restore and Delete (pop)')
+        bt = Button(self, text='Apply & Delete (pop)')
         bt.callback_clicked_add(self._pop_clicked_cb)
         hbox.pack_end(bt)
         bt.show()
 
-        bt = Button(self, text='Branch (TODO)', content=Icon(self, standard='git-branch'))
-        # bt.callback_clicked_add( ... )
+        bt = Button(self, text='Branch & Delete',
+                    content=Icon(self, standard='git-branch'))
+        bt.callback_clicked_add(self._branch_clicked_cb)
         hbox.pack_end(bt)
         bt.show()
 
-        bt = Button(self, text='Delete (drop)',
+        bt = Button(self, text='Delete',
                     content=Icon(self, standard='user-trash'))
         bt.callback_clicked_add(self._drop_clicked_cb)
         hbox.pack_end(bt)
@@ -207,6 +209,23 @@ class StashDialog(DialogWindow):
         self.app.repo.stash_pop(self._pop_done_cb, self.stash)
 
     def _pop_done_cb(self, success, err_msg=None):
+        if success:
+            self.app.action_update_all()
+            self.delete()
+        else:
+            ErrorPopup(self, msg=err_msg)
+
+    # branch
+    def _branch_clicked_cb(self, btn):
+        RequestPopup(self, self._branch_confirmed_cb,
+                     'Stash -> branch',
+                     'Pop the stash in a newly created branch',
+                     'Type the name for the new branch', not_empty=True)
+
+    def _branch_confirmed_cb(self, branch_name):
+        self.app.repo.stash_branch(self._branch_done_cb, self.stash, branch_name)
+
+    def _branch_done_cb(self, success, err_msg=None):
         if success:
             self.app.action_update_all()
             self.delete()

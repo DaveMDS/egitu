@@ -764,6 +764,21 @@ class Repository(object):
         """
         raise NotImplementedError("stash_pop() not implemented in backend")
 
+    def stash_branch(self, done_cb, stash_item, branch_name):
+        """
+        Create a new branch and pop the stash item in the new branch.
+
+        Args:
+            done_cb:
+                Function to call when the operation finish.
+                signature: cb(success, err_msg=None)
+            stash_item:
+                The Stash item instance
+            branch_name:
+                Name of the new branch to create
+        """
+        raise NotImplementedError("stash_pop() not implemented in backend")
+
 ### Git backend ###############################################################
 from egitu.utils import options, CmdReviewDialog
 
@@ -1429,5 +1444,7 @@ class GitBackend(Repository):
         cmd = 'stash pop "%s"' % stash_item.ref
         GitCmd(self._url, cmd, self._common_done_cb, None, done_cb)
 
+    def stash_branch(self, done_cb, stash_item, branch_name):
+        cmd = 'stash branch %s "%s"' % (branch_name, stash_item.ref)
+        GitCmd(self._url, cmd, self._common_done_cb, None, done_cb)
 
-        

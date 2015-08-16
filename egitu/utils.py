@@ -415,6 +415,56 @@ class WaitPopup(Popup):
         self.show()
 
 
+class RequestPopup(Popup):
+    def __init__(self, parent, done_cb, title, text=None, guide=None, not_empty=True):
+        self.done_cb = done_cb
+
+        Popup.__init__(self, parent)
+        self.part_text_set('title,text', title)
+
+        box = Box(self, padding=(0,4))
+        self.content = box
+        box.show()
+
+        if text:
+            lb = Label(self, text=text)
+            box.pack_end(lb)
+            lb.show()
+
+        en = Entry(self, single_line=True, scrollable=True,
+                   size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        if guide is not None:
+            en.part_text_set('guide', guide)
+        box.pack_end(en)
+        en.show()
+
+        sep = Separator(self, horizontal=True, size_hint_expand=EXPAND_HORIZ)
+        box.pack_end(sep)
+        sep.show()
+
+        b = Button(self, text='Cancel')
+        b.callback_clicked_add(lambda b: self.delete())
+        self.part_content_set('button1', b)
+        b.show()
+        
+        b = Button(self, text='OK', disabled=not_empty)
+        b.callback_clicked_add(self._confirmed_cb, en, done_cb)
+        self.part_content_set('button2', b)
+        b.show()
+
+        if not_empty is True:
+            en.callback_changed_user_add(self._entry_changed, b)
+
+        en.focus = True
+        self.show()
+
+    def _entry_changed(self, en, btn):
+        btn.disabled = True if not en.text else False
+
+    def _confirmed_cb(self, btn, en, done_cb):
+        done_cb(en.text)
+        self.delete()
+
 class ComboBox(Entry):
     def __init__(self, parent, text=None, icon=None):
         Entry.__init__(self, parent, scrollable=True, single_line=True,
