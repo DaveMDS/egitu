@@ -95,9 +95,8 @@ A Git user interface written in Python-EFL<br>
 Draw the <b>DAG</b> of the repo<br>
 View the <b>diff</b> of each revision<br>
 Edit repository <b>description</b><br>
-Change current <b>branch</b><br>
 Powerfull <b>branches</b> management<br>
-<b>Clone</b> local or remote URL<br>
+<b>Clone</b> local or remote repository<br>
 <b>Stage/unstage</b> files<br>
 <b>Commit</b> staged changes<br>
 <b>Revert</b> commits<br>
@@ -106,6 +105,7 @@ Powerfull <b>branches</b> management<br>
 <b>Merge</b> any local branch in the current one<br>
 <b>Discard</b> not committed changes<br>
 Add/Remove/Checkout <b>Tags</b><br>
+<b>Stash</b> management<br>
 Manage repository <b>remotes</b><br>
 Cool <b>Gravatar</b> integration<br>
 Review/Edit all <b>git commands</b> before execution<br>
@@ -252,6 +252,9 @@ def format_date(d):
     else:
         return '{} hours ago'.format(int(s/3600))
 
+def parseint(string):
+    return int(''.join([x for x in string if x.isdigit()]))
+
 
 class GravatarPict(Photo):
 
@@ -311,8 +314,11 @@ class DiffedEntry(Entry):
         wrap = ELM_WRAP_MIXED if options.diff_text_wrap else ELM_WRAP_NONE
         Entry.__init__(self, parent,
                        scrollable=True, editable=False, line_wrap=wrap,
-                       text="<info>Loading diff, please wait...</info>",
                        size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
+        self.loading_set()
+
+    def loading_set(self):
+        self.text = "<info>Loading diff, please wait...</info>"
 
     def lines_set(self, lines):
         markup = ''

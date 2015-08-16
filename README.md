@@ -8,17 +8,17 @@ EFL Git user interface
 * Draw the **DAG** of the repo
 * View the **diff** of each revision
 * Edit repository **description**
-* Change current **branch**
 * Powerfull **branches** management
-* **Clone** local or remote URL
+* **Clone** local or remote repository
 * **Stage/unstage** files
 * **Commit** staged changes
 * **Revert** commits (optionally autocommit the revert)
 * **Cherry-pick** commits (optionally autocommit)
-* **Push/Pull** to/from remote repository
+* **Push/Pull** to/from the remote repository
 * **Merge** any local branch in the current one
 * **Discard** not committed changes (checkout <files> or reset --HARD)
 * Add/Remove/Checkout **Tags**
+* **Stash** management
 * Manage repository **remotes**
 * Review/Edit all **git commands** before execution (for advanced users)
 * Cool **Gravatar** integration

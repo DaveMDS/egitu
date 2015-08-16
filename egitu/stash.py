@@ -20,21 +20,21 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-import os
-
 from efl import elementary as elm
 from efl.elementary.window import DialogWindow
 from efl.elementary.box import Box
+from efl.elementary.table import Table
 from efl.elementary.frame import Frame
 from efl.elementary.button import Button
 from efl.elementary.check import Check
+from efl.elementary.label import Label
 from efl.elementary.entry import Entry, ELM_WRAP_NONE, utf8_to_markup
 from efl.elementary.icon import Icon
 from efl.elementary.popup import Popup
 from efl.elementary.separator import Separator
 
 from egitu.utils import ErrorPopup, ConfirmPupup, RequestPopup, \
-    DiffedEntry, format_date, \
+    DiffedEntry, format_date, parseint, \
     EXPAND_BOTH, EXPAND_HORIZ, EXPAND_VERT, FILL_BOTH, FILL_HORIZ, FILL_VERT
 
 
@@ -106,8 +106,9 @@ class StashDialog(DialogWindow):
     def __init__(self, parent, app, stash=None):
         self.app = app
         self.stash = stash or app.repo.stash[0]
+        self.idx = parseint(stash.ref) if stash else 0
 
-        DialogWindow.__init__(self, app.win, 'Egitu-stash', self.stash.ref,
+        DialogWindow.__init__(self, app.win, 'egitu-stash', 'stash',
                               size=(500,500), autodel=True)
 
         # main vertical box (inside a padding frame)
@@ -119,13 +120,47 @@ class StashDialog(DialogWindow):
         fr.show()
         vbox.show()
 
+        # header horizontal box
+        hbox = Box(self, horizontal=True,
+                   size_hint_expand=EXPAND_HORIZ, size_hint_fill=FILL_HORIZ)
+        vbox.pack_end(hbox)
+        hbox.show()
+
         # title
         en = Entry(self, editable=False, scrollable=False,
-                   text='<subtitle>{}</><br><name>Created: </name>{}'.format(
-                         self.stash.desc, format_date(self.stash.ts)),
-                   size_hint_expand=EXPAND_HORIZ, size_hint_fill=FILL_HORIZ)
-        vbox.pack_end(en)
+                    size_hint_expand=EXPAND_HORIZ, size_hint_align=(-1,0.0))
+        hbox.pack_end(en)
         en.show()
+        self.title_entry = en
+
+        # header separator
+        sep = Separator(self)
+        hbox.pack_end(sep)
+        sep.show()
+
+        # navigation table
+        tb = Table(self, size_hint_align=(0.5,0.0))
+        hbox.pack_end(tb)
+        tb.show()
+
+        lb = Label(self)
+        tb.pack(lb, 0, 0, 2, 1)
+        lb.show()
+        self.nav_label = lb
+
+        ic = Icon(self, standard='arrow-left')
+        bt = Button(self, text='Prev', content=ic)
+        bt.callback_clicked_add(self._prev_clicked_cb)
+        tb.pack(bt, 0, 1, 1, 1)
+        bt.show()
+        self.prev_btn = bt
+
+        ic = Icon(self, standard='arrow-right')
+        bt = Button(self, text='Next', content=ic)
+        bt.callback_clicked_add(self._next_clicked_cb)
+        tb.pack(bt, 1, 1, 1, 1)
+        bt.show()
+        self.next_btn = bt
 
         # diff entry
         self.diff_entry = DiffedEntry(self)
@@ -173,17 +208,46 @@ class StashDialog(DialogWindow):
         bt.show()
 
         # request the diff and show the dialog
-        self.app.repo.stash_request_diff(self._diff_done_cb, self.stash)
+        self.update(self.idx)
         self.show()
 
+    def update(self, idx):
+        self.idx = idx
+        self.stash = self.app.repo.stash[idx]
+        stash_len = len(self.app.repo.stash)
+
+        self.title = self.stash.ref
+
+        self.title_entry.text = \
+            '<name>Stash item</> #{}   <name>Created</> {}<br>' \
+            '<subtitle>{}</>'.format(idx,
+            format_date(self.stash.ts), self.stash.desc)
+
+        self.nav_label.text = \
+            '{} {}<br>in the stash'.format(stash_len,
+            'items' if stash_len > 1 else 'item')
+
+        self.prev_btn.disabled = (idx == 0)
+        self.next_btn.disabled = (idx >= stash_len - 1)
+
+        self.diff_entry.loading_set()
+        self.app.repo.stash_request_diff(self._diff_done_cb, self.stash)
+
+    def _prev_clicked_cb(self, btn):
+        self.update(self.idx - 1)
+
+    def _next_clicked_cb(self, btn):
+        self.update(self.idx + 1)
+        
     def _diff_done_cb(self, lines, success):
         self.diff_entry.lines_set(lines)
 
     # drop
     def _drop_clicked_cb(self, btn):
         ConfirmPupup(self, ok_cb=self._drop_confirmed_cb,
-                     msg='This will delete the stash item:<br>' \
-                         '<hilight>{}</hilight>'.format(self.stash.ref))
+                     msg='This will delete the stash item:<br><br>' \
+                         '<hilight>{0.ref}</hilight><br>' \
+                         '<b>{0.desc}</b>'.format(self.stash))
 
     def _drop_confirmed_cb(self):
         self.app.repo.stash_drop(self._drop_done_cb, self.stash)
@@ -191,7 +255,12 @@ class StashDialog(DialogWindow):
     def _drop_done_cb(self, success, err_msg=None):
         # TODO: reload the dialog instead of deleting
         self.app.action_update_all()
-        self.delete()
+        if self.idx >= len(self.app.repo.stash):
+            self.idx -= 1
+        if self.idx < 0:
+            self.delete()
+        else:
+            self.update(self.idx)
 
     # apply
     def _apply_clicked_cb(self, btn):
