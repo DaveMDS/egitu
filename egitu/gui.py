@@ -41,8 +41,9 @@ from efl.elementary.table import Table
 from efl.elementary.frame import Frame
 from efl.elementary.separator import Separator
 
-from egitu.utils import options, GravatarPict, ErrorPopup, FolderSelector, \
-    CommandOutputEntry, recent_history_get, recent_history_push, format_date, \
+from egitu.utils import options, GravatarPict, ErrorPopup, ConfirmPupup, \
+    FolderSelector, CommandOutputEntry, format_date, \
+    recent_history_get, recent_history_push, \
     EXPAND_BOTH, EXPAND_HORIZ, EXPAND_VERT, FILL_BOTH, FILL_HORIZ, FILL_VERT
 from egitu.dagview import DagGraph
 from egitu.diffview import DiffViewer
@@ -392,7 +393,7 @@ class MainMenuButton(Button):
                     m.item_add(subit, 'Branch (TODO)')
                     m.item_add(subit, 'Drop (TODO)', 'user-trash')
                 m.item_separator_add(it_stash)
-                m.item_add(it_stash, 'Clear (TODO)', 'user-trash')
+                m.item_add(it_stash, 'Clear', 'user-trash', self._stash_clear_cb)
             else:
                 m.item_add(it_stash, 'Nothing stashed so far').disabled = True
 
@@ -489,6 +490,18 @@ class MainMenuButton(Button):
         options.number_of_commits_to_load = int(item.text)
         self.app.action_update_dag()
 
+    def _stash_clear_cb(self, menu, item):
+        t = 'This will delete ALL your stashed stuff<br>' \
+            '<warning>WARNING: this operation is irreversible!</warning>'
+        ConfirmPupup(self.app.win, msg=t, ok_cb=self._stash_clear_confirmed_cb)
+
+    def _stash_clear_confirmed_cb(self):
+        self.app.repo.stash_clear(self._stash_clear_done_cb)
+
+    def _stash_clear_done_cb(self, success, err_msg=None):
+        if not success:
+            ErrorPopup(self.app.win, msg=err_msg)
+            
 
 class EditableDescription(Entry):
     def __init__(self, app):

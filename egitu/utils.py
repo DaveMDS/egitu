@@ -369,19 +369,28 @@ class ConfirmPupup(Popup):
     def __init__(self, parent, title=None, msg=None, ok_cb=None):
         Popup.__init__(self, parent)
         self.part_text_set('title,text', title or 'Are you sure?')
-        self.part_text_set('default', msg or 'Please confirm')
+
+        en = Entry(self, scrollable=False, editable=False,
+                   text=msg or 'Please confirm',
+                   size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
+        self.content = en
+        en.show()
 
         b = Button(self, text='Cancel')
         b.callback_clicked_add(lambda b: self.delete())
         self.part_content_set('button1', b)
         b.show()
         
-        b = Button(self, text='Ok')
-        b.callback_clicked_add(lambda b: ok_cb())
+        b = Button(self, text='Yes, do it!')
+        b.callback_clicked_add(self._confirmed_cb, ok_cb)
         self.part_content_set('button2', b)
         b.show()
 
         self.show()
+
+    def _confirmed_cb(self, btn, ok_cb):
+        self.delete()
+        ok_cb()
 
 
 class WaitPopup(Popup):
