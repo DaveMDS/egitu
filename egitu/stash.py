@@ -156,9 +156,9 @@ class StashDialog(DialogWindow):
         hbox.pack_end(bt)
         bt.show()
 
-        bt = Button(self, text='Delete (Drop)',
+        bt = Button(self, text='Delete (drop)',
                     content=Icon(self, standard='user-trash'))
-        # bt.callback_clicked_add( ... )
+        bt.callback_clicked_add(self._drop_clicked_cb)
         hbox.pack_end(bt)
         bt.show()
 
@@ -176,6 +176,20 @@ class StashDialog(DialogWindow):
 
     def _diff_done_cb(self, lines, success):
         self.diff_entry.lines_set(lines)
+
+    # drop
+    def _drop_clicked_cb(self, btn):
+        ConfirmPupup(self, ok_cb=self._drop_confirmed_cb,
+                     msg='This will delete the stash item:<br>' \
+                         '<hilight>{}</hilight>'.format(self.stash.ref))
+
+    def _drop_confirmed_cb(self):
+        self.app.repo.stash_drop(self._drop_done_cb, self.stash)
+
+    def _drop_done_cb(self, success, err_msg=None):
+        # TODO: reload the dialog instead of deleting
+        self.app.action_update_all()
+        self.delete()
 
 
 class StashMenu(object):

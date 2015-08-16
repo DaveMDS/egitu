@@ -722,6 +722,20 @@ class Repository(object):
         """
         raise NotImplementedError("stash_clear() not implemented in backend")
 
+    def stash_drop(self, done_cb, stash_item):
+        """
+        Delete (drop) the given stash item.
+
+        WARNING: this is not reversible
+        
+        Args:
+            done_cb:
+                Function to call when the operation finish.
+                signature: cb(success, err_msg=None)
+            stash_item:
+                The Stash item instance
+        """
+        raise NotImplementedError("stash_drop() not implemented in backend")
 
 ### Git backend ###############################################################
 from egitu.utils import options, CmdReviewDialog
@@ -1375,3 +1389,10 @@ class GitBackend(Repository):
     def stash_request_diff(self, done_cb, stash_item):
         cmd = 'stash show -p "%s"' % stash_item.ref
         GitCmd(self._url, cmd, done_cb)
+
+    def stash_drop(self, done_cb, stash_item):
+        cmd = 'stash drop "%s"' % stash_item.ref
+        GitCmd(self._url, cmd, self._common_done_cb, None, done_cb)
+
+
+        
