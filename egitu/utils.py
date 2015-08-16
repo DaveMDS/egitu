@@ -122,6 +122,7 @@ Ctrl+B        Branches<br>
 Ctrl+T        Tags<br>
 Ctrl+C        Clone<br>
 Ctrl+S        Stash save<br>
+Ctrl+Shift+S  Stash show<br>
 Ctrl+Q        Quit<br>
 </code>
 </align>

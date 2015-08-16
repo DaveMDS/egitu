@@ -102,11 +102,11 @@ class StashSavePopup(Popup):
 
 
 class StashDialog(DialogWindow):
-    def __init__(self, parent, app, stash):
+    def __init__(self, parent, app, stash=None):
         self.app = app
-        self.stash = stash
+        self.stash = stash or app.repo.stash[0]
 
-        DialogWindow.__init__(self, app.win, 'Egitu-stash', stash.ref,
+        DialogWindow.__init__(self, app.win, 'Egitu-stash', self.stash.ref,
                               size=(500,500), autodel=True)
 
         # main vertical box (inside a padding frame)
@@ -121,7 +121,7 @@ class StashDialog(DialogWindow):
         # title
         en = Entry(self, editable=False, scrollable=False,
                    text='<subtitle>{}</><br><name>Created: </name>{}'.format(
-                         stash.desc, format_date(stash.ts)),
+                         self.stash.desc, format_date(self.stash.ts)),
                    size_hint_expand=EXPAND_HORIZ, size_hint_fill=FILL_HORIZ)
         vbox.pack_end(en)
         en.show()
@@ -156,7 +156,8 @@ class StashDialog(DialogWindow):
         hbox.pack_end(bt)
         bt.show()
 
-        bt = Button(self, text='Drop (TODO)', content=Icon(self, standard='user-trash'))
+        bt = Button(self, text='Delete (Drop)',
+                    content=Icon(self, standard='user-trash'))
         # bt.callback_clicked_add( ... )
         hbox.pack_end(bt)
         bt.show()
@@ -170,7 +171,7 @@ class StashDialog(DialogWindow):
         bt.show()
 
         # request the diff and show the dialog
-        self.app.repo.stash_request_diff(self._diff_done_cb, stash)
+        self.app.repo.stash_request_diff(self._diff_done_cb, self.stash)
         self.show()
 
     def _diff_done_cb(self, lines, success):
