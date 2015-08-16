@@ -737,6 +737,33 @@ class Repository(object):
         """
         raise NotImplementedError("stash_drop() not implemented in backend")
 
+    def stash_apply(self, done_cb, stash_item):
+        """
+        Apply the given stash item to your working directory.
+
+        Args:
+            done_cb:
+                Function to call when the operation finish.
+                signature: cb(success, err_msg=None)
+            stash_item:
+                The Stash item instance
+        """
+        raise NotImplementedError("stash_apply() not implemented in backend")
+
+    def stash_pop(self, done_cb, stash_item):
+        """
+        Apply the given stash item to your working directory and remove
+        it from the stash
+
+        Args:
+            done_cb:
+                Function to call when the operation finish.
+                signature: cb(success, err_msg=None)
+            stash_item:
+                The Stash item instance
+        """
+        raise NotImplementedError("stash_pop() not implemented in backend")
+
 ### Git backend ###############################################################
 from egitu.utils import options, CmdReviewDialog
 
@@ -1392,6 +1419,14 @@ class GitBackend(Repository):
 
     def stash_drop(self, done_cb, stash_item):
         cmd = 'stash drop "%s"' % stash_item.ref
+        GitCmd(self._url, cmd, self._common_done_cb, None, done_cb)
+
+    def stash_apply(self, done_cb, stash_item):
+        cmd = 'stash apply "%s"' % stash_item.ref
+        GitCmd(self._url, cmd, self._common_done_cb, None, done_cb)
+
+    def stash_pop(self, done_cb, stash_item):
+        cmd = 'stash pop "%s"' % stash_item.ref
         GitCmd(self._url, cmd, self._common_done_cb, None, done_cb)
 
 

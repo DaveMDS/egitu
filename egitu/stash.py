@@ -141,13 +141,13 @@ class StashDialog(DialogWindow):
         vbox.pack_end(hbox)
         hbox.show()
 
-        bt = Button(self, text='Apply (TODO)')
-        # bt.callback_clicked_add( ... )
+        bt = Button(self, text='Restore (apply)')
+        bt.callback_clicked_add(self._apply_clicked_cb)
         hbox.pack_end(bt)
         bt.show()
 
-        bt = Button(self, text='Pop (TODO)')
-        # bt.callback_clicked_add( ... )
+        bt = Button(self, text='Restore and Delete (pop)')
+        bt.callback_clicked_add(self._pop_clicked_cb)
         hbox.pack_end(bt)
         bt.show()
 
@@ -190,6 +190,28 @@ class StashDialog(DialogWindow):
         # TODO: reload the dialog instead of deleting
         self.app.action_update_all()
         self.delete()
+
+    # apply
+    def _apply_clicked_cb(self, btn):
+        self.app.repo.stash_apply(self._apply_done_cb, self.stash)
+
+    def _apply_done_cb(self, success, err_msg=None):
+        if success:
+            self.app.action_update_all()
+            self.delete()
+        else:
+            ErrorPopup(self, msg=err_msg)
+
+    # pop
+    def _pop_clicked_cb(self, btn):
+        self.app.repo.stash_pop(self._pop_done_cb, self.stash)
+
+    def _pop_done_cb(self, success, err_msg=None):
+        if success:
+            self.app.action_update_all()
+            self.delete()
+        else:
+            ErrorPopup(self, msg=err_msg)
 
 
 class StashMenu(object):
