@@ -709,13 +709,27 @@ class Repository(object):
         """
         raise NotImplementedError("stash_clear() not implemented in backend")
 
+    def stash_request_diff(self, done_cb, stash_item):
+        """
+        Request the full diff for the give stash item.
+
+        Args:
+            done_cb:
+                Function to call when the operation finish.
+                Signature: cb(lines, success)
+            stash_item:
+                The Stash item instance
+        """
+        raise NotImplementedError("stash_clear() not implemented in backend")
+
+
 ### Git backend ###############################################################
 from egitu.utils import options, CmdReviewDialog
 
 CMD_TO_REVIEW = ('commit', 'pull', 'push', 'revert', 'checkout', 'rm', 'add',
     'reset', 'commit', 'merge', 'branch', 'cherry-pick', 'clone', 'tag',
     'stash', 'remote add', 'remote remove', 'remote set-url')
-CMD_TO_EXCLUDE = ('branch -a', 'stash list')
+CMD_TO_EXCLUDE = ('branch -a', 'stash list', 'stash show')
 
 class GitCmd(Exe):
     def __init__(self, local_path, cmd, done_cb=None, line_cb=None, *args):
@@ -1357,3 +1371,7 @@ class GitBackend(Repository):
 
     def stash_clear(self, done_cb):
         GitCmd(self._url, 'stash clear', self._common_done_cb, None, done_cb)
+
+    def stash_request_diff(self, done_cb, stash_item):
+        cmd = 'stash show -p "%s"' % stash_item.ref
+        GitCmd(self._url, cmd, done_cb)

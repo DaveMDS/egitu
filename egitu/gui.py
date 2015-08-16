@@ -24,7 +24,7 @@ import os
 
 from efl import elementary as elm
 from efl.evas import Rectangle
-from efl.elementary.window import StandardWindow
+from efl.elementary.window import StandardWindow, DialogWindow
 from efl.elementary.box import Box
 from efl.elementary.button import Button
 from efl.elementary.check import Check
@@ -42,7 +42,7 @@ from efl.elementary.frame import Frame
 from efl.elementary.separator import Separator
 
 from egitu.utils import options, GravatarPict, ErrorPopup, ConfirmPupup, \
-    FolderSelector, CommandOutputEntry, format_date, \
+    FolderSelector, CommandOutputEntry, DiffedEntry, format_date, \
     recent_history_get, recent_history_push, \
     EXPAND_BOTH, EXPAND_HORIZ, EXPAND_VERT, FILL_BOTH, FILL_HORIZ, FILL_VERT
 from egitu.dagview import DagGraph
@@ -337,6 +337,83 @@ class StashSavePopup(Popup):
         else:
             ErrorPopup(self.app.win, msg=err_msg)
 
+class StashDialog(DialogWindow):
+    def __init__(self, parent, app, stash):
+        self.app = app
+        self.stash = stash
+
+        DialogWindow.__init__(self, app.win, 'Egitu-stash', stash.ref,
+                              size=(500,500), autodel=True)
+
+        # main vertical box (inside a padding frame)
+        vbox = Box(self, padding=(0, 6), size_hint_weight=EXPAND_BOTH,
+                   size_hint_align=FILL_BOTH)
+        fr = Frame(self, style='pad_medium', size_hint_weight=EXPAND_BOTH)
+        self.resize_object_add(fr)
+        fr.content = vbox
+        fr.show()
+        vbox.show()
+
+        # title
+        en = Entry(self, editable=False, scrollable=False,
+                   text='<subtitle>{}</><br><name>Created: </name>{}'.format(
+                         stash.desc, format_date(stash.ts)),
+                   size_hint_expand=EXPAND_HORIZ, size_hint_fill=FILL_HORIZ)
+        vbox.pack_end(en)
+        en.show()
+
+        
+        # diff entry
+        self.diff_entry = DiffedEntry(self)
+        vbox.pack_end(self.diff_entry)
+        self.diff_entry.show()
+
+        # buttons
+        sep = Separator(self, horizontal=True, size_hint_expand=EXPAND_HORIZ)
+        vbox.pack_end(sep)
+        sep.show()
+
+        hbox = Box(self, horizontal=True,
+                   size_hint_expand=EXPAND_HORIZ, size_hint_fill=FILL_BOTH)
+        vbox.pack_end(hbox)
+        hbox.show()
+
+        bt = Button(self, text='Apply (TODO)')
+        # bt.callback_clicked_add( ... )
+        hbox.pack_end(bt)
+        bt.show()
+
+        bt = Button(self, text='Pop (TODO)')
+        # bt.callback_clicked_add( ... )
+        hbox.pack_end(bt)
+        bt.show()
+
+        bt = Button(self, text='Branch (TODO)', content=Icon(self, standard='git-branch'))
+        # bt.callback_clicked_add( ... )
+        hbox.pack_end(bt)
+        bt.show()
+
+        bt = Button(self, text='Drop (TODO)', content=Icon(self, standard='user-trash'))
+        # bt.callback_clicked_add( ... )
+        hbox.pack_end(bt)
+        bt.show()
+
+
+        sep = Separator(self, size_hint_expand=EXPAND_HORIZ)
+        hbox.pack_end(sep)
+
+        bt = Button(self, text='Close')
+        bt.callback_clicked_add(lambda b: self.delete())
+        hbox.pack_end(bt)
+        bt.show()
+
+        # request the diff and show the dialog
+        self.app.repo.stash_request_diff(self._diff_done_cb, stash)
+        self.show()
+
+    def _diff_done_cb(self, lines, success):
+        self.diff_entry.lines_set(lines)
+
 
 class MainMenuButton(Button):
     def __init__(self, app):
@@ -383,15 +460,7 @@ class MainMenuButton(Button):
             m.item_separator_add(it_stash)
             if len(self.app.repo.stash) > 0:
                 for si in self.app.repo.stash:
-                    subit = m.item_add(it_stash, si.desc)
-                    label = '{} - {}'.format(si.ref, format_date(si.ts))
-                    m.item_add(subit, label).disabled = True
-                    m.item_separator_add(subit)
-                    m.item_add(subit, 'Show (TODO)')
-                    m.item_add(subit, 'Apply (TODO)')
-                    m.item_add(subit, 'Pop (TODO)')
-                    m.item_add(subit, 'Branch (TODO)')
-                    m.item_add(subit, 'Drop (TODO)', 'user-trash')
+                    m.item_add(it_stash, si.desc, None, self._stash_show_cb, si)
                 m.item_separator_add(it_stash)
                 m.item_add(it_stash, 'Clear', 'user-trash', self._stash_clear_cb)
             else:
@@ -501,7 +570,9 @@ class MainMenuButton(Button):
     def _stash_clear_done_cb(self, success, err_msg=None):
         if not success:
             ErrorPopup(self.app.win, msg=err_msg)
-            
+
+    def _stash_show_cb(self, menu, item, stash_item):
+        StashDialog(self.app.win, self.app, stash_item)
 
 class EditableDescription(Entry):
     def __init__(self, app):
