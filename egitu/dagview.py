@@ -22,6 +22,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 import sys
+import time
 from datetime import datetime
 
 from efl.edje import Edje
@@ -113,6 +114,8 @@ class DagGraph(Table):
                 self.point_add(c, 1, self._current_row)
                 self._current_row += 1
 
+        self._startup_num = self._visible_commits
+        self._startup_time = time.time()
         self.repo.request_commits(self._populate_done_cb,
                                   self._populate_progress_cb,
                                   max_count=self._commits_to_load)
@@ -199,6 +202,12 @@ class DagGraph(Table):
                                         child_col, self._current_row)
                 self._open_connection_lines.append(l)
 
+        print('\n===============================================')
+        print('=== DAG: %d revision loaded in %.3f seconds' % \
+              (self._visible_commits - self._startup_num,
+               time.time() - self._startup_time))
+        print('===============================================\n')
+
         # add the "show more" button if necessary
         if self._open_connections:
             bt = Button(self, text="Show more commits", size_hint_align=(0,0))
@@ -213,6 +222,8 @@ class DagGraph(Table):
 
     def _show_more_clicked_cb(self, bt):
         bt.delete()
+        self._startup_num = self._visible_commits
+        self._startup_time = time.time()
         self.repo.request_commits(self._populate_done_cb,
                                   self._populate_progress_cb,
                                   max_count=self._commits_to_load,
