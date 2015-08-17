@@ -25,16 +25,81 @@ collections {
 
    group { name: "egitu/graph/list_item";
       parts {
-         // DBG_SHOW("pad.swallow", 0, 0, 255)
          part { name: "pad.swallow"; type: SWALLOW;
             mouse_events: 0;
             description { state: "default" 0.0;
-               // min: 30 20;
-               // max: 30 20;
-               // rel2.relative: 0.0 1.0;
                align: 0.0 0.5;
             }
          }
+         // #########  MACRO TODO //
+         part { name: "conn1.swallow"; type: SWALLOW;
+            description { state: "default" 0.0;
+               rel1.to: "point_base";
+               rel2.to: "point_base";
+               fixed: 1 1;
+               align: 1.0 1.0;
+            }
+         }
+         part { name: "conn2.swallow"; type: SWALLOW;
+            description { state: "default" 0.0;
+               rel1.to: "point_base";
+               rel2.to: "point_base";
+               fixed: 1 1;
+               align: 1.0 1.0;
+            }
+         }
+         part { name: "conn3.swallow"; type: SWALLOW;
+            description { state: "default" 0.0;
+               rel1.to: "point_base";
+               rel2.to: "point_base";
+               fixed: 1 1;
+               align: 1.0 1.0;
+            }
+         }
+         part { name: "conn4.swallow"; type: SWALLOW;
+            description { state: "default" 0.0;
+               rel1.to: "point_base";
+               rel2.to: "point_base";
+               fixed: 1 1;
+               align: 1.0 1.0;
+            }
+         }
+         // ######### MACRO TODO //
+         part { name: "conn1.swallow.fork"; type: SWALLOW;
+            description { state: "default" 0.0;
+               rel1.to: "point_base";
+               rel2.to: "point_base";
+               fixed: 1 1;
+               align: 0.0 1.0;
+            }
+         }
+         part { name: "conn2.swallow.fork"; type: SWALLOW;
+            description { state: "default" 0.0;
+               rel1.to: "point_base";
+               rel2.to: "point_base";
+               fixed: 1 1;
+               align: 0.0 1.0;
+            }
+         }
+         part { name: "conn3.swallow.fork"; type: SWALLOW;
+            description { state: "default" 0.0;
+               rel1.to: "point_base";
+               rel2.to: "point_base";
+               fixed: 1 1;
+               align: 0.0 1.0;
+            }
+         }
+         part { name: "conn4.swallow.fork"; type: SWALLOW;
+            description { state: "default" 0.0;
+               rel1.to: "point_base";
+               rel2.to: "point_base";
+               fixed: 1 1;
+               align: 0.0 1.0;
+            }
+         }
+         // SHOW("connection1.swallow")
+         // ######### //
+
          part { name: "point_base"; type: SPACER;
             mouse_events: 0;
             description { state: "default" 0.0;
@@ -71,6 +136,31 @@ collections {
                visible: 1;
             }
          }
+         /* TODO still need to retry the box approach
+         part { name: "connections.box"; type: BOX;
+            mouse_events: 0;
+            description { state: "default" 0.0;
+               rel1 {
+                  to: "point_base";
+                  // relative: 1.0 0.0;
+                  // offset: 4 0;
+               }
+               rel2 {
+                  to: "point_base";
+                  // relative: 1.0 1.0;
+                  // offset: 4 0;
+               }
+               // align: 0.0 0.0;
+               box {
+                  layout: "stack";
+                  // padding: 12 0;
+                  // min: 1 1;
+                  align: 1.0 0.0;
+               }
+            }
+         }
+         */
+
          part { name: "refs.box"; type: BOX;
             mouse_events: 0;
             description { state: "default" 0.0;

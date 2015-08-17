@@ -69,10 +69,10 @@ class CommitPopup(Table):
 
 
 class CommitDagData(object):
-    def __init__(self, col):
+    def __init__(self, col, row):
         self.col = col
-
-COL_SIZE = 20
+        self.row = row
+        self.obj = None # the edje swallowed in the genlist icon.swallow
 
 class DagGraph(Genlist):
     def __init__(self, parent, app, *args, **kargs):
@@ -103,6 +103,9 @@ class DagGraph(Genlist):
         # self._commits_to_load = options.number_of_commits_to_load
         self._commits_to_load = 20000
 
+        self.COLW = 20 # columns width (fixed)
+        self.RAWH = 0  # raws height (fetched from genlist on first realize)
+
         self.clear()
 
         # create the first fake commit (local changes)
@@ -111,7 +114,7 @@ class DagGraph(Genlist):
             c.special = 'local'
             c.tags = ['Local changes']
             c.title = None
-            c.dag_data = CommitDagData(col=1)
+            c.dag_data = CommitDagData(col=1, row=self._current_row)
             
             self._current_row += 1
             self._first_commit = c
@@ -166,24 +169,9 @@ class DagGraph(Genlist):
             self._first_commit = commit
 
         # 1. draw the connection if there are 'open-to' this one
-        """
         if commit.sha in self._open_connections:
-            R = self._open_connections.pop(commit.sha)
-            point_col = min([c[2] for c in R])
-            for child_col, child_row, new_col in R:
-                self.connection_add(child_col, child_row,
-                                    point_col, self._current_row)
-            # if is a fork we can release the columns
-            if len(R) > 1:
-                for c in R:
-                    if c[2] != point_col:
-                        self._used_columns.remove(c[2])
-        else:
-            # point need a new free column
-            point_col = self._find_a_free_column()
-        """
-        if commit.sha in self._open_connections:
-            R = self._open_connections.pop(commit.sha)
+            # R = self._open_connections.pop(commit.sha)
+            R = self._open_connections[commit.sha]
             point_col = min([c[2] for c in R])
             # for child_col, child_row, new_col in R:
                 # self.connection_add(child_col, child_row,
@@ -199,22 +187,9 @@ class DagGraph(Genlist):
         
         
         # 2. add an open_connection, one for each parent
-        """
         i = 0
         for parent in commit.parents:
-            r = (point_col,
-                 self._current_row,
-                 self._find_a_free_column() if i > 0 else point_col)
-            if parent in self._open_connections:
-                self._open_connections[parent].append(r)
-            else:
-                self._open_connections[parent] = [r]
-            i += 1
-        """
-        i = 0
-        for parent in commit.parents:
-            r = (point_col,
-                 self._current_row,
+            r = (point_col, self._current_row,
                  self._find_a_free_column() if i > 0 else point_col)
             if parent in self._open_connections:
                 self._open_connections[parent].append(r)
@@ -240,7 +215,7 @@ class DagGraph(Genlist):
         """
         self.point_add(commit, point_col, self._current_row)
         """
-        commit.dag_data = CommitDagData(point_col)
+        commit.dag_data = CommitDagData(point_col, self._current_row)
         self.item_append(self._itc, commit)
 
 
@@ -273,65 +248,47 @@ class DagGraph(Genlist):
                time.time() - self._startup_time))
         print('===============================================\n')
 
-        """
-        # add the "show more" button if necessary
-        if self._open_connections:
-            bt = Button(self, text="Show more commits", size_hint_align=(0,0))
-            bt.callback_clicked_add(self._show_more_clicked_cb)
-            self.pack(bt, 0, self._current_row + 1, 10, 2)
-            bt.show()
-        """
         # show the first commit in the diff view
         # if self._first_commit is not None:
             # self.app.win.show_commit(self._first_commit)
             # self._first_commit = None
 
-    # def _show_more_clicked_cb(self, bt):
-        # bt.delete()
-        # self._startup_num = self._visible_commits
-        # self._startup_time = time.time()
-        # self.repo.request_commits(self._populate_done_cb,
-                                  # self._populate_progress_cb,
-                                  # max_count=self._commits_to_load,
-                                  # skip=self._visible_commits)
 
     def _gl_content_get(self, gl, part, commit):
-        # print("GET", part, commit.sha)
 
-        dd = commit.dag_data
-        
-        p = Layout(gl, file=(self.themef,'egitu/graph/list_item'))
+        ly = Layout(gl, file=(self.themef,'egitu/graph/list_item'))
+        commit.dag_data.obj = ly
 
         # padding rect (to place the point in the right column)
-        size = dd.col * COL_SIZE, 10
-        r = Rectangle(p.evas, color=(0,200,0,30),
+        size = commit.dag_data.col * self.COLW, 10
+        r = Rectangle(ly.evas, color=(0,200,0,30),
                       size_hint_min=size, size_hint_max=size)
-        p.part_content_set('pad.swallow', r)
+        ly.part_content_set('pad.swallow', r)
 
         # local refs
         for head in commit.heads:
             if head == 'HEAD':
-                p.signal_emit('head,show', 'egitu')
+                ly.signal_emit('head,show', 'egitu')
             else:
-                l = Layout(gl, file=(self.themef, 'egitu/graph/ref'))
-                l.text_set('ref.text', head)
-                p.box_append('refs.box', l)
-                l.show()
+                ref = Layout(gl, file=(self.themef, 'egitu/graph/ref'))
+                ref.text_set('ref.text', head)
+                ly.box_append('refs.box', ref)
+                ref.show()
 
         # remote refs
         if options.show_remotes_in_dag:
             for head in commit.remotes:
-                l = Layout(gl, file=(self.themef, 'egitu/graph/ref'))
-                l.text_set('ref.text', head)
-                p.box_append('refs.box', l)
-                l.show()
+                ref = Layout(gl, file=(self.themef, 'egitu/graph/ref'))
+                ref.text_set('ref.text', head)
+                ly.box_append('refs.box', ref)
+                ref.show()
 
         # tags
         for tag in commit.tags:
-            l = Layout(gl, file=(self.themef, 'egitu/graph/tag'))
-            l.text_set('tag.text', tag)
-            p.box_append('refs.box', l)
-            l.show()
+            ref = Layout(gl, file=(self.themef, 'egitu/graph/tag'))
+            ref.text_set('tag.text', tag)
+            ly.box_append('refs.box', ref)
+            ref.show()
 
         # message
         if commit.title is not None:
@@ -347,25 +304,64 @@ class DagGraph(Genlist):
 
             if text:
                 lb = Label(gl, text=text)
-                p.box_append('refs.box', lb)
+                ly.box_append('refs.box', lb)
                 lb.show()
 
-        return p
+        return ly
 
     def _gl_item_realized(self, gl, item):
         commit = item.data
 
+        # on first item realized fetch the items height
+        if self.RAWH == 0:
+            track = item.track_object
+            self.ROWH = track.size[1]
+            item.untrack()
+        
         # setup item tooltip
         if commit.title is not None:
             item.tooltip_content_cb_set(lambda o, it, tt:
                                         CommitPopup(tt, self.repo, it.data))
 
-        # CHECK ME !!!!!!!!!!!!!
-        try: # added in pyefl 1.16
-            from efl.elementary import ELM_TOOLTIP_ORIENT_RIGHT
-            p.tooltip_orient = ELM_TOOLTIP_ORIENT_RIGHT
-        except:
-            pass
+        # draw connection lines
+        if not commit.sha in self._open_connections:
+            return
+
+        ly = commit.dag_data.obj
+        row2 = commit.dag_data.row
+        col2 = commit.dag_data.col
+        i = 0
+        for col1, row1, col2__ in self._open_connections[commit.sha]:
+            i += 1
+            swallow_name = 'conn%d.swallow' % i
+            if col1 == col2:
+                # a stright line
+                l = Edje(self.evas, file=self.themef,
+                         group='egitu/graph/connection/vert',
+                         color=self.color_for_column(col1))
+                l.size = (col2 - col1 + 1 )*self.COLW, (row2 - row1 + 1)*self.ROWH
+                l.size_hint_min = l.size
+                l.show()
+                # point.box_append('connections.box', l)
+                ly.part_content_set(swallow_name, l)
+            elif col1 > col2:
+                # a "fork"
+                l = Edje(self.evas, file=self.themef,
+                         group='egitu/graph/connection/vert_fork',
+                         color=self.color_for_column(col1))
+                l.size = (col1 - col2 + 1 )*self.COLW, (row2 - row1 + 1)*self.ROWH
+                l.size_hint_min = l.size
+                l.show()
+                ly.part_content_set(swallow_name+'.fork', l)
+            else:
+                # a "merge"
+                l = Edje(self.evas, file=self.themef, 
+                         group='egitu/graph/connection/vert_merge',
+                         color=self.color_for_column(col2))
+                l.size = (col2 - col1 + 1 )*self.COLW, (row2 - row1 + 1)*self.ROWH
+                l.size_hint_min = l.size
+                l.show()
+                ly.part_content_set(swallow_name, l)
 
     def _gl_item_selected(self, gl, item):
         commit = item.data
@@ -376,103 +372,6 @@ class DagGraph(Genlist):
                     return
         else:
             self.app.win.show_commit(commit)
-
-
-######
-    """
-    def date_add(self, date, from_row, to_row):
-        ly = self.child_get(0, from_row)
-        if ly is None:
-            ly = Layout(self, file=(self.themef, 'egitu/graph/date'),
-                        size_hint_align=FILL_BOTH)
-        fmt = '%d %b' if to_row - from_row > 2 else '%d'
-        ly.part_text_set('date.text', date.strftime(fmt))
-        self.pack(ly, 0, from_row, 1, to_row - from_row)
-        ly.show()
-
-    def point_add(self, commit, col, row):
-        p = Layout(self, file=(self.themef,'egitu/graph/item'))
-        p.on_mouse_down_add(self.point_mouse_down_cb, commit)
-        if commit.title is not None:
-            p.tooltip_content_cb_set(lambda o,tt:
-                                     CommitPopup(self, self.repo, commit))
-        try: # added in pyefl 1.16
-            from efl.elementary import ELM_TOOLTIP_ORIENT_RIGHT
-            p.tooltip_orient = ELM_TOOLTIP_ORIENT_RIGHT
-        except:
-            pass
-
-        for head in commit.heads:
-            if head == 'HEAD':
-                p.signal_emit('head,show', 'egitu')
-            else:
-                l = Layout(self, file=(self.themef, 'egitu/graph/ref'))
-                l.text_set('ref.text', head)
-                p.box_append('refs.box', l)
-                l.show()
-
-        if options.show_remotes_in_dag:
-            for head in commit.remotes:
-                l = Layout(self, file=(self.themef, 'egitu/graph/ref'))
-                l.text_set('ref.text', head)
-                p.box_append('refs.box', l)
-                l.show()
-
-        for tag in commit.tags:
-            l = Layout(self, file=(self.themef, 'egitu/graph/tag'))
-            l.text_set('tag.text', tag)
-            p.box_append('refs.box', l)
-            l.show()
-        
-        if commit.title is not None:
-            if options.show_message_in_dag and options.show_author_in_dag:
-                text = '<b>{}:</b> {}'.format(utf8_to_markup(commit.author),
-                                              utf8_to_markup(commit.title))
-            elif options.show_author_in_dag:
-                text = '<b>{}</b>'.format(utf8_to_markup(commit.author))
-            elif options.show_message_in_dag:
-                text = utf8_to_markup(commit.title)
-            else:
-                text = None
-            
-            if text:
-                l = Layout(self, file=(self.themef, 'egitu/graph/msg'))
-                l.text_set('msg.text', text)
-                p.box_append('refs.box', l)
-                l.show()
-
-        self.pack(p, col, row, 1, 1)
-        p.show()
-
-
-    def connection_add(self, col1, row1, col2, row2):
-        # print ("CONNECTION", col1, row1, col2, row2)
-        if col1 == col2:
-            # a stright line
-            l = Edje(self.evas, file=self.themef, size_hint_align=FILL_BOTH,
-                    group='egitu/graph/connection/vert',
-                    color=self.color_for_column(col1))
-            self.pack(l, col1, row1, col2 - col1 + 1, row2 - row1 + 1)
-
-        elif col1 > col2:
-            # a "fork"
-            l = Edje(self.evas, file=self.themef, size_hint_align=FILL_BOTH,
-                    group='egitu/graph/connection/vert_fork',
-                    color=self.color_for_column(col1))
-            self.pack(l, col2, row1, col1 - col2 + 1, row2 - row1 + 1)
-        else:
-            # a "merge"
-            l = Edje(self.evas, file=self.themef, size_hint_align=FILL_BOTH,
-                    group='egitu/graph/connection/vert_merge',
-                    color=self.color_for_column(col2))
-            self.pack(l, col1, row1, col2 - col1 + 1, row2 - row1 + 1)
-
-        l.lower()
-        l.show()
-
-        return l
-    """
-
 
 
 class DagGraphTable(Table):
