@@ -8,6 +8,8 @@
 
 #define SHOW(_PART) DBG_SHOW(_PART, 50, 0, 0)
 
+#define FIXED_SIZE(_W, _H) \
+   min: _W _H; max: _W _H; fixed: 1 1;
 
 images {
    image: "graph_tag_bg.png" COMP;
@@ -21,6 +23,87 @@ images {
 
 collections {
 
+   group { name: "egitu/graph/list_item";
+      parts {
+         DBG_SHOW("pad.swallow", 0, 0, 255)
+         part { name: "pad.swallow"; type: SWALLOW;
+            mouse_events: 0;
+            description { state: "default" 0.0;
+               min: 30 20;
+               max: 30 20;
+               // rel2.relative: 0.0 1.0;
+               align: 0.0 0.5;
+            }
+         }
+         part { name: "point_base"; type: SPACER;
+            mouse_events: 0;
+            description { state: "default" 0.0;
+               FIXED_SIZE(20,20)
+               align: 0.0 0.5;
+               rel1.to: "pad.swallow";
+               rel1.relative: 1.0 0.0;
+            }
+         }
+         part { name: "point"; type: IMAGE;
+            mouse_events: 0;
+            description { state: "default" 0.0;
+               FIXED_SIZE(10,10)
+               align: 0.5 0.5;
+               rel1.to: "point_base";
+               rel2.to: "point_base";
+               image.normal: "graph_point.png";
+            }
+            // description { state: "hover" 0.0;
+               // inherit: "default" 0.0;
+               // FIXED_SIZE(20,20)
+            // }
+         }
+         part { name: "head"; type: IMAGE;
+            mouse_events: 0;
+            description { state: "default" 0.0;
+               visible: 0;
+               rel1.to: "point_base";
+               rel2.to: "point_base";
+               image.normal: "graph_head.png";
+            }
+            description { state: "visible" 0.0;
+               inherit: "default" 0.0;
+               visible: 1;
+            }
+         }
+         part { name: "refs.box"; type: BOX;
+            mouse_events: 0;
+            description { state: "default" 0.0;
+               rel1 {
+                  to: "point_base";
+                  relative: 1.0 0.0;
+                  offset: 4 0;
+               }
+               rel2 {
+                  to: "point_base";
+                  relative: 1.0 1.0;
+                  offset: 4 0;
+               }
+               align: 0.0 0.0;
+               box {
+                  padding: 12 0;
+                  min: 1 0;
+               }
+            }
+         }
+         program { source: "egitu"; signal: "head,show";
+            action: STATE_SET "visible" 0.0;
+            target: "head";
+         }
+         program { source: "egitu"; signal: "head,hide";
+            action: STATE_SET "default" 0.0;
+            target: "head";
+         }
+      }
+      
+   }
+
+   /* The item for the old table version of the DAG
    group { name: "egitu/graph/item";
       parts {
          part { name: "base"; type: RECT;
@@ -103,6 +186,7 @@ collections {
          }
       }
    }
+   */
 
    group { name: "egitu/graph/tag";
       parts {
@@ -166,33 +250,6 @@ collections {
                   min: 1 1;
                   ellipsis: -1;
                }
-            }
-            description { state: "visible" 0.0;
-               inherit: "default" 0.0;
-               visible: 1;
-            }
-         }
-      }
-   }
-
-   group { name: "egitu/graph/msg";
-      styles {
-         style { name: "msg_style";
-            base: "font=Sans font_size=10 color=#ffffff style=shadow,bottom shadow_color=#00000080 wrap=none";
-         }
-      }
-      parts {
-         part { name: "msg.text"; type: TEXTBLOCK;
-            description { state: "default" 0.0;
-               text {
-                  style: "msg_style";
-                  min: 1 1;
-                  ellipsis: -1;
-               }
-            }
-            description { state: "visible" 0.0;
-               inherit: "default" 0.0;
-               visible: 1;
             }
          }
       }
