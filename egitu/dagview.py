@@ -25,6 +25,7 @@ import sys
 import time
 from datetime import datetime
 
+from efl.evas import Rectangle
 from efl.edje import Edje
 from efl.elementary.button import Button
 from efl.elementary.entry import Entry, utf8_to_markup, ELM_WRAP_NONE
@@ -67,6 +68,12 @@ class CommitPopup(Table):
         en.show()
 
 
+class CommitDagData(object):
+    def __init__(self, col):
+        self.col = col
+
+COL_SIZE = 20
+
 class DagGraph(Genlist):
     def __init__(self, parent, app, *args, **kargs):
         self.app = app
@@ -104,10 +111,12 @@ class DagGraph(Genlist):
             c.special = 'local'
             c.tags = ['Local changes']
             c.title = None
-            # self.point_add(c, 1, 0)
+            c.dag_data = CommitDagData(col=1)
+            
             self._current_row += 1
             self._first_commit = c
 
+            # self.point_add(c, 1, 0)
             self.item_append(self._itc, c)
 
         """
@@ -156,9 +165,6 @@ class DagGraph(Genlist):
         if self._first_commit is None and commit.special is None:
             self._first_commit = commit
 
-        self.item_append(self._itc, commit)
-
-        
         # 1. draw the connection if there are 'open-to' this one
         """
         if commit.sha in self._open_connections:
@@ -176,6 +182,21 @@ class DagGraph(Genlist):
             # point need a new free column
             point_col = self._find_a_free_column()
         """
+        if commit.sha in self._open_connections:
+            R = self._open_connections.pop(commit.sha)
+            point_col = min([c[2] for c in R])
+            # for child_col, child_row, new_col in R:
+                # self.connection_add(child_col, child_row,
+                                    # point_col, self._current_row)
+            # if is a fork we can release the columns
+            if len(R) > 1:
+                for c in R:
+                    if c[2] != point_col:
+                        self._used_columns.remove(c[2])
+        else:
+            # point need a new free column
+            point_col = self._find_a_free_column()
+        
         
         # 2. add an open_connection, one for each parent
         """
@@ -190,6 +211,17 @@ class DagGraph(Genlist):
                 self._open_connections[parent] = [r]
             i += 1
         """
+        i = 0
+        for parent in commit.parents:
+            r = (point_col,
+                 self._current_row,
+                 self._find_a_free_column() if i > 0 else point_col)
+            if parent in self._open_connections:
+                self._open_connections[parent].append(r)
+            else:
+                self._open_connections[parent] = [r]
+            i += 1
+
         
         # 3. draw the date on column 0 (if the day is changed)
         """
@@ -205,7 +237,13 @@ class DagGraph(Genlist):
         """
 
         # 4. add the commit point to the graph
-        # self.point_add(commit, point_col, self._current_row)
+        """
+        self.point_add(commit, point_col, self._current_row)
+        """
+        commit.dag_data = CommitDagData(point_col)
+        self.item_append(self._itc, commit)
+
+
         self._visible_commits += 1
         self._current_row += 1
 
@@ -235,8 +273,8 @@ class DagGraph(Genlist):
                time.time() - self._startup_time))
         print('===============================================\n')
 
-        # add the "show more" button if necessary
         """
+        # add the "show more" button if necessary
         if self._open_connections:
             bt = Button(self, text="Show more commits", size_hint_align=(0,0))
             bt.callback_clicked_add(self._show_more_clicked_cb)
@@ -248,18 +286,29 @@ class DagGraph(Genlist):
             # self.app.win.show_commit(self._first_commit)
             # self._first_commit = None
 
-    def _show_more_clicked_cb(self, bt):
-        bt.delete()
-        self._startup_num = self._visible_commits
-        self._startup_time = time.time()
-        self.repo.request_commits(self._populate_done_cb,
-                                  self._populate_progress_cb,
-                                  max_count=self._commits_to_load,
-                                  skip=self._visible_commits)
+    # def _show_more_clicked_cb(self, bt):
+        # bt.delete()
+        # self._startup_num = self._visible_commits
+        # self._startup_time = time.time()
+        # self.repo.request_commits(self._populate_done_cb,
+                                  # self._populate_progress_cb,
+                                  # max_count=self._commits_to_load,
+                                  # skip=self._visible_commits)
 
     def _gl_content_get(self, gl, part, commit):
+        # print("GET", part, commit.sha)
+
+        dd = commit.dag_data
+        
         p = Layout(gl, file=(self.themef,'egitu/graph/list_item'))
 
+        # padding rect (to place the point in the right column)
+        size = dd.col * COL_SIZE, 10
+        r = Rectangle(p.evas, color=(0,200,0,30),
+                      size_hint_min=size, size_hint_max=size)
+        p.part_content_set('pad.swallow', r)
+
+        # local refs
         for head in commit.heads:
             if head == 'HEAD':
                 p.signal_emit('head,show', 'egitu')
@@ -269,6 +318,7 @@ class DagGraph(Genlist):
                 p.box_append('refs.box', l)
                 l.show()
 
+        # remote refs
         if options.show_remotes_in_dag:
             for head in commit.remotes:
                 l = Layout(gl, file=(self.themef, 'egitu/graph/ref'))
@@ -276,12 +326,14 @@ class DagGraph(Genlist):
                 p.box_append('refs.box', l)
                 l.show()
 
+        # tags
         for tag in commit.tags:
             l = Layout(gl, file=(self.themef, 'egitu/graph/tag'))
             l.text_set('tag.text', tag)
             p.box_append('refs.box', l)
             l.show()
 
+        # message
         if commit.title is not None:
             if options.show_message_in_dag and options.show_author_in_dag:
                 text = '<b>{}:</b> {}'.format(utf8_to_markup(commit.author),
@@ -327,6 +379,7 @@ class DagGraph(Genlist):
 
 
 ######
+    """
     def date_add(self, date, from_row, to_row):
         ly = self.child_get(0, from_row)
         if ly is None:
@@ -418,7 +471,7 @@ class DagGraph(Genlist):
         l.show()
 
         return l
-
+    """
 
 
 

@@ -25,12 +25,12 @@ collections {
 
    group { name: "egitu/graph/list_item";
       parts {
-         DBG_SHOW("pad.swallow", 0, 0, 255)
+         // DBG_SHOW("pad.swallow", 0, 0, 255)
          part { name: "pad.swallow"; type: SWALLOW;
             mouse_events: 0;
             description { state: "default" 0.0;
-               min: 30 20;
-               max: 30 20;
+               // min: 30 20;
+               // max: 30 20;
                // rel2.relative: 0.0 1.0;
                align: 0.0 0.5;
             }

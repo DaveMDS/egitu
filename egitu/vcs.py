@@ -60,6 +60,8 @@ class Commit(object):
         self.remotes = []
         self.tags = []
 
+        self.dag_data = None
+
     def __str__(self):
         return '<Commit:%s parents:%s heads:%s remotes:%s tags:%s "%s">' % (
                     self.sha[:7],
