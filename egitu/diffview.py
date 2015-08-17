@@ -149,12 +149,17 @@ class DiffViewer(Table):
         self.diff_list.clear()
         self.diff_entry.text = ''
 
-        if commit.sha:
-            # a real commit
+        if commit.special == 'local':
+            # the special 'local changes' commit
+            text = '<bigger><b>Local changes</b></bigger>'
+            self.show_local_status()
+            self.update_action_buttons(['commit', 'discard'])
+        else:
+            # or a real commit
             line1 = '<name>{}</name>  <b>{}</b>  {}<br>'.format(commit.sha[:9],
                      commit.author, format_date(commit.commit_date))
             line2 = line3 = line4 = ''
-            if commit.committer != commit.author:
+            if commit.committer and commit.committer != commit.author:
                 line2 = '<name>Committed by:</name> <b>{}</b><br>'.format(
                          commit.committer)
             if commit.title:
@@ -165,11 +170,6 @@ class DiffViewer(Table):
             text = line1 + line2 + line3 + line4
             self.app.repo.request_changes(self._changes_done_cb, commit1=commit)
             self.update_action_buttons(['checkout', 'revert', 'cherrypick'])
-        else:
-            # or the fake 'local changes' commit
-            text = '<bigger><b>Local changes</b></bigger>'
-            self.show_local_status()
-            self.update_action_buttons(['commit', 'discard'])
 
         self.entry.text = text
         self.picture.email_set(commit.author_email)
@@ -190,8 +190,8 @@ class DiffViewer(Table):
             self.app.repo.unstage_file(self._stage_unstage_done_cb, path, path)
 
     def _stage_unstage_done_cb(self, success, path):
-            self.app.action_update_header()
-            self.diff_list.realized_items_update()
+        self.app.action_update_header()
+        self.diff_list.realized_items_update()
 
     def _changes_done_cb(self, success, lines):
         for mod, name, new_name in lines:

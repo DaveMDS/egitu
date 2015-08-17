@@ -46,6 +46,7 @@ def repo_factory(url):
 
 class Commit(object):
     def __init__(self):
+        self.special = None  # "None" for real commits, or "local" or "stash"
         self.sha = ''
         self.author = ''
         self.author_email = ''
@@ -125,11 +126,13 @@ class Remote(object):
 
 
 class StashItem(object):
-    def __init__(self, sha, ref, desc, ts):
-        self.sha = sha    # afc5244009b92b1a95a7354a1a7dcaf6678fb3d6|
-        self.ref = ref    # stash@{0}
-        self.desc = desc  # On master: WIP on master
-        self.ts = int(ts) # timestamp
+    def __init__(self, sha, ref, desc, ts, aut, amail):
+        self.sha = sha     # afc5244009b92b1a95a7354a1a7dcaf6678fb3d6|
+        self.ref = ref     # stash@{0}
+        self.desc = desc   # On master: WIP on master
+        self.ts = int(ts)  # timestamp
+        self.aut = aut     # author
+        self.amail = amail # author email
 
 
 ### Base class for backends ###################################################
@@ -1080,7 +1083,7 @@ class GitBackend(Repository):
         def _cmd_done_cb(lines, success):
             done_cb(success, *args)
 
-        cmd = 'stash list --format="%H|%gd|%gs|%ct"'
+        cmd = 'stash list --format="%H|%gd|%gs|%ct|%an|%ae"'
         GitCmd(self._url, cmd, _cmd_done_cb, _cmd_line_cb)
 
     def _fetch_local_config(self, done_cb, *args):

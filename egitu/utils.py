@@ -162,6 +162,7 @@ class Options(object):
         self.show_message_in_dag = True
         self.show_author_in_dag = True
         self.show_remotes_in_dag = True
+        self.show_stash_in_dag = True
         self.number_of_commits_to_load = 100
         self.diff_font_face = 'Mono'
         self.diff_font_size = 10

@@ -32,6 +32,7 @@ from efl.elementary.layout import Layout
 
 from egitu.utils import options, theme_file_get, format_date, \
     GravatarPict, EXPAND_BOTH, FILL_BOTH
+from egitu.stash import StashDialog
 from egitu.vcs import Commit
 
 
@@ -49,7 +50,7 @@ class CommitPopup(Table):
         self.pack(pic, 0, 0, 1, 1)
         pic.show()
 
-        if commit.committer != commit.author:
+        if commit.committer and commit.committer != commit.author:
             committed = '<name>Committed by:</name> <b>{}</b><br>'.format(
                         commit.committer)
         else:
@@ -64,9 +65,9 @@ class CommitPopup(Table):
 
 
 class DagGraph(Table):
-    def __init__(self, parent, *args, **kargs):
+    def __init__(self, parent, app, *args, **kargs):
+        self.app = app
         self.repo = None
-        self.win = parent
         self.themef = theme_file_get()
         self.colors = [(0,100,0,100), (0,0,100,100), (100,0,0,100),
                       (100,100,0,100), (0,100,100,100), (100,0,100,100)]
@@ -90,12 +91,27 @@ class DagGraph(Table):
         # create the first fake commit (local changes)
         if not self.repo.status.is_clean:
             c = Commit()
+            c.special = 'local'
             c.tags = ['Local changes']
             c.title = None
             self.point_add(c, 1, 0)
             # self.connection_add(1, 1, 1, 2)
             self._current_row += 1
             self._first_commit = c
+
+        # show stash items (if requested)
+        if options.show_stash_in_dag:
+            for si in self.repo.stash:
+                c = Commit()
+                c.special = 'stash'
+                c.sha = si.sha
+                c.tags = ['Stash']
+                c.title = si.desc
+                c.author = si.aut
+                c.author_email = si.amail
+                c.commit_date = datetime.fromtimestamp(si.ts)
+                self.point_add(c, 1, self._current_row)
+                self._current_row += 1
 
         self.repo.request_commits(self._populate_done_cb,
                                   self._populate_progress_cb,
@@ -120,7 +136,7 @@ class DagGraph(Table):
         return x
 
     def _populate_progress_cb(self, commit):
-        if self._current_row == 0:
+        if self._first_commit is None and commit.special is None:
             self._first_commit = commit
 
         # 1. draw the connection if there are 'open-to' this one
@@ -192,7 +208,7 @@ class DagGraph(Table):
 
         # show the first commit in the diff view
         if self._first_commit is not None:
-            self.win.show_commit(self._first_commit)
+            self.app.win.show_commit(self._first_commit)
             self._first_commit = None
 
     def _show_more_clicked_cb(self, bt):
@@ -248,7 +264,7 @@ class DagGraph(Table):
         
         if commit.title is not None:
             if options.show_message_in_dag and options.show_author_in_dag:
-                text = '<b>{}</b>: {}'.format(utf8_to_markup(commit.author),
+                text = '<b>{}:</b> {}'.format(utf8_to_markup(commit.author),
                                               utf8_to_markup(commit.title))
             elif options.show_author_in_dag:
                 text = '<b>{}</b>'.format(utf8_to_markup(commit.author))
@@ -297,4 +313,10 @@ class DagGraph(Table):
         return l
 
     def point_mouse_down_cb(self, obj, event, commit):
-        self.win.show_commit(commit)
+        if commit.special == 'stash':
+            for si in self.app.repo.stash:
+                if si.sha == commit.sha:
+                    StashDialog(self.parent, self.app, si)
+                    return
+        else:
+            self.app.win.show_commit(commit)
