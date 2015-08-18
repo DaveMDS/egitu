@@ -74,7 +74,6 @@ class CommitDagData(object):
         self.col = col
         self.row = row
         self.icon_obj = None
-        self.list_item = None
 
 
 class DagGraph(Genlist):
@@ -142,9 +141,8 @@ class DagGraph(Genlist):
 
     def commit_append(self, commit, col):
         commit.dag_data = CommitDagData(col, self._current_row)
-        commit.dag_data.list_item = self.item_append(self._itc, commit)
         self._current_row += 1
-        return commit.dag_data.list_item
+        return self.item_append(self._itc, commit)
 
     def _find_a_free_column(self):
         # set is empty, add and return "1"
