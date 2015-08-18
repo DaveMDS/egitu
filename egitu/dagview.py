@@ -117,13 +117,8 @@ class DagGraph(Genlist):
             c.special = 'local'
             c.tags = ['Local changes']
             c.title = None
-            c.dag_data = CommitDagData(col=1, row=self._current_row)
-            
-            self._current_row += 1
+            self.commit_append(c, 1)
             self._first_commit = c
-
-            # self.point_add(c, 1, 0)
-            self.item_append(self._itc, c)
 
         """
         # show stash items (if requested)
@@ -145,6 +140,11 @@ class DagGraph(Genlist):
         self.repo.request_commits(self._populate_done_cb,
                                   self._populate_progress_cb,
                                   max_count=self._commits_to_load)
+
+    def commit_append(self, commit, col):
+        commit.dag_data = CommitDagData(col, self._current_row)
+        commit.dag_data.list_item = self.item_append(self._itc, commit)
+        self._current_row += 1
 
     def _find_a_free_column(self):
         # set is empty, add and return "1"
@@ -218,12 +218,8 @@ class DagGraph(Genlist):
         """
         self.point_add(commit, point_col, self._current_row)
         """
-        commit.dag_data = CommitDagData(point_col, self._current_row)
-        self.item_append(self._itc, commit)
-
-
+        self.commit_append(commit, point_col)
         self._visible_commits += 1
-        self._current_row += 1
 
     def _populate_done_cb(self, success):
         # draw the last date piece
