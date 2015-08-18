@@ -11,6 +11,7 @@
 #define FIXED_SIZE(_W, _H) \
    min: _W _H; max: _W _H; fixed: 1 1;
 
+
 images {
    image: "graph_tag_bg.png" COMP;
    image: "graph_label_bg.png" COMP;
@@ -23,14 +24,9 @@ images {
 
 collections {
 
-   group { name: "egitu/graph/list_item";
+   group { name: "egitu/graph/commit_icon";
       parts {
-         part { name: "pad.swallow"; type: SWALLOW;
-            mouse_events: 0;
-            description { state: "default" 0.0;
-               align: 0.0 0.5;
-            }
-         }
+
          // #########  MACRO TODO //
          part { name: "conn1.swallow"; type: SWALLOW;
             description { state: "default" 0.0;
@@ -98,15 +94,39 @@ collections {
             }
          }
          // SHOW("connection1.swallow")
-         // ######### //
+         /* TODO still need to retry the box approach
+         part { name: "connections.box"; type: BOX;
+            mouse_events: 0;
+            description { state: "default" 0.0;
+               rel1 {
+                  to: "point_base";
+                  // relative: 1.0 0.0;
+                  // offset: 4 0;
+               }
+               rel2 {
+                  to: "point_base";
+                  // relative: 1.0 1.0;
+                  // offset: 4 0;
+               }
+               // align: 0.0 0.0;
+               box {
+                  layout: "stack";
+                  // padding: 12 0;
+                  // min: 1 1;
+                  align: 1.0 0.0;
+               }
+            }
+         }
+         */
 
+         // ######### //
          part { name: "point_base"; type: SPACER;
             mouse_events: 0;
             description { state: "default" 0.0;
                FIXED_SIZE(20,20)
                align: 0.0 0.5;
-               rel1.to: "pad.swallow";
-               rel1.relative: 1.0 0.0;
+               // rel1.to: "pad.swallow";
+               // rel1.relative: 1.0 0.0;
             }
          }
          part { name: "point"; type: IMAGE;
@@ -136,51 +156,7 @@ collections {
                visible: 1;
             }
          }
-         /* TODO still need to retry the box approach
-         part { name: "connections.box"; type: BOX;
-            mouse_events: 0;
-            description { state: "default" 0.0;
-               rel1 {
-                  to: "point_base";
-                  // relative: 1.0 0.0;
-                  // offset: 4 0;
-               }
-               rel2 {
-                  to: "point_base";
-                  // relative: 1.0 1.0;
-                  // offset: 4 0;
-               }
-               // align: 0.0 0.0;
-               box {
-                  layout: "stack";
-                  // padding: 12 0;
-                  // min: 1 1;
-                  align: 1.0 0.0;
-               }
-            }
-         }
-         */
 
-         part { name: "refs.box"; type: BOX;
-            mouse_events: 0;
-            description { state: "default" 0.0;
-               rel1 {
-                  to: "point_base";
-                  relative: 1.0 0.0;
-                  offset: 4 0;
-               }
-               rel2 {
-                  to: "point_base";
-                  relative: 1.0 1.0;
-                  offset: 4 0;
-               }
-               align: 0.0 0.0;
-               box {
-                  padding: 12 0;
-                  min: 1 0;
-               }
-            }
-         }
          program { source: "egitu"; signal: "head,show";
             action: STATE_SET "visible" 0.0;
             target: "head";
@@ -284,11 +260,11 @@ collections {
             description { state: "default" 0.0;
                rel1 {
                   to: "tag.text";
-                  offset: -6 -3;
+                  offset: -6 -1;
                }
                rel2 {
                   to: "tag.text";
-                  offset: 6 3;
+                  offset: 6 2;
                }
                image {
                   normal: "graph_tag_bg.png";
@@ -299,13 +275,14 @@ collections {
          part { name: "tag.text"; type: TEXT;
             description { state: "default" 0.0;
                color: 0 0 0 255;
+               rel1.offset: 4 -1;
+               rel2.offset: -7 -1;
                text {
                   font: "Sans";
                   size: 10;
                   min: 1 1;
                   ellipsis: -1;
                }
-               
             }
          }
       }
@@ -313,15 +290,15 @@ collections {
 
    group { name: "egitu/graph/ref";
       parts {
-         part { name: "bg"; type: IMAGE;
+         image { name: "bg";
             description { state: "default" 0.0;
                rel1 {
                   to: "ref.text";
-                  offset: -15 -4;
+                  offset: -15 -3;
                }
                rel2 {
                   to: "ref.text";
-                  offset: 6 3;
+                  offset: 6 2;
                }
                image {
                   normal: "graph_label_bg.png";
@@ -329,11 +306,10 @@ collections {
                }
             }
          }
-         part { name: "ref.text"; type: TEXT;
+         text { name: "ref.text";
             description { state: "default" 0.0;
-               rel1 {
-                  offset: 6 0;
-               }
+               rel1.offset: 12 -1;
+               rel2.offset: -8 -1;
                text {
                   font: "Sans";
                   size: 10;
@@ -460,7 +436,107 @@ collections {
    }
 
 
-   /// ELM ICONS /////////////////////////////////////////////////////////////
+   /// ELM GENLIST ITEM ////////////////////////////////////////////////////////
+   group { "elm/genlist/item_compress/egitu_commit/default"; mouse_events: 0;
+      data.item: "selectraise" "off";
+      data.item: "focusraise" "off";
+      data.item: "texts" "egitu.text.author egitu.text.title";
+      data.item: "contents" "egitu.swallow.pad egitu.swallow.icon egitu.swallow.refs";
+      data.item: "treesize" "0";
+      parts {
+         /// BASE --------------------------------------------------------------
+         rect { "event"; mouse_events: 1;
+            desc { "default";
+               color: 0 0 0 0;
+            }
+         }
+         rect { "base";
+            desc { "default";
+               min: 20 20;
+               visible: 0;
+            }
+         }
+         rect { "sel_base";
+            desc { "default";
+               color: 0 0 0 64;
+               visible: 0;
+               link.base: "elm,state,unselected" "elm";
+            }
+            desc { "selected";
+               inherit: "default";
+               visible: 1;
+               link.base: "elm,state,selected" "elm";
+            }
+         }
+         /// PARTS -------------------------------------------------------------
+         swallow { "egitu.swallow.pad";
+            desc { "default";
+               fixed: 1 1;
+               align: 0.0 0.5;
+               rel2.relative: 0.0 1.0;
+            }
+         }
+         swallow { "egitu.swallow.icon";
+            desc { "default";
+               fixed: 1 1;
+               align: 0.0 0.5;
+               aspect: 1.0 1.0;
+               rel1.to_x: "egitu.swallow.pad";
+               rel1.relative: 1.0 0.0;
+               rel2.to_x: "egitu.swallow.pad";
+               rel2.relative: 1.0 1.0;
+            }
+         }
+         swallow { "egitu.swallow.refs";
+            desc { "default";
+               fixed: 1 1;
+               align: 0.0 0.5;
+               rel1.to_x: "egitu.swallow.icon";
+               rel1.relative: 1.0 0.0;
+               rel2.to_x: "egitu.swallow.icon";
+               rel2.relative: 1.0 1.0;
+            }
+         }
+         text { "egitu.text.author";
+            effect: SHADOW BOTTOM;
+            scale;
+            desc { "default";
+               rel1.relative: 1.0 0.0;
+               rel1.to_x: "egitu.swallow.refs";
+               rel2.relative: 1.0 1.0;
+               rel2.to_x: "egitu.swallow.refs";
+               align: 0.0 0.5;
+               text {
+                  font: "Sans:style=Bold";
+                  size: 10;
+                  min: 1 0;
+                  ellipsis: -1;
+               }
+            }
+         }
+         text { "egitu.text.title";
+            effect: SHADOW BOTTOM;
+            scale;
+            desc { "default";
+               rel1.relative: 1.0 0.0;
+               rel1.to_x: "egitu.text.author";
+               rel1.offset: 4 0;
+               rel2.relative: 1.0 1.0;
+               rel2.to_x: "egitu.text.author";
+               align: 0.0 0.5;
+               text {
+                  font: "Sans";
+                  size: 10;
+                  min: 1 0;
+                  ellipsis: -1;
+               }
+            }
+         }
+      }
+   }
+
+
+   /// ELM ICONS ///////////////////////////////////////////////////////////////
 #define IC(Name, File) \
    group { name: "elm/icon/"##Name##"/default"; \
       min: 16 16; max: 0 0; \

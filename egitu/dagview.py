@@ -29,6 +29,7 @@ from efl.evas import Rectangle
 from efl.edje import Edje
 from efl.elementary.button import Button
 from efl.elementary.entry import Entry, utf8_to_markup, ELM_WRAP_NONE
+from efl.elementary.box import Box
 from efl.elementary.table import Table
 from efl.elementary.layout import Layout
 from efl.elementary.label import Label
@@ -83,7 +84,8 @@ class DagGraph(Genlist):
         self.colors = [(0,100,0,100), (0,0,100,100), (100,0,0,100),
                       (100,100,0,100), (0,100,100,100), (100,0,100,100)]
 
-        self._itc = GenlistItemClass(item_style='one_icon',
+        self._itc = GenlistItemClass(item_style='egitu_commit',
+                                     text_get_func=self._gl_text_get,
                                      content_get_func=self._gl_content_get)
 
         Genlist.__init__(self, parent, homogeneous=True, mode=ELM_LIST_COMPRESS,
@@ -255,60 +257,54 @@ class DagGraph(Genlist):
             # self._first_commit = None
 
 
+    def _gl_text_get(self, gl, part, commit):
+        if options.show_author_in_dag and part == 'egitu.text.author':
+            return commit.author
+        elif options.show_message_in_dag and part == 'egitu.text.title':
+            return commit.title
+        
+
     def _gl_content_get(self, gl, part, commit):
+        if part == 'egitu.swallow.pad':
+            # padding rect (to place the point in the right column)
+            size = commit.dag_data.col * self.COLW, 10
+            r = Rectangle(gl.evas, color=(0,200,0,15),
+                          size_hint_min=size, size_hint_max=size)
+            return r
 
-        ly = Layout(gl, file=(self.themef,'egitu/graph/list_item'))
-        commit.dag_data.obj = ly
-
-        # padding rect (to place the point in the right column)
-        size = commit.dag_data.col * self.COLW, 10
-        r = Rectangle(ly.evas, color=(0,200,0,30),
-                      size_hint_min=size, size_hint_max=size)
-        ly.part_content_set('pad.swallow', r)
-
-        # local refs
-        for head in commit.heads:
-            if head == 'HEAD':
+        elif part == 'egitu.swallow.icon':
+            # the point (+ swallows for connection lines)
+            ly = Layout(gl, file=(self.themef,'egitu/graph/commit_icon'))
+            commit.dag_data.obj = ly
+            if 'HEAD' in commit.heads:
                 ly.signal_emit('head,show', 'egitu')
-            else:
+            return ly
+
+        elif part == 'egitu.swallow.refs':
+            box = Box(gl, horizontal=True)
+
+            # local refs
+            for head in commit.heads:
                 ref = Layout(gl, file=(self.themef, 'egitu/graph/ref'))
                 ref.text_set('ref.text', head)
-                ly.box_append('refs.box', ref)
+                box.pack_end(ref)
                 ref.show()
 
-        # remote refs
-        if options.show_remotes_in_dag:
-            for head in commit.remotes:
-                ref = Layout(gl, file=(self.themef, 'egitu/graph/ref'))
-                ref.text_set('ref.text', head)
-                ly.box_append('refs.box', ref)
+            # remote refs
+            if options.show_remotes_in_dag:
+                for head in commit.remotes:
+                    ref = Layout(gl, file=(self.themef, 'egitu/graph/ref'))
+                    ref.text_set('ref.text', head)
+                    box.pack_end(ref)
+                    ref.show()
+            # tags
+            for tag in commit.tags:
+                ref = Layout(gl, file=(self.themef, 'egitu/graph/tag'))
+                ref.text_set('tag.text', tag)
+                box.pack_end(ref)
                 ref.show()
 
-        # tags
-        for tag in commit.tags:
-            ref = Layout(gl, file=(self.themef, 'egitu/graph/tag'))
-            ref.text_set('tag.text', tag)
-            ly.box_append('refs.box', ref)
-            ref.show()
-
-        # message
-        if commit.title is not None:
-            if options.show_message_in_dag and options.show_author_in_dag:
-                text = '<b>{}:</b> {}'.format(utf8_to_markup(commit.author),
-                                              utf8_to_markup(commit.title))
-            elif options.show_author_in_dag:
-                text = '<b>{}</b>'.format(utf8_to_markup(commit.author))
-            elif options.show_message_in_dag:
-                text = utf8_to_markup(commit.title)
-            else:
-                text = None
-
-            if text:
-                lb = Label(gl, text=text)
-                ly.box_append('refs.box', lb)
-                lb.show()
-
-        return ly
+            return box
 
     def _gl_item_realized(self, gl, item):
         commit = item.data
@@ -330,8 +326,7 @@ class DagGraph(Genlist):
             return
 
         ly = commit.dag_data.obj
-        row2 = commit.dag_data.row
-        col2 = commit.dag_data.col
+        col2, row2 = commit.dag_data.col, commit.dag_data.row
         i = 0
         for col1, row1, col2__ in self._open_connections[commit.sha]:
             i += 1
