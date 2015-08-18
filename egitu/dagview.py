@@ -74,6 +74,7 @@ class CommitDagData(object):
         self.col = col
         self.row = row
         self.icon_obj = None
+        self.list_item = None
 
 
 class DagGraph(Genlist):
@@ -99,7 +100,6 @@ class DagGraph(Genlist):
         self._used_columns = set()
         self._open_connections = dict()
         self._open_connection_lines = list()
-        self._first_commit = None
         self._last_date = None
         self._last_date_row = 1
         self._visible_commits = 0
@@ -117,8 +117,7 @@ class DagGraph(Genlist):
             c.special = 'local'
             c.tags = ['Local changes']
             c.title = None
-            self.commit_append(c, 1)
-            self._first_commit = c
+            self.commit_append(c, 1).selected = True
 
         """
         # show stash items (if requested)
@@ -145,6 +144,7 @@ class DagGraph(Genlist):
         commit.dag_data = CommitDagData(col, self._current_row)
         commit.dag_data.list_item = self.item_append(self._itc, commit)
         self._current_row += 1
+        return commit.dag_data.list_item
 
     def _find_a_free_column(self):
         # set is empty, add and return "1"
@@ -168,8 +168,6 @@ class DagGraph(Genlist):
         return self.colors[(column - 1) % len(self.colors)]
 
     def _populate_progress_cb(self, commit):
-        if self._first_commit is None and commit.special is None:
-            self._first_commit = commit
 
         # 1. draw the connection if there are 'open-to' this one
         if commit.sha in self._open_connections:
@@ -218,8 +216,12 @@ class DagGraph(Genlist):
         """
         self.point_add(commit, point_col, self._current_row)
         """
-        self.commit_append(commit, point_col)
+        item = self.commit_append(commit, point_col)
         self._visible_commits += 1
+
+        if self.repo.status.is_clean and 'HEAD' in commit.heads:
+            item.selected = True
+            item.show()
 
     def _populate_done_cb(self, success):
         # draw the last date piece
@@ -246,12 +248,6 @@ class DagGraph(Genlist):
               (self._visible_commits - self._startup_num,
                time.time() - self._startup_time))
         print('===============================================\n')
-
-        # show the first commit in the diff view
-        # if self._first_commit is not None:
-            # self.app.win.show_commit(self._first_commit)
-            # self._first_commit = None
-
 
     def _gl_text_get(self, gl, part, commit):
         if options.show_author_in_dag and part == 'egitu.text.author':
@@ -360,7 +356,7 @@ class DagGraph(Genlist):
         else:
             self.app.win.show_commit(commit)
 
-
+"""
 class DagGraphTable(Table):
     def __init__(self, parent, app, *args, **kargs):
         self.app = app
@@ -627,3 +623,4 @@ class DagGraphTable(Table):
                     return
         else:
             self.app.win.show_commit(commit)
+"""
