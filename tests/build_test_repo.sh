@@ -131,10 +131,38 @@ $PAUSE
 git merge --no-ff branch5 -m 'Merge branch5 in master'
 $PAUSE
 
+# TEST: octopus merge
+git checkout master
+echo "first file content (v6)" >> file1.txt
+git commit -a -m 'sixts commit in master'
+$PAUSE
+
+git checkout master
+git checkout -b octopus1
+echo "octopus 1" >> file1.txt
+git commit -a -m 'octopus commit 1'
+$PAUSE
+
+git checkout master
+git checkout -b octopus2
+echo "octopus 2" >> file2.txt
+git commit -a -m 'octopus commit 2'
+$PAUSE
+
+git checkout master
+git checkout -b octopus3
+echo "octopus 3" >> file3.txt
+git commit -a -m 'octopus commit 3'
+$PAUSE
+
+git checkout master
+git merge --no-ff octopus1 octopus2 octopus3 -m 'Octopus merge'
+$PAUSE
+
 
 # TEST: a branch that merge from master (and then continue...)
 echo "first file content (v5)" >> file1.txt
-git commit -a -m 'sixts commit in master'
+git commit -a -m 'seventh commit in master'
 $PAUSE
 
 git checkout -b branch6
@@ -148,7 +176,7 @@ $PAUSE
 
 git checkout master
 echo "first file content (v6)" >> file1.txt
-git commit -a -m 'seventh commit in master'
+git commit -a -m 'eightth commit in master'
 $PAUSE
 
 git checkout branch6
@@ -161,7 +189,12 @@ $PAUSE
 
 git checkout master
 echo "first file content (v7)" >> file1.txt
-git commit -a -m 'eightth commit in master'
+git commit -a -m 'nineth commit in master'
+$PAUSE
+
+# TEST stash
+echo "This will be stashed" >> file1.txt
+git stash save stashed stuff
 $PAUSE
 
 # TEST local changes (staged)
