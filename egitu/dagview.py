@@ -166,25 +166,24 @@ class DagGraph(Genlist):
 
     def _populate_progress_cb(self, commit):
 
-        # 1. draw the connection if there are 'open-to' this one
+        # 1. find the column to use
         if commit.sha in self._connections:
-            # R = self._connections.pop(commit.sha)
-            R = self._connections[commit.sha]
-            point_col = min([c[2] for c in R])
-            # for child_col, child_row, new_col in R:
-                # self.connection_add(child_col, child_row,
-                                    # point_col, self._current_row)
+            L = self._connections[commit.sha]
+            point_col = min([ c[2] for c in L ])
             # if is a fork we can release the columns
-            if len(R) > 1:
-                for c in R:
+            if len(L) > 1:
+                for c in L:
                     if c[2] != point_col:
                         self._used_columns.remove(c[2])
+            # no parents, release the column
+            if len(commit.parents) < 1:
+                self._used_columns.remove(point_col)
         else:
             # point need a new free column
             point_col = self._find_a_free_column()
         
         
-        # 2. add an open_connection, one for each parent
+        # 2. add a _connection, one for each parent
         i = 0
         for parent in commit.parents:
             r = (point_col, self._current_row,
