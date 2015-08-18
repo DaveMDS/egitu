@@ -93,12 +93,37 @@ class DagGraph(Genlist):
         self.callback_realized_add(self._gl_item_realized)
         self.callback_selected_add(self._gl_item_selected)
 
+    def commit_append(self, commit, col):
+        commit.dag_data = CommitDagData(col, self._current_row)
+        self._current_row += 1
+        return self.item_append(self._itc, commit)
+
+    def _find_a_free_column(self):
+        # set is empty, add and return "1"
+        if len(self._used_columns) == 0:
+            self._used_columns.add(1)
+            return 1
+
+        # search the lowest not-present number (a hole)
+        max_num = max(self._used_columns)
+        for x in range(1, max_num):
+            if not x in self._used_columns:
+                self._used_columns.add(x)
+                return x
+
+        # or append and return a new number
+        x = max_num + 1
+        self._used_columns.add(x)
+        return x
+
+    def _color_for_column(self, column):
+        return self.colors[(column - 1) % len(self.colors)]
+
     def populate(self, repo):
         self.repo = repo
         self._current_row = 0
         self._used_columns = set()
-        self._open_connections = dict()
-        self._open_connection_lines = list()
+        self._connections = dict()  # 'sha':[(col1, row1, col2), ...]
         self._last_date = None
         self._last_date_row = 1
         self._visible_commits = 0
@@ -139,38 +164,12 @@ class DagGraph(Genlist):
                                   self._populate_progress_cb,
                                   max_count=self._commits_to_load)
 
-    def commit_append(self, commit, col):
-        commit.dag_data = CommitDagData(col, self._current_row)
-        self._current_row += 1
-        return self.item_append(self._itc, commit)
-
-    def _find_a_free_column(self):
-        # set is empty, add and return "1"
-        if len(self._used_columns) == 0:
-            self._used_columns.add(1)
-            return 1
-
-        # search the lowest not-present number (a hole)
-        max_num = max(self._used_columns)
-        for x in range(1, max_num):
-            if not x in self._used_columns:
-                self._used_columns.add(x)
-                return x
-
-        # or append and return a new number
-        x = max_num + 1
-        self._used_columns.add(x)
-        return x
-
-    def color_for_column(self, column):
-        return self.colors[(column - 1) % len(self.colors)]
-
     def _populate_progress_cb(self, commit):
 
         # 1. draw the connection if there are 'open-to' this one
-        if commit.sha in self._open_connections:
-            # R = self._open_connections.pop(commit.sha)
-            R = self._open_connections[commit.sha]
+        if commit.sha in self._connections:
+            # R = self._connections.pop(commit.sha)
+            R = self._connections[commit.sha]
             point_col = min([c[2] for c in R])
             # for child_col, child_row, new_col in R:
                 # self.connection_add(child_col, child_row,
@@ -190,10 +189,10 @@ class DagGraph(Genlist):
         for parent in commit.parents:
             r = (point_col, self._current_row,
                  self._find_a_free_column() if i > 0 else point_col)
-            if parent in self._open_connections:
-                self._open_connections[parent].append(r)
+            if parent in self._connections:
+                self._connections[parent].append(r)
             else:
-                self._open_connections[parent] = [r]
+                self._connections[parent] = [r]
             i += 1
 
         
@@ -210,10 +209,7 @@ class DagGraph(Genlist):
             self._last_date_row = self._current_row
         """
 
-        # 4. add the commit point to the graph
-        """
-        self.point_add(commit, point_col, self._current_row)
-        """
+        # 4. add the commit to the graph
         item = self.commit_append(commit, point_col)
         self._visible_commits += 1
 
@@ -228,19 +224,7 @@ class DagGraph(Genlist):
             self.date_add(self._last_date, self._last_date_row,
                           self._current_row)
         """
-        
-        # draw still-open connections lines (and clear the old ones)
-        """
-        while self._open_connection_lines:
-            l = self._open_connection_lines.pop()
-            l.delete()
-        for key in self._open_connections:
-            for child_col, child_row, new_col in self._open_connections[key]:
-                l = self.connection_add(child_col, child_row,
-                                        child_col, self._current_row)
-                self._open_connection_lines.append(l)
-        """
-        
+
         print('\n===============================================')
         print('=== DAG: %d revision loaded in %.3f seconds' % \
               (self._visible_commits - self._startup_num,
@@ -252,7 +236,6 @@ class DagGraph(Genlist):
             return commit.author
         elif options.show_message_in_dag and part == 'egitu.text.title':
             return commit.title
-        
 
     def _gl_content_get(self, gl, part, commit):
         if part == 'egitu.swallow.pad':
@@ -309,16 +292,16 @@ class DagGraph(Genlist):
                                         CommitPopup(tt, self.repo, it.data))
 
         # draw connection lines
-        if commit.sha in self._open_connections:
+        if commit.sha in self._connections:
             ly = commit.dag_data.icon_obj
             col2, row2 = commit.dag_data.col, commit.dag_data.row
             i = 1
-            for col1, row1, col2__ in self._open_connections[commit.sha]:
+            for col1, row1, col2__ in self._connections[commit.sha]:
                 if col1 == col2:
                     # a stright line
                     line = Edje(self.evas, file=self.themef,
                                 group='egitu/graph/connection/vert',
-                                color=self.color_for_column(col1))
+                                color=self._color_for_column(col1))
                     line.size = (col2 - col1 + 1) * self.COLW, \
                                 (row2 - row1 + 1) * self.ROWH
                     ly.signal_emit('connection,stright,%d' % i, 'egitu')
@@ -326,7 +309,7 @@ class DagGraph(Genlist):
                     # a "fork"
                     line = Edje(self.evas, file=self.themef,
                                 group='egitu/graph/connection/vert_fork',
-                                color=self.color_for_column(col1))
+                                color=self._color_for_column(col1))
                     line.size = (col1 - col2 + 1) * self.COLW, \
                                 (row2 - row1 + 1) * self.ROWH
                     ly.signal_emit('connection,fork,%d' % i, 'egitu')
@@ -334,7 +317,7 @@ class DagGraph(Genlist):
                     # a "merge"
                     line = Edje(self.evas, file=self.themef,
                                 group='egitu/graph/connection/vert_merge',
-                                color=self.color_for_column(col2))
+                                color=self._color_for_column(col2))
                     line.size = (col2 - col1 + 1) * self.COLW, \
                                 (row2 - row1 + 1) * self.ROWH
                     ly.signal_emit('connection,merge,%d' % i, 'egitu')
