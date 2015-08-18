@@ -126,7 +126,7 @@ class DagGraph(Genlist):
         self._connections = dict()  # 'sha':[(col1, row1, col2), ...]
         self._last_date = None
         self._last_date_row = 1
-        self._visible_commits = 0
+        self._head_found = False
         # self._commits_to_load = options.number_of_commits_to_load
         self._commits_to_load = 20000
 
@@ -142,8 +142,8 @@ class DagGraph(Genlist):
             c.tags = ['Local changes']
             c.title = None
             self.commit_append(c, 1).selected = True
+            self._head_found = True
 
-        """
         # show stash items (if requested)
         if options.show_stash_in_dag:
             for si in self.repo.stash:
@@ -155,10 +155,8 @@ class DagGraph(Genlist):
                 c.author = si.aut
                 c.author_email = si.amail
                 c.commit_date = datetime.fromtimestamp(si.ts)
-                self.point_add(c, 1, self._current_row)
-                self._current_row += 1
-        """
-        self._startup_num = self._visible_commits
+                self.commit_append(c, 1)
+
         self._startup_time = time.time()
         self.repo.request_commits(self._populate_done_cb,
                                   self._populate_progress_cb,
@@ -181,20 +179,16 @@ class DagGraph(Genlist):
         else:
             # point need a new free column
             point_col = self._find_a_free_column()
-        
-        
+
         # 2. add a _connection, one for each parent
-        i = 0
-        for parent in commit.parents:
+        for i, parent in enumerate(commit.parents):
             r = (point_col, self._current_row,
                  self._find_a_free_column() if i > 0 else point_col)
             if parent in self._connections:
                 self._connections[parent].append(r)
             else:
                 self._connections[parent] = [r]
-            i += 1
 
-        
         # 3. draw the date on column 0 (if the day is changed)
         """
         if self._last_date is None:
@@ -210,9 +204,8 @@ class DagGraph(Genlist):
 
         # 4. add the commit to the graph
         item = self.commit_append(commit, point_col)
-        self._visible_commits += 1
 
-        if self.repo.status.is_clean and 'HEAD' in commit.heads:
+        if not self._head_found and 'HEAD' in commit.heads:
             item.selected = True
             item.show()
 
@@ -226,8 +219,7 @@ class DagGraph(Genlist):
 
         print('\n===============================================')
         print('=== DAG: %d revision loaded in %.3f seconds' % \
-              (self._visible_commits - self._startup_num,
-               time.time() - self._startup_time))
+              (self._current_row, time.time() - self._startup_time))
         print('===============================================\n')
 
     def _gl_text_get(self, gl, part, commit):
