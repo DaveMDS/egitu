@@ -74,6 +74,7 @@ class CommitDagData(object):
         self.row = row
         self.obj = None # the edje swallowed in the genlist icon.swallow
 
+
 class DagGraph(Genlist):
     def __init__(self, parent, app, *args, **kargs):
         self.app = app
@@ -104,7 +105,7 @@ class DagGraph(Genlist):
         self._commits_to_load = 20000
 
         self.COLW = 20 # columns width (fixed)
-        self.RAWH = 0  # raws height (fetched from genlist on first realize)
+        self.ROWH = 0  # raws height (fetched from genlist on first realize)
 
         self.clear()
 
@@ -313,10 +314,11 @@ class DagGraph(Genlist):
         commit = item.data
 
         # on first item realized fetch the items height
-        if self.RAWH == 0:
+        if self.ROWH == 0:
             track = item.track_object
-            self.ROWH = track.size[1]
-            item.untrack()
+            if track:
+                self.ROWH = track.size[1]
+                item.untrack()
         
         # setup item tooltip
         if commit.title is not None:
