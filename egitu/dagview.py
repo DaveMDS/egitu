@@ -74,6 +74,7 @@ class CommitDagData(object):
         self.col = col
         self.row = row
         self.icon_obj = None
+        self.used_swallows = 0
 
 
 class DagGraph(Genlist):
@@ -96,6 +97,7 @@ class DagGraph(Genlist):
     def commit_append(self, commit, col):
         commit.dag_data = CommitDagData(col, self._current_row)
         self._current_row += 1
+        self._COMMITS[commit.sha] = commit
         return self.item_append(self._itc, commit)
 
     def _find_a_free_column(self):
@@ -129,6 +131,8 @@ class DagGraph(Genlist):
         self._head_found = False
         # self._commits_to_load = options.number_of_commits_to_load
         self._commits_to_load = 20000
+
+        self._COMMITS = dict()
 
         self.COLW = 20 # columns width (fixed)
         self.ROWH = 0  # raws height (fetched from genlist on first realize)
@@ -167,6 +171,7 @@ class DagGraph(Genlist):
         # 1. find the column to use
         if commit.sha in self._connections:
             L = self._connections[commit.sha]
+            # L = self._connections.pop(commit.sha)
             point_col = min([ c[2] for c in L ])
             # if is a fork we can release the columns
             if len(L) > 1:
@@ -282,41 +287,50 @@ class DagGraph(Genlist):
             item.tooltip_content_cb_set(lambda o, it, tt:
                                         CommitPopup(tt, self.repo, it.data))
 
-        # draw connection lines
-        if commit.sha in self._connections:
-            ly = commit.dag_data.icon_obj
-            col2, row2 = commit.dag_data.col, commit.dag_data.row
-            i = 1
-            for col1, row1, col2__ in self._connections[commit.sha]:
-                if col1 == col2:
-                    # a stright line
-                    line = Edje(self.evas, file=self.themef,
-                                group='egitu/graph/connection/vert',
-                                color=self._color_for_column(col1))
-                    line.size = (col2 - col1 + 1) * self.COLW, \
-                                (row2 - row1 + 1) * self.ROWH
-                    ly.signal_emit('connection,stright,%d' % i, 'egitu')
-                elif col1 > col2:
-                    # a "fork"
-                    line = Edje(self.evas, file=self.themef,
-                                group='egitu/graph/connection/vert_fork',
-                                color=self._color_for_column(col1))
-                    line.size = (col1 - col2 + 1) * self.COLW, \
-                                (row2 - row1 + 1) * self.ROWH
-                    ly.signal_emit('connection,fork,%d' % i, 'egitu')
-                else:
-                    # a "merge"
-                    line = Edje(self.evas, file=self.themef,
-                                group='egitu/graph/connection/vert_merge',
-                                color=self._color_for_column(col2))
-                    line.size = (col2 - col1 + 1) * self.COLW, \
-                                (row2 - row1 + 1) * self.ROWH
-                    ly.signal_emit('connection,merge,%d' % i, 'egitu')
-                
-                line.size_hint_min = line.size
-                ly.content_set('conn.swallow.%d' % i, line)
-                ly.edje.message_signal_process()
-                i += 1
+        # draw connection lines with parents (down direction)
+        print("DRAW FOR", commit.sha_short, commit.title)
+        for parent_sha in commit.parents:
+            if parent_sha in self._COMMITS:
+                self.draw_connection(commit, self._COMMITS[parent_sha])
+            else:
+                print("WTF !!!!!!!!!!!!!!!!!!")
+
+    def draw_connection(self, commit1, commit2):
+        col1, row1 = commit1.dag_data.col, commit1.dag_data.row
+        col2, row2 = commit2.dag_data.col, commit2.dag_data.row
+        swal_num = commit1.dag_data.used_swallows
+        ly = commit1.dag_data.icon_obj
+
+        if col1 == col2:
+            # a stright line (down)
+            line = Edje(self.evas, file=self.themef,
+                        group='egitu/graph/connection/vert',
+                        color=self._color_for_column(col1))
+            line.size = (col2 - col1 + 1) * self.COLW, \
+                        (row2 - row1 + 1) * self.ROWH
+            ly.signal_emit('connection,stright,down,%d' % swal_num, 'egitu')
+        elif col1 > col2:
+            # a "fork" (down)
+            line = Edje(self.evas, file=self.themef,
+                        group='egitu/graph/connection/vert_fork',
+                        color=self._color_for_column(col1))
+            line.size = (col1 - col2 + 1) * self.COLW, \
+                        (row2 - row1 + 1) * self.ROWH
+            ly.signal_emit('connection,fork,down,%d' % swal_num, 'egitu')
+        else:
+            # a "merge" (down)
+            line = Edje(self.evas, file=self.themef,
+                        group='egitu/graph/connection/vert_merge',
+                        color=self._color_for_column(col2))
+            line.size = (col2 - col1 + 1) * self.COLW, \
+                        (row2 - row1 + 1) * self.ROWH
+            ly.signal_emit('connection,merge,down,%d' % swal_num, 'egitu')
+
+        line.size_hint_min = line.size
+        ly.content_set('conn.swallow.%d' % swal_num, line)
+        ly.edje.message_signal_process()
+        # ly.edje.calc_force()
+        commit1.dag_data.used_swallows += 1
 
     def _gl_item_selected(self, gl, item):
         commit = item.data

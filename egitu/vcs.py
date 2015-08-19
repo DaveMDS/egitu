@@ -74,6 +74,10 @@ class Commit(object):
     def is_a_merge(self):
         return len(self.parents) > 1
 
+    @property
+    def sha_short(self):
+        return self.sha[:7]
+
 
 class Status(object):
     def __init__(self):

@@ -36,17 +36,33 @@ collections {
                   align: 1.0 1.0; \
                   link.base: "connection,stright,"_X; \
                } \
+               desc { "stright_down"; \
+                  inherit: "default"; \
+                  align: 0.0 0.0; \
+                  link.base: "connection,stright,down,"_X; \
+               } \
                desc { "fork"; \
                   inherit: "default"; \
                   align: 0.0 1.0; \
                   link.base: "connection,fork,"_X; \
+               } \
+               desc { "fork_down"; \
+                  inherit: "default"; \
+                  align: 1.0 0.0; \
+                  link.base: "connection,fork,down,"_X; \
                } \
                desc { "merge"; \
                   inherit: "default"; \
                   align: 1.0 1.0; \
                   link.base: "connection,merge,"_X; \
                } \
+               desc { "merge_down"; \
+                  inherit: "default"; \
+                  align: 0.0 0.0; \
+                  link.base: "connection,merge,down,"_X; \
+               } \
             }
+         CONN_SWALLOW(0)
          CONN_SWALLOW(1)
          CONN_SWALLOW(2)
          CONN_SWALLOW(3)
