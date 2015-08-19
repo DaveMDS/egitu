@@ -125,7 +125,7 @@ class DagGraph(Genlist):
         self.repo = repo
         self._current_row = 0
         self._used_columns = set()
-        self._connections = dict()  # 'sha':[(col1, row1, col2), ...]
+        self._open_connections = dict()  # 'sha':[col1, col2, col3, ...]
         self._last_date = None
         self._last_date_row = 1
         self._head_found = False
@@ -169,15 +169,14 @@ class DagGraph(Genlist):
     def _populate_progress_cb(self, commit):
 
         # 1. find the column to use
-        if commit.sha in self._connections:
-            L = self._connections[commit.sha]
-            # L = self._connections.pop(commit.sha)
-            point_col = min([ c[2] for c in L ])
+        if commit.sha in self._open_connections:
+            L = self._open_connections.pop(commit.sha)
+            point_col = min(L)
             # if is a fork we can release the columns
             if len(L) > 1:
-                for c in L:
-                    if c[2] != point_col:
-                        self._used_columns.remove(c[2])
+                for col in L:
+                    if col != point_col:
+                        self._used_columns.remove(col)
             # no parents, release the column
             if len(commit.parents) < 1:
                 self._used_columns.remove(point_col)
@@ -185,14 +184,13 @@ class DagGraph(Genlist):
             # point need a new free column
             point_col = self._find_a_free_column()
 
-        # 2. add a _connection, one for each parent
+        # 2. add an open_connection, one for each parent
         for i, parent in enumerate(commit.parents):
-            r = (point_col, self._current_row,
-                 self._find_a_free_column() if i > 0 else point_col)
-            if parent in self._connections:
-                self._connections[parent].append(r)
+            parent_col = point_col if i == 0 else self._find_a_free_column()
+            if parent in self._open_connections:
+                self._open_connections[parent].append(parent_col)
             else:
-                self._connections[parent] = [r]
+                self._open_connections[parent] = [parent_col]
 
         # 3. draw the date on column 0 (if the day is changed)
         """
