@@ -352,6 +352,8 @@ collections {
          }
          rect { "sel_base";
             desc { "default";
+               rel1.to_x: "egitu.swallow.date";
+               rel1.relative: 1.0 0.0;
                color: 0 0 0 64;
                visible: 0;
                link.base: "elm,state,unselected" "elm";
