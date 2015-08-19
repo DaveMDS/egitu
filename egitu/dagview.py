@@ -37,7 +37,7 @@ from efl.elementary.label import Label
 from efl.elementary.genlist import Genlist, GenlistItemClass, ELM_LIST_COMPRESS
 
 from egitu.utils import options, theme_file_get, format_date, \
-    GravatarPict, EXPAND_BOTH, FILL_BOTH
+    GravatarPict, EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ, FILL_HORIZ
 from egitu.stash import StashDialog
 from egitu.vcs import Commit
 
@@ -83,7 +83,34 @@ class CommitDagData(object):
         self.fixed_childs = dict() # 'child Commit': line_obj
 
 
-class DagGraph(Genlist):
+class DagGraph(Box):
+    def __init__(self, parent, app):
+        Box.__init__(self, parent)
+
+        self.genlist = DagGraphList(self, app)
+        self.pack_end(self.genlist)
+        self.genlist.show()
+
+        hbox = Box(self, horizontal=True,
+                   size_hint_expand=EXPAND_HORIZ, size_hint_fill=FILL_HORIZ)
+        self.pack_end(hbox)
+        hbox.show()
+
+        self.label = Label(self, size_hint_expand=EXPAND_BOTH,
+                           size_hint_align=(0.0,0.5))
+        hbox.pack_end(self.label)
+        self.label.show()
+
+        self.show()
+
+    def populate(self, *args):
+        self.genlist.populate(*args)
+
+    def info_label_set(self, text):
+        self.label.text = '  ' + text
+
+
+class DagGraphList(Genlist):
     def __init__(self, parent, app, *args, **kargs):
         self.app = app
         self.repo = None
@@ -136,8 +163,6 @@ class DagGraph(Genlist):
         self._open_childs = dict()       # 'sha':[child1, child2, child3, ...]
         self._last_date_commit = None    # last commit that changed the date
         self._head_found = False
-        # self._commits_to_load = options.number_of_commits_to_load
-        self._commits_to_load = 20000
 
         self._COMMITS = dict()
         self._fix_idler = None
@@ -145,6 +170,7 @@ class DagGraph(Genlist):
         self.COLW = 20 # columns width (fixed)
         self.ROWH = 0  # raws height (fetched from genlist on first realize)
 
+        self.parent.info_label_set('Reading repository...')
         self.clear()
 
         # create the first fake commit (local changes)
@@ -171,7 +197,7 @@ class DagGraph(Genlist):
         self._startup_time = time.time()
         self.repo.request_commits(self._populate_done_cb,
                                   self._populate_progress_cb,
-                                  max_count=self._commits_to_load)
+                                  max_count=999999)
 
     def _populate_progress_cb(self, commit):
 
@@ -233,10 +259,9 @@ class DagGraph(Genlist):
             self._last_date_commit.dag_data.date_span = \
                 self._current_row - self._last_date_commit.dag_data.row
 
-        print('\n===============================================')
-        print('=== DAG: %d revision loaded in %.3f seconds' % \
-              (self._current_row, time.time() - self._startup_time))
-        print('===============================================\n')
+        # update the status bar
+        self.parent.info_label_set('%d revisions loaded in %.2f seconds' % (
+                        self._current_row, time.time() - self._startup_time))
 
     def _gl_text_get(self, gl, part, commit):
         if options.show_author_in_dag and part == 'egitu.text.author':
