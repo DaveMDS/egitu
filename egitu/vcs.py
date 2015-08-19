@@ -55,16 +55,16 @@ class Commit(object):
         self.title = ''
         self.message = ''
         self.commit_date = None
-        self.parents = []
-        self.heads = []
-        self.remotes = []
-        self.tags = []
+        self.parents = list()
+        self.heads = list()
+        self.remotes = list()
+        self.tags = list()
 
         self.dag_data = None
 
     def __str__(self):
         return '<Commit:%s parents:%s heads:%s remotes:%s tags:%s "%s">' % (
-                    self.sha[:7],
+                    self.sha_short,
                     [p[:7] for p in self.parents],
                     self.heads,
                     self.remotes,
@@ -85,7 +85,7 @@ class Status(object):
         self.behind = 0
         self.textual = ''
         self.current_branch = None
-        self.changes = {} # key: 'path' val: (mod, staged, path, new_path=None)
+        self.changes = dict() # key: 'path' val: (mod, staged, path, new_path=None)
 
         # HEAD status
         self.head_detached = False

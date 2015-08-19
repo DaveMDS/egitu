@@ -25,6 +25,7 @@ import sys
 import time
 from datetime import datetime
 
+from efl.ecore import IdleEnterer
 from efl.evas import Rectangle
 from efl.edje import Edje
 from efl.elementary.button import Button
@@ -73,8 +74,12 @@ class CommitDagData(object):
     def __init__(self, col, row):
         self.col = col
         self.row = row
+        self.childs = list()  # all the childrens (Commit instance)
+
         self.icon_obj = None
         self.used_swallows = 0
+        self.rezzed = False
+        self.fixed_childs = dict() # 'child Commit': line_obj
 
 
 class DagGraph(Genlist):
@@ -92,6 +97,7 @@ class DagGraph(Genlist):
         Genlist.__init__(self, parent, homogeneous=True, mode=ELM_LIST_COMPRESS,
                          size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
         self.callback_realized_add(self._gl_item_realized)
+        self.callback_unrealized_add(self._gl_item_unrealized)
         self.callback_selected_add(self._gl_item_selected)
 
     def commit_append(self, commit, col):
@@ -125,7 +131,8 @@ class DagGraph(Genlist):
         self.repo = repo
         self._current_row = 0
         self._used_columns = set()
-        self._open_connections = dict()  # 'sha':[col1, col2, col3, ...]
+        self._open_connections = dict()  # 'sha':[child1_col, child2_col, child3_col, ...]
+        self._open_childs = dict()       # 'sha':[child1, child2, child3, ...]
         self._last_date = None
         self._last_date_row = 1
         self._head_found = False
@@ -133,6 +140,7 @@ class DagGraph(Genlist):
         self._commits_to_load = 20000
 
         self._COMMITS = dict()
+        self._fix_idler = None
 
         self.COLW = 20 # columns width (fixed)
         self.ROWH = 0  # raws height (fetched from genlist on first realize)
@@ -144,7 +152,6 @@ class DagGraph(Genlist):
             c = Commit()
             c.special = 'local'
             c.tags = ['Local changes']
-            c.title = None
             self.commit_append(c, 1).selected = True
             self._head_found = True
 
@@ -170,11 +177,11 @@ class DagGraph(Genlist):
 
         # 1. find the column to use
         if commit.sha in self._open_connections:
-            L = self._open_connections.pop(commit.sha)
-            point_col = min(L)
-            # if is a fork we can release the columns
-            if len(L) > 1:
-                for col in L:
+            childs_cols = self._open_connections.pop(commit.sha)
+            point_col = min(childs_cols)
+            # if child was a fork we can release the columns
+            if len(childs_cols) > 1:
+                for col in childs_cols:
                     if col != point_col:
                         self._used_columns.remove(col)
             # no parents, release the column
@@ -192,6 +199,12 @@ class DagGraph(Genlist):
             else:
                 self._open_connections[parent] = [parent_col]
 
+            # also remember this commit for later childrends population
+            if parent in self._open_childs:
+                self._open_childs[parent].append(commit)
+            else:
+                self._open_childs[parent] = [commit]
+
         # 3. draw the date on column 0 (if the day is changed)
         """
         if self._last_date is None:
@@ -207,6 +220,10 @@ class DagGraph(Genlist):
 
         # 4. add the commit to the graph
         item = self.commit_append(commit, point_col)
+
+        # 5. store all the childrens of this commit
+        if commit.sha in self._open_childs:
+            commit.dag_data.childs = self._open_childs.pop(commit.sha)
 
         if not self._head_found and 'HEAD' in commit.heads:
             item.selected = True
@@ -270,8 +287,16 @@ class DagGraph(Genlist):
                 ref.show()
             return box
 
+    def _gl_item_unrealized(self, gl, item):
+        dag_data = item.data.dag_data
+        dag_data.icon_obj = None
+        dag_data.used_swallows = 0
+        dag_data.rezzed = False
+        dag_data.fixed_childs.clear()
+
     def _gl_item_realized(self, gl, item):
         commit = item.data
+        commit.dag_data.rezzed = True
 
         # on first item realized fetch the items height
         if self.ROWH == 0:
@@ -286,12 +311,35 @@ class DagGraph(Genlist):
                                         CommitPopup(tt, self.repo, it.data))
 
         # draw connection lines with parents (down direction)
-        print("DRAW FOR", commit.sha_short, commit.title)
         for parent_sha in commit.parents:
             if parent_sha in self._COMMITS:
-                self.draw_connection(commit, self._COMMITS[parent_sha])
+                parent = self._COMMITS[parent_sha]
+                self.draw_connection(commit, parent)
+
+                # remove lines from parent (the ones generated in the fix idler)
+                for fixed in list(parent.dag_data.fixed_childs):
+                    if fixed == commit:
+                        line = parent.dag_data.fixed_childs[fixed]
+                        line.delete()
+                        del parent.dag_data.fixed_childs[fixed]
             else:
                 print("WTF !!!!!!!!!!!!!!!!!!")
+
+        # start the fix idler (will draw upwards connectios to unrealized childs)
+        if self._fix_idler is None:
+            self._fix_idler = IdleEnterer(self._fix_idler_cb)
+
+    def _fix_idler_cb(self):
+        self._fix_idler = None
+
+        for item in self.realized_items:
+            commit = item.data
+            for child in commit.dag_data.childs:
+                if not child.dag_data.rezzed and not child in commit.dag_data.fixed_childs:
+                    line = self.draw_connection(commit, child)
+                    commit.dag_data.fixed_childs[child] = line
+
+        return False # stop the idler
 
     def draw_connection(self, commit1, commit2):
         col1, row1 = commit1.dag_data.col, commit1.dag_data.row
@@ -300,35 +348,55 @@ class DagGraph(Genlist):
         ly = commit1.dag_data.icon_obj
 
         if col1 == col2:
-            # a stright line (down)
+            # a stright line
             line = Edje(self.evas, file=self.themef,
                         group='egitu/graph/connection/vert',
                         color=self._color_for_column(col1))
-            line.size = (col2 - col1 + 1) * self.COLW, \
-                        (row2 - row1 + 1) * self.ROWH
-            ly.signal_emit('connection,stright,down,%d' % swal_num, 'egitu')
+            if row1 < row2:
+                ly.signal_emit('connection,stright,down,%d' % swal_num, 'egitu')
+            else:
+                ly.signal_emit('connection,stright,up,%d' % swal_num, 'egitu')
         elif col1 > col2:
-            # a "fork" (down)
-            line = Edje(self.evas, file=self.themef,
-                        group='egitu/graph/connection/vert_fork',
-                        color=self._color_for_column(col1))
-            line.size = (col1 - col2 + 1) * self.COLW, \
-                        (row2 - row1 + 1) * self.ROWH
-            ly.signal_emit('connection,fork,down,%d' % swal_num, 'egitu')
-        else:
-            # a "merge" (down)
-            line = Edje(self.evas, file=self.themef,
-                        group='egitu/graph/connection/vert_merge',
-                        color=self._color_for_column(col2))
-            line.size = (col2 - col1 + 1) * self.COLW, \
-                        (row2 - row1 + 1) * self.ROWH
-            ly.signal_emit('connection,merge,down,%d' % swal_num, 'egitu')
+            if row1 < row2:
+                # a "fork" (down)
+                line = Edje(self.evas, file=self.themef,
+                            group='egitu/graph/connection/vert_fork',
+                            color=self._color_for_column(col1))
+            
+                ly.signal_emit('connection,fork,down,%d' % swal_num, 'egitu')
+            else:
+                # a "merge" (up)
+                line = Edje(self.evas, file=self.themef,
+                            group='egitu/graph/connection/vert_merge',
+                            color=self._color_for_column(col1))
+                ly.signal_emit('connection,merge,up,%d' % swal_num, 'egitu')
+        else: # col1 < col2
+            if row1 < row2:
+                # a "merge" (down)
+                line = Edje(self.evas, file=self.themef,
+                            group='egitu/graph/connection/vert_merge',
+                            color=self._color_for_column(col2))
+                ly.signal_emit('connection,merge,down,%d' % swal_num, 'egitu')
+            else:
+                # a "fork" (up)
+                line = Edje(self.evas, file=self.themef,
+                            group='egitu/graph/connection/vert_fork',
+                            color=self._color_for_column(col2))
+                ly.signal_emit('connection,fork,up,%d' % swal_num, 'egitu')
 
+        
+        line.size = (abs(col2 - col1) + 1) * self.COLW, \
+                    (abs(row2 - row1) + 1) * self.ROWH
         line.size_hint_min = line.size
-        ly.content_set('conn.swallow.%d' % swal_num, line)
+        try:
+            ly.content_set('conn.swallow.%d' % swal_num, line)
+        except:
+            print(swal_num)
         ly.edje.message_signal_process()
         # ly.edje.calc_force()
         commit1.dag_data.used_swallows += 1
+
+        return line
 
     def _gl_item_selected(self, gl, item):
         commit = item.data

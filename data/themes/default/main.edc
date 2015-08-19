@@ -34,7 +34,7 @@ collections {
                   rel2.to: "point_base"; \
                   fixed: 1 1; \
                   align: 1.0 1.0; \
-                  link.base: "connection,stright,"_X; \
+                  link.base: "connection,stright,up,"_X; \
                } \
                desc { "stright_down"; \
                   inherit: "default"; \
@@ -44,7 +44,7 @@ collections {
                desc { "fork"; \
                   inherit: "default"; \
                   align: 0.0 1.0; \
-                  link.base: "connection,fork,"_X; \
+                  link.base: "connection,fork,up,"_X; \
                } \
                desc { "fork_down"; \
                   inherit: "default"; \
@@ -54,7 +54,7 @@ collections {
                desc { "merge"; \
                   inherit: "default"; \
                   align: 1.0 1.0; \
-                  link.base: "connection,merge,"_X; \
+                  link.base: "connection,merge,up,"_X; \
                } \
                desc { "merge_down"; \
                   inherit: "default"; \
