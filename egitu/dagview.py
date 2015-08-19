@@ -75,6 +75,7 @@ class CommitDagData(object):
         self.col = col
         self.row = row
         self.childs = list()  # all the childrens (Commit instance)
+        self.date_span = 0 # if >0 then a date item is required
 
         self.icon_obj = None
         self.used_swallows = 0
@@ -133,8 +134,7 @@ class DagGraph(Genlist):
         self._used_columns = set()
         self._open_connections = dict()  # 'sha':[child1_col, child2_col, child3_col, ...]
         self._open_childs = dict()       # 'sha':[child1, child2, child3, ...]
-        self._last_date = None
-        self._last_date_row = 1
+        self._last_date_commit = None    # last commit that changed the date
         self._head_found = False
         # self._commits_to_load = options.number_of_commits_to_load
         self._commits_to_load = 20000
@@ -205,20 +205,18 @@ class DagGraph(Genlist):
             else:
                 self._open_childs[parent] = [commit]
 
-        # 3. draw the date on column 0 (if the day is changed)
-        """
-        if self._last_date is None:
-            self._last_date = commit.commit_date
-            self._last_date_row = self._current_row
-
-        d1, d2 = self._last_date, commit.commit_date
-        if d1.month != d2.month or d1.day != d2.day or d1.year != d2.year:
-            self.date_add(d1, self._last_date_row, self._current_row)
-            self._last_date = commit.commit_date
-            self._last_date_row = self._current_row
-        """
+        # 3. store date span information (if the day is changed)
+        if self._last_date_commit is None:
+            self._last_date_commit = commit
+        else:
+            d1, d2 = self._last_date_commit.commit_date, commit.commit_date
+            if d1.month != d2.month or d1.day != d2.day or d1.year != d2.year:
+                self._last_date_commit.dag_data.date_span = \
+                    self._current_row - self._last_date_commit.dag_data.row
+                self._last_date_commit = commit
 
         # 4. add the commit to the graph
+        # NOTE: this will create DagData and increment _current_row
         item = self.commit_append(commit, point_col)
 
         # 5. store all the childrens of this commit
@@ -230,12 +228,10 @@ class DagGraph(Genlist):
             item.show()
 
     def _populate_done_cb(self, success):
-        # draw the last date piece
-        """
-        if self._last_date:
-            self.date_add(self._last_date, self._last_date_row,
-                          self._current_row)
-        """
+        # store the last date information
+        if self._last_date_commit:
+            self._last_date_commit.dag_data.date_span = \
+                self._current_row - self._last_date_commit.dag_data.row
 
         print('\n===============================================')
         print('=== DAG: %d revision loaded in %.3f seconds' % \
@@ -252,7 +248,7 @@ class DagGraph(Genlist):
         if part == 'egitu.swallow.pad':
             # padding rect (to place the point in the right column)
             size = commit.dag_data.col * self.COLW, 10
-            r = Rectangle(gl.evas, color=(0,200,0,15),
+            r = Rectangle(gl.evas, color=(0,0,0,0),
                           size_hint_min=size, size_hint_max=size)
             return r
 
@@ -286,6 +282,13 @@ class DagGraph(Genlist):
                 box.pack_end(ref)
                 ref.show()
             return box
+
+        elif commit.dag_data.date_span and part == 'egitu.swallow.date':
+            dt = Edje(gl.evas, file=self.themef, group='egitu/graph/date')
+            dt.size_hint_min = self.COLW, commit.dag_data.date_span * self.ROWH
+            fmt = '%d %b' if commit.dag_data.date_span > 2 else '%d'
+            dt.part_text_set('date.text', commit.commit_date.strftime(fmt))
+            return dt
 
     def _gl_item_unrealized(self, gl, item):
         dag_data = item.data.dag_data

@@ -335,7 +335,7 @@ collections {
       data.item: "selectraise" "off";
       data.item: "focusraise" "off";
       data.item: "texts" "egitu.text.author egitu.text.title";
-      data.item: "contents" "egitu.swallow.pad egitu.swallow.icon egitu.swallow.refs";
+      data.item: "contents" "egitu.swallow.date egitu.swallow.pad egitu.swallow.icon egitu.swallow.refs";
       data.item: "treesize" "0";
       parts {
          /// BASE --------------------------------------------------------------
@@ -367,6 +367,15 @@ collections {
             desc { "default";
                fixed: 1 1;
                align: 0.0 0.5;
+               rel1.offset: 4 0;
+               rel2.relative: 0.0 1.0;
+            }
+         }
+         swallow { "egitu.swallow.date";
+            desc { "default";
+               FIXED_SIZE(20, 20)
+               align: 0.0 0.0;
+               rel1.offset: 4 0;
                rel2.relative: 0.0 1.0;
             }
          }
