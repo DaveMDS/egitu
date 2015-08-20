@@ -25,7 +25,6 @@ import sys
 import time
 from datetime import datetime
 
-from efl.ecore import IdleEnterer
 from efl.evas import Rectangle
 from efl.edje import Edje
 from efl.elementary.button import Button
@@ -322,6 +321,18 @@ class DagGraphList(Genlist):
         dag_data.rezzed = False
         dag_data.fixed_childs.clear()
 
+        # draw (upwards) connections from realized parents to this one
+        commit = item.data
+        for parent_sha in commit.parents:
+            if parent_sha in self._COMMITS:
+                parent = self._COMMITS[parent_sha]
+                if parent.dag_data.rezzed:
+                    line = self.draw_connection(parent, commit)
+                    parent.dag_data.fixed_childs[commit] = line
+                    # TODO factorize this creations !!!
+            else:
+                pass # parent not yet created ???
+
     def _gl_item_realized(self, gl, item):
         commit = item.data
         commit.dag_data.rezzed = True
@@ -332,42 +343,34 @@ class DagGraphList(Genlist):
             if track:
                 self.ROWH = track.size[1]
                 item.untrack()
-        
+
         # setup item tooltip
         if commit.title is not None:
             item.tooltip_content_cb_set(lambda o, it, tt:
                                         CommitPopup(tt, self.repo, it.data))
 
-        # draw connection lines with parents (down direction)
+        # draw connection lines with parents (downwards)
         for parent_sha in commit.parents:
             if parent_sha in self._COMMITS:
                 parent = self._COMMITS[parent_sha]
                 self.draw_connection(commit, parent)
 
-                # remove lines from parent (the ones generated in the fix idler)
+                # remove (upwards) lines from parents
                 for fixed in list(parent.dag_data.fixed_childs):
                     if fixed == commit:
                         line = parent.dag_data.fixed_childs[fixed]
                         line.delete()
                         del parent.dag_data.fixed_childs[fixed]
+                        # TODO update swallows count and factorize !!!
             else:
-                print("WTF !!!!!!!!!!!!!!!!!!")
+                pass # parent not yet created ???
 
-        # start the fix idler (will draw upwards connectios to unrealized childs)
-        if self._fix_idler is None:
-            self._fix_idler = IdleEnterer(self._fix_idler_cb)
-
-    def _fix_idler_cb(self):
-        self._fix_idler = None
-
-        for item in self.realized_items:
-            commit = item.data
-            for child in commit.dag_data.childs:
-                if not child.dag_data.rezzed and not child in commit.dag_data.fixed_childs:
-                    line = self.draw_connection(commit, child)
-                    commit.dag_data.fixed_childs[child] = line
-
-        return False # stop the idler
+        # draw connections to unrealized childs (upwards)
+        for child in commit.dag_data.childs:
+            if not child.dag_data.rezzed:
+                line = self.draw_connection(commit, child)
+                commit.dag_data.fixed_childs[child] = line
+                # TODO factorize this creations !!!
 
     def draw_connection(self, commit1, commit2):
         col1, row1 = commit1.dag_data.col, commit1.dag_data.row
