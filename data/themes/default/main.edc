@@ -26,87 +26,22 @@ collections {
 
    group { name: "egitu/graph/icon"; program_source: "egitu";
       parts {
-
-         #define CONN_SWALLOW(_X) \
-            swallow { name: "conn.swallow."_X; \
-               desc { "default"; \
-                  rel1.to: "point_base"; \
-                  rel2.to: "point_base"; \
-                  fixed: 1 1; \
-                  align: 1.0 1.0; \
-                  link.base: "connection,stright,up,"_X; \
-               } \
-               desc { "stright_down"; \
-                  inherit: "default"; \
-                  align: 0.0 0.0; \
-                  link.base: "connection,stright,down,"_X; \
-               } \
-               desc { "fork"; \
-                  inherit: "default"; \
-                  align: 0.0 1.0; \
-                  link.base: "connection,fork,up,"_X; \
-               } \
-               desc { "fork_down"; \
-                  inherit: "default"; \
-                  align: 1.0 0.0; \
-                  link.base: "connection,fork,down,"_X; \
-               } \
-               desc { "merge"; \
-                  inherit: "default"; \
-                  align: 1.0 1.0; \
-                  link.base: "connection,merge,up,"_X; \
-               } \
-               desc { "merge_down"; \
-                  inherit: "default"; \
-                  align: 0.0 0.0; \
-                  link.base: "connection,merge,down,"_X; \
-               } \
-            }
-         CONN_SWALLOW(0)
-         CONN_SWALLOW(1)
-         CONN_SWALLOW(2)
-         CONN_SWALLOW(3)
-         CONN_SWALLOW(4)
-         CONN_SWALLOW(5)
-         CONN_SWALLOW(6)
-         CONN_SWALLOW(7)
-         CONN_SWALLOW(8)
-         CONN_SWALLOW(9)
-
-         // SHOW("connection1.swallow")
-         /* TODO still need to retry the box approach
          part { name: "connections.box"; type: BOX;
             mouse_events: 0;
             description { state: "default" 0.0;
-               rel1 {
-                  to: "point_base";
-                  // relative: 1.0 0.0;
-                  // offset: 4 0;
-               }
-               rel2 {
-                  to: "point_base";
-                  // relative: 1.0 1.0;
-                  // offset: 4 0;
-               }
-               // align: 0.0 0.0;
+               rel1.to: "point_base";
+               rel2.to: "point_base";
                box {
                   layout: "stack";
-                  // padding: 12 0;
-                  // min: 1 1;
-                  align: 1.0 0.0;
+                  min: 0 0;
                }
             }
          }
-         */
-
-         // ######### //
          part { name: "point_base"; type: SPACER;
             mouse_events: 0;
             description { state: "default" 0.0;
                FIXED_SIZE(20,20)
                align: 0.0 0.5;
-               // rel1.to: "pad.swallow";
-               // rel1.relative: 1.0 0.0;
             }
          }
          part { name: "point"; type: IMAGE;
@@ -136,7 +71,6 @@ collections {
                visible: 1;
             }
          }
-
          program { signal: "head,show";
             action: STATE_SET "visible" 0.0;
             target: "head";
