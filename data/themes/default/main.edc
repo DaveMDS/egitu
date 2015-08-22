@@ -245,6 +245,7 @@ collections {
                   font: "Sans";
                   size: 11;
                   align: 0.0 0.5;
+                  ellipsis: -1;
                }
                map {
                   on: 1;
