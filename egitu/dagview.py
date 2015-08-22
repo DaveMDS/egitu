@@ -33,7 +33,8 @@ from efl.elementary.box import Box
 from efl.elementary.table import Table
 from efl.elementary.layout import Layout
 from efl.elementary.label import Label
-from efl.elementary.genlist import Genlist, GenlistItemClass, ELM_LIST_COMPRESS
+from efl.elementary.genlist import Genlist, GenlistItemClass, \
+    ELM_LIST_COMPRESS, ELM_GENLIST_ITEM_GROUP
 
 from egitu.utils import options, theme_file_get, format_date, \
     GravatarPict, EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ, FILL_HORIZ
@@ -120,6 +121,7 @@ class DagGraphList(Genlist):
         self._itc = GenlistItemClass(item_style='egitu_commit',
                                      text_get_func=self._gl_text_get,
                                      content_get_func=self._gl_content_get)
+        self._itcg = GenlistItemClass(item_style='egitu_group_index')
 
         Genlist.__init__(self, parent, homogeneous=True, mode=ELM_LIST_COMPRESS,
                          size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
@@ -131,7 +133,7 @@ class DagGraphList(Genlist):
         commit.dag_data = CommitDagData(col, self._current_row)
         self._current_row += 1
         self._COMMITS[commit.sha] = commit
-        return self.item_append(self._itc, commit)
+        return self.item_append(self._itc, commit, self._group_item)
 
     def _find_a_free_column(self):
         # set is empty, add and return "1"
@@ -171,6 +173,10 @@ class DagGraphList(Genlist):
 
         self.parent.info_label_set('Reading repository...')
         self.clear()
+
+        # add the invisible group item
+        self._group_item = self.item_append(self._itcg, None,
+                                            flags=ELM_GENLIST_ITEM_GROUP)
 
         # create the first fake commit (local changes)
         if not self.repo.status.is_clean:
@@ -315,6 +321,9 @@ class DagGraphList(Genlist):
             return dt
 
     def _gl_item_unrealized(self, gl, item):
+        if item.data is None: # this is the group item (nothing to do)
+            return 
+
         dag_data = item.data.dag_data
         dag_data.icon_obj = None
         dag_data.used_swallows = 0
@@ -334,6 +343,9 @@ class DagGraphList(Genlist):
                 pass # parent not yet created ???
 
     def _gl_item_realized(self, gl, item):
+        if item.data is None: # this is the group item (nothing to do)
+            return 
+
         commit = item.data
         commit.dag_data.rezzed = True
 

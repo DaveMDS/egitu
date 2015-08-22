@@ -287,15 +287,9 @@ collections {
 
    group { name: "egitu/graph/date";
       parts {
-         part { name: "bg"; type: RECT;
-            description { state: "default" 0.0;
-               min: 20 20;
-               color: 0 0 0 100;
-            }
-         }
          part { name: "sep"; type: RECT;
             description { state: "default" 0.0;
-               color: 150 150 150 150;
+               // color: 150 150 150 150;
                rel1.offset: 0 -1;
                rel2.relative: 1.0 0.0;
             }
@@ -312,7 +306,7 @@ collections {
                fixed: 1 1;
                rel1.to: "rot_center";
                rel2.to: "rot_center";
-               color: 150 150 150 150;
+               // color: 150 150 150 150;
                text {
                   font: "Sans";
                   size: 11;
@@ -331,6 +325,9 @@ collections {
 
 
    /// ELM GENLIST ITEM ////////////////////////////////////////////////////////
+   #define LEFT_MARGIN 4
+   #define COL_W 20
+   #define ROW_H 20
    group { "elm/genlist/item_compress/egitu_commit/default"; mouse_events: 0;
       data.item: "selectraise" "off";
       data.item: "focusraise" "off";
@@ -346,7 +343,7 @@ collections {
          }
          rect { "base";
             desc { "default";
-               min: 20 20;
+               min: COL_W ROW_H;
                visible: 0;
             }
          }
@@ -369,15 +366,15 @@ collections {
             desc { "default";
                fixed: 1 1;
                align: 0.0 0.5;
-               rel1.offset: 4 0;
+               rel1.offset: LEFT_MARGIN 0;
                rel2.relative: 0.0 1.0;
             }
          }
          swallow { "egitu.swallow.date";
             desc { "default";
-               FIXED_SIZE(20, 20)
+               FIXED_SIZE(COL_W, ROW_H)
                align: 0.0 0.0;
-               rel1.offset: 4 0;
+               rel1.offset: LEFT_MARGIN 0;
                rel2.relative: 0.0 1.0;
             }
          }
@@ -435,6 +432,22 @@ collections {
                   min: 1 0;
                   ellipsis: -1;
                }
+            }
+         }
+      }
+   }
+   group { "elm/genlist/item/egitu_group_index/default"; nomouse;
+      alias: "elm/genlist/item_compress/egitu_group_index/default";
+      data.item: "texts" "";
+      data.item: "contents" "";
+      data.item: "treesize" "0";
+      parts {
+         rect { "date_bg";
+            desc { "default";
+               FIXED_SIZE(COL_W, 9999)
+               rel1.offset: LEFT_MARGIN 0;
+               align: 0.0 0.0;
+               color: 0 0 0 100;
             }
          }
       }
