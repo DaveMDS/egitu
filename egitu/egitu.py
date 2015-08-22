@@ -25,6 +25,7 @@ import sys
 
 from efl import elementary as elm
 from efl.elementary.theme import theme_extension_add
+from efl.elementary.entry import utf8_to_markup
 from egitu.utils import options, config_path, theme_file_get, KeyBindings
 from egitu.gui import EgituWin, RepoSelector
 
@@ -104,7 +105,7 @@ class EgituApp(object):
         
     def action_update_dag(self, *args):
         if self.repo is not None:
-            self.win.graph.populate(self.repo)
+            self.win.graph.populate()
     
     def action_update_header(self, *args):
         self.win.update_header()

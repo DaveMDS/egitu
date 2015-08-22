@@ -535,11 +535,12 @@ class EgituWin(StandardWindow):
 
         # the dag graph inside a scroller on the left
         self.graph = DagGraph(self, self.app)
-        fr = Frame(self, style='pad_medium', content=self.graph)
-        scr = Scroller(self, content=fr,
-                       size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
-        scr.bounce_set(0, 1)
-        panes.part_content_set('left', scr)
+        # fr = Frame(self, style='pad_medium', content=self.graph)
+        # scr = Scroller(self, content=fr,
+                       # size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
+        # scr.bounce_set(0, 1)
+        # panes.part_content_set('left', scr)
+        panes.part_content_set('left', self.graph)
 
         # the diff viewer on the right
         self.diff_view = DiffViewer(self, self.app)
@@ -552,7 +553,7 @@ class EgituWin(StandardWindow):
 
     def update_all(self):
         self.update_header()
-        self.graph.populate(self.app.repo)
+        self.graph.populate()
 
     def update_header(self):
         repo = self.app.repo
