@@ -105,7 +105,7 @@ class EgituApp(object):
         
     def action_update_dag(self, *args):
         if self.repo is not None:
-            self.win.graph.populate(self.repo)
+            self.win.graph.populate()
     
     def action_update_header(self, *args):
         self.win.update_header()

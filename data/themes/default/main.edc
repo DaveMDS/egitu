@@ -149,7 +149,7 @@ collections {
       }
    }
 
-   group { name: "egitu/graph/connection/vert";
+   group { name: "egitu/graph/connection/stright";
       parts {
          part { name: "bg"; type: IMAGE;
             description { state: "default" 0.0;
@@ -163,7 +163,7 @@ collections {
       }
    }
    
-   group { name: "egitu/graph/connection/vert_fork";
+   group { name: "egitu/graph/connection/fork";
       parts {
          part { name: "curve"; type: IMAGE;
             description { state: "default" 0.0;
@@ -191,7 +191,7 @@ collections {
       }
    }
 
-   group { name: "egitu/graph/connection/vert_merge";
+   group { name: "egitu/graph/connection/merge";
       parts {
          part { name: "bg"; type: IMAGE;
             description { state: "default" 0.0;
