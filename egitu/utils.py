@@ -38,7 +38,7 @@ from efl.elementary.fileselector import Fileselector
 from efl.elementary.label import Label
 from efl.elementary.icon import Icon
 from efl.elementary.hover import Hover, ELM_HOVER_AXIS_VERTICAL
-from efl.elementary.list import List
+from efl.elementary.genlist import Genlist, GenlistItemClass
 from efl.elementary.table import Table
 from efl.elementary.background import Background
 from efl.elementary.frame import Frame
@@ -319,7 +319,7 @@ class DiffedEntry(Entry):
         self.loading_set()
 
     def loading_set(self):
-        self.text = "<info>Loading diff, please wait...</info>"
+        self.text = '<info>Loading diff, please wait...</info>'
 
     def lines_set(self, lines):
         markup = ''
@@ -472,6 +472,7 @@ class RequestPopup(Popup):
         done_cb(en.text)
         self.delete()
 
+
 class ComboBox(Entry):
     def __init__(self, parent, text=None, icon=None):
         Entry.__init__(self, parent, scrollable=True, single_line=True,
@@ -486,7 +487,10 @@ class ComboBox(Entry):
         ic.callback_clicked_add(self.activate)
         self.part_content_set('end', ic)
 
-        self._list = List(self)
+        self._itc = GenlistItemClass(item_style='default',
+                                     text_get_func=self._gl_text_get,
+                                     content_get_func=self._gl_content_get)
+        self._list = Genlist(self)
         self._list.callback_selected_add(self._list_selected_cb)
 
         self._hover = Hover(self.parent, target=self)
@@ -525,14 +529,14 @@ class ComboBox(Entry):
         self.part_text_set('guide', text)
     
     def item_append(self, label=None, icon=None, end=None):
-        self._list.item_append(label, icon, end)
+        item_data = (label, icon, end)
+        self._list.item_append(self._itc, item_data)
 
     def clear(self):
         self._list.clear()
 
     def activate(self, source=None):
         self.focus = False # :/
-        self._list.go()
 
         # TODO calculate this based on _list and parent size
         # print(self._list.size)
@@ -548,12 +552,26 @@ class ComboBox(Entry):
     def dismiss(self):
         self._hover.dismiss()
 
-    def _list_selected_cb(self, li, it):
-        self.text = it.text
-        it.selected = False
+    def _list_selected_cb(self, gl, item):
+        label, icon, end = item.data
+        self.text = label
+        if icon:
+            self.icon = Icon(self, standard=icon)
+        item.selected = False
         self.dismiss()
         if callable(self._selected_func):
             self._selected_func(self)
+
+    def _gl_text_get(self, gl, part, item_data):
+        label, icon, end = item_data
+        return label
+
+    def _gl_content_get(self, gl, part, item_data):
+        label, icon, end = item_data
+        if icon and part == 'elm.swallow.icon':
+            return Icon(gl, standard=icon)
+        elif end and part == 'elm.swallow.end':
+            return Icon(gl, standard=end)
 
 
 class FolderSelector(Fileselector):

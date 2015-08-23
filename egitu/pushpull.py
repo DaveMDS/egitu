@@ -60,7 +60,7 @@ class PushPullBase(Popup):
         cb = ComboBox(self, icon=Icon(self, standard='git-remote'))
         cb.callback_selected_add(self.rbranch_populate)
         for remote in app.repo.remotes:
-            cb.item_append(remote.name, Icon(cb, standard='git-remote'))
+            cb.item_append(remote.name, 'git-remote')
         tb.pack(cb, 1, 1, 1, 1)
         cb.show()
         self.remote_combo = cb
@@ -143,8 +143,7 @@ class PushPullBase(Popup):
         remote = self.remote_combo.text + '/'
         for branch in self.app.repo.remote_branches:
             if branch.startswith(remote):
-                icon = Icon(self, standard='git-branch')
-                self.rbranch_combo.item_append(branch[len(remote):], icon)
+                self.rbranch_combo.item_append(branch[len(remote):], 'git-branch')
 
     def _action_btn_cb(self, bt):
         remote = self.remote_combo.text

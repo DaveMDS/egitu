@@ -63,6 +63,6 @@ GNU General Public License v3 - see COPYING
 
 ## TODO ##
 
-* Manage staging area
 * Blame
+* Undo commits (git reset --soft HEAD~1 ??)
 * Improve branches dialog with more branches info
