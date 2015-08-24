@@ -259,6 +259,35 @@ def parseint(string):
     return int(''.join([x for x in string if x.isdigit()]))
 
 
+class CommitTooltip(Table):
+    def __init__(self, parent, commit, show_full_msg=False):
+        self.commit = commit
+
+        Table.__init__(self, parent,  padding=(5,5))
+        self.show()
+
+        pic = GravatarPict(self)
+        pic.size_hint_align = 0.0, 0.0
+        pic.email_set(commit.author_email)
+        self.pack(pic, 0, 0, 1, 1)
+        pic.show()
+
+        if commit.committer and commit.committer != commit.author:
+            committed = '<name>Committed by:</name> <b>{}</b><br>'.format(
+                        commit.committer)
+        else:
+            committed = ''
+        text = '<name>{}</name>  <b>{}</b>  {}<br>{}<br>{}'.format(
+                commit.sha[:9], commit.author, format_date(commit.commit_date), 
+                committed, utf8_to_markup(commit.title))
+        if show_full_msg:
+            text += '<br><br>{}'.format(utf8_to_markup(commit.message))
+        en = Entry(self, text=text, line_wrap=ELM_WRAP_NONE,
+                   size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
+        self.pack(en, 1, 0, 1, 1)
+        en.show()
+
+
 class GravatarPict(Photo):
 
     cache_folder = os.path.join(xdg_cache_home, 'gravatar')

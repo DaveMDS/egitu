@@ -34,7 +34,7 @@ from efl.elementary.genlist import Genlist, GenlistItemClass, \
 
 from egitu.gui import DiffedEntry
 from egitu.branches import MergeBranchPopup
-from egitu.utils import ComboBox, ErrorPopup, \
+from egitu.utils import ComboBox, ErrorPopup, CommitTooltip, \
     EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ, FILL_HORIZ
 
 
@@ -58,9 +58,16 @@ class CommitsList(Genlist):
         if part == 'elm.swallow.icon':
             return Icon(gl, standard='git-commit')
         else:
-            return Entry(gl, editable=False, single_line=True,
-                         text='<name>{}</>'.format(commit.sha_short))
-        
+            en = Entry(gl, editable=False, single_line=True,
+                       text='<name>{}</>'.format(commit.sha_short))
+            # en.tooltip_window_mode = True  # TODO why this fail??
+            en.tooltip_content_cb_set(self._tooltip_content_cb, commit)
+            return en
+
+    def _tooltip_content_cb(self, entry, tooltip, commit):
+        # print(tooltip)  # TODO tooltip param is wrong, report on phab !!
+        return CommitTooltip(tooltip, commit, show_full_msg=True)
+
 
 class CompareDialog(DialogWindow):
     def __init__(self, parent, app, target=None):

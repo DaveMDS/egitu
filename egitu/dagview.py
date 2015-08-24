@@ -37,36 +37,10 @@ from efl.elementary.genlist import Genlist, GenlistItemClass, \
     ELM_LIST_COMPRESS, ELM_GENLIST_ITEM_GROUP
 
 from egitu.utils import options, theme_file_get, format_date, \
-    GravatarPict, EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ, FILL_HORIZ
+    GravatarPict, CommitTooltip, \
+    EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ, FILL_HORIZ
 from egitu.stash import StashDialog
 from egitu.vcs import Commit
-
-
-
-class CommitPopup(Table):
-    def __init__(self, parent, commit):
-        self.commit = commit
-
-        Table.__init__(self, parent,  padding=(5,5))
-        self.show()
-
-        pic = GravatarPict(self)
-        pic.email_set(commit.author_email)
-        self.pack(pic, 0, 0, 1, 1)
-        pic.show()
-
-        if commit.committer and commit.committer != commit.author:
-            committed = '<name>Committed by:</name> <b>{}</b><br>'.format(
-                        commit.committer)
-        else:
-            committed = ''
-        text = '<name>{}</name>  <b>{}</b>  {}<br>{}<br>{}'.format(
-                commit.sha[:9], commit.author, format_date(commit.commit_date), 
-                committed, utf8_to_markup(commit.title))
-        en = Entry(self, text=text, line_wrap=ELM_WRAP_NONE,
-                   size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
-        self.pack(en, 1, 0, 1, 1)
-        en.show()
 
 
 class DagGraph(Box):
@@ -349,7 +323,7 @@ class DagGraphList(Genlist):
 
         # setup item tooltip
         if commit.title is not None:
-            item.tooltip_content_cb_set(lambda o,i,t: CommitPopup(t, i.data))
+            item.tooltip_content_cb_set(lambda o,i,t: CommitTooltip(t, i.data))
 
         # draw connection lines with parents (downwards)
         for parent_sha in commit.parents:
