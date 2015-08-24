@@ -304,6 +304,8 @@ class MainMenuButton(Button):
                    self.app.action_branches).disabled = disabled
         m.item_add(None, 'Tags...', 'git-tag', 
                    self.app.action_tags).disabled = disabled
+        m.item_add(None, 'Compare...', 'git-compare', 
+                   self.app.action_compare).disabled = disabled
         m.item_add(None, 'Remotes...', 'git-remote', 
                    self.app.action_remotes).disabled = disabled
 

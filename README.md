@@ -16,6 +16,7 @@ EFL Git user interface
 * **Cherry-pick** commits (optionally autocommit)
 * **Push/Pull** to/from the remote repository
 * **Merge** any local branch in the current one
+* Powerfull **Compare** tool.
 * **Discard** not committed changes (checkout <files> or reset --HARD)
 * Add/Remove/Checkout **Tags**
 * **Stash** management

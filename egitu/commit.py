@@ -257,9 +257,9 @@ class CommitDialog(DialogWindow):
         # load the diff
         if revert_commit:
             app.repo.request_diff(self.diff_done_cb, revert=True,
-                                  commit1=revert_commit)
+                                  ref1=revert_commit.sha)
         elif cherrypick_commit:
-            app.repo.request_diff(self.diff_done_cb, commit1=cherrypick_commit)
+            app.repo.request_diff(self.diff_done_cb, ref1=cherrypick_commit.sha)
         else:
             app.repo.request_diff(self.diff_done_cb, only_staged=True)
 

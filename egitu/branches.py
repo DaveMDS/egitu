@@ -98,6 +98,14 @@ class BranchesDialog(DialogWindow):
         hbox.pack_end(bt)
         bt.show()
         self.merge_btn = bt
+        
+        ic = Icon(self, standard='git-compare')
+        bt = Button(self, text='Compare & Merge', content=ic)
+        bt.callback_clicked_add(lambda b: \
+            self.app.action_compare(target=self.selected_branch.name))
+        hbox.pack_end(bt)
+        bt.show()
+        self.merge_btn2 = bt
 
         sep = Separator(self, size_hint_expand=EXPAND_HORIZ)
         hbox.pack_end(sep)
@@ -136,9 +144,11 @@ class BranchesDialog(DialogWindow):
         if self.selected_branch.is_current:
             self.delete_btn.disabled = True
             self.merge_btn.disabled = True
+            self.merge_btn2.disabled = True
         else:
             self.delete_btn.disabled = False
             self.merge_btn.disabled = False
+            self.merge_btn2.disabled = False
 
 
 class MergeBranchPopup(Popup):

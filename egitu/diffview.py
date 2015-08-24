@@ -205,7 +205,8 @@ class DiffViewer(Table):
         else: # in local changes (item_data is the path)
             mod, staged, name, new = self.app.repo.status.changes[item.data]
 
-        self.app.repo.request_diff(self._diff_done_cb, commit1=self.commit, path=name)
+        self.app.repo.request_diff(self._diff_done_cb,
+                                   ref1=self.commit.sha, path=name)
         self.diff_entry.line_wrap = \
             ELM_WRAP_MIXED if options.diff_text_wrap else ELM_WRAP_NONE
         self.diff_entry.loading_set()

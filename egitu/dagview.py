@@ -195,8 +195,7 @@ class DagGraphList(Genlist):
 
         self._startup_time = time.time()
         self.app.repo.request_commits(self._populate_done_cb,
-                                  self._populate_progress_cb,
-                                  max_count=999999)
+                                      self._populate_progress_cb)
 
     def _populate_progress_cb(self, commit):
 

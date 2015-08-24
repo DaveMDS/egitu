@@ -312,17 +312,22 @@ class Repository(object):
         """
         raise NotImplementedError("stash not implemented in backend")
 
-    def request_commits(self, done_cb, prog_cb, max_count=100, skip=0):
+    def request_commits(self, done_cb, prog_cb, ref1=None, ref2=None,
+                        max_count=100, skip=0):
         """
         Request a list of Commit objects.
 
         Args:
             done_cb:
                 Function to call when the operation finish.
-                Signature: cb(success)
+                Signature: cb(success, err_msg=None)
             prog_cb:
                 Function to call for each commit.
                 Signature: cb(commit)
+            ref1:
+                Any valid reference (commit sha, branch, tag, etc).
+            ref2:
+                Another valid reference.
             max_count:
                 Maximum number of commit to return.
             skip:
@@ -330,8 +335,8 @@ class Repository(object):
         """
         raise NotImplementedError("request_commits() not implemented in backend")
 
-    def request_diff(self, done_cb, prog_cb=None, commit1=None, commit2=None,
-                     path=None, only_staged=False, revert=False):
+    def request_diff(self, done_cb, prog_cb=None, ref1=None, ref2=None,
+                     path=None, only_staged=False, revert=False, compare=False):
         """
         Request the full unified diff between 2 commit.
 
@@ -349,10 +354,10 @@ class Repository(object):
             prog_cb:
                 Function to call on each line of the diff.
                 Signature: cb(line)
-            commit1:
-                A Commit object.
-            commit2:
-                Another Commit object.
+            ref1:
+                Any valid reference (commit sha, branch, tag, etc).
+            ref2:
+                Another valid reference.
             path:
                 If given only the diff that occur in that file is reported.
             only_staged:
@@ -361,6 +366,10 @@ class Repository(object):
             revert:
                 If True and only commit1 is given then the diff of reverting
                 commit1 will be calculated
+            compare:
+                If True build the diff from all the commits between the 2 refs
+                are given, otherwise only the diff between ref1 and ref2
+                (in git terms: True='...', False='..')
         """
         raise NotImplementedError("request_diff() not implemented in backend")
 
@@ -1163,10 +1172,13 @@ class GitBackend(Repository):
     def stash(self):
         return self._stash
 
-    def request_commits(self, done_cb, prog_cb, max_count=100, skip=0):
-
+    def request_commits(self, done_cb, prog_cb, ref1=None, ref2=None,
+                        max_count=0, skip=0):
         def _cmd_done_cb(lines, success, lines_buf):
-            done_cb(success)
+            if success:
+                done_cb(success)
+            else:
+                done_cb(success, '\n'.join(lines_buf))
 
         def _cmd_line_cb(line, lines_buf):
             lines_buf.append(line)
@@ -1208,21 +1220,30 @@ class GitBackend(Repository):
         #                "body": "%b", "refs":"%d"}'
         # Use ascii char 00 as field separator and char 03 as commits separator
         fmt = '%x00'.join(('%H','%P','%an','%ae','%cn','%ce','%ct','%s','%b','%d')) + '%x03'
-        cmd = "log --pretty='tformat:%s' --decorate=full --all -n %d" % (fmt, max_count)
+        cmd = "log --pretty='tformat:%s' --decorate=full" % (fmt)
+        if ref1 and ref2:
+            cmd += ' %s..%s' % (ref1, ref2)
+        else:
+            cmd += ' --all'
+            
+        if max_count > 0: cmd += ' --max-count %d' % max_count
         if skip > 0: cmd += ' --skip %d' % skip
         GitCmd(self._url, cmd, _cmd_done_cb, _cmd_line_cb, list())
 
-    def request_diff(self, done_cb, prog_cb=None, commit1=None, commit2=None,
-                     path=None, only_staged=False, revert=False):
+    def request_diff(self, done_cb, prog_cb=None, ref1=None, ref2=None,
+                     path=None, only_staged=False, revert=False, compare=False):
         cmd = 'diff --no-prefix'
         if only_staged:
             cmd += ' --staged'
-        if commit2 and commit2.sha and commit1 and commit1.sha:
-            cmd += ' %s %s' % (commit1.sha, commit2.sha)
-        elif revert and commit1 and commit1.sha:
-            cmd += ' %s %s^' % (commit1.sha, commit1.sha)
-        elif commit1 and commit1.sha:
-            cmd += ' %s^ %s' % (commit1.sha, commit1.sha)
+        if ref2 and ref1:
+            if compare:
+                cmd += ' %s...%s' % (ref1, ref2)
+            else:
+                cmd += ' %s..%s' % (ref1, ref2)
+        elif revert and ref1:
+            cmd += ' %s..%s^' % (ref1, ref1)
+        elif ref1:
+            cmd += ' %s^..%s' % (ref1, ref1)
         else:
             cmd += ' HEAD'
         if path is not None:

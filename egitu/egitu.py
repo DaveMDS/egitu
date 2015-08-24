@@ -37,6 +37,7 @@ from egitu.tags import TagsDialog
 from egitu.remotes import RemotesDialog
 from egitu.pushpull import PullPopup, PushPopup
 from egitu.stash import StashSavePopup, StashDialog
+from egitu.compare import CompareDialog
 from egitu.gui import ClonePopup
 
 
@@ -59,6 +60,7 @@ class EgituApp(object):
         binds.bind_add('Control+t', self.action_tags)
         binds.bind_add('Control+s', self.action_stash_save)
         binds.bind_add('Control+Shift+s', self.action_stash_show)
+        binds.bind_add('Control+m', self.action_compare)
 
         # try to load a repo, from command-line or cwd (else show the RepoSelector)
         if not self.try_to_load(os.path.abspath(args[0]) if args else os.getcwd()):
@@ -156,6 +158,10 @@ class EgituApp(object):
                 StashDialog(self.win, self)
             else:
                 ErrorPopup(self.win, 'The stash is empty', 'Nothing to show')
+
+    def action_compare(self, *args, **kargs):
+        if self.repo is not None:
+            CompareDialog(self.win, self, **kargs)
 
 def main():
 

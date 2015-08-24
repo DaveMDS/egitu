@@ -103,6 +103,7 @@ Powerfull <b>branches</b> management<br>
 <b>Cherry-pick</b> commits<br>
 <b>Push/Pull</b> to/from remote repository<br>
 <b>Merge</b> any local branch in the current one<br>
+Powerfull <b>Compare</b> tool<br>
 <b>Discard</b> not committed changes<br>
 Add/Remove/Checkout <b>Tags</b><br>
 <b>Stash</b> management<br>
@@ -121,6 +122,7 @@ Ctrl+Shift+P  Push<br>
 Ctrl+B        Branches<br>
 Ctrl+T        Tags<br>
 Ctrl+C        Clone<br>
+Ctrl+M        Compare and Merge<br>
 Ctrl+S        Stash save<br>
 Ctrl+Shift+S  Stash show<br>
 Ctrl+Q        Quit<br>
