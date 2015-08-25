@@ -672,10 +672,10 @@ class CommandOutputEntry(Table):
         self._wheel.hide()
 
     def successfull(self):
-        self._entry.entry_insert('<success>Operation successfully completed.</success><br>')
+        self._entry.entry_append('<success>Operation successfully completed.</success><br>')
     
     def failure(self):
-        self._entry.entry_insert('<failure>Error! Something goes wrong.</failure><br>')
+        self._entry.entry_append('<failure>Error! Something goes wrong.</failure><br>')
     
     def error_set(self, text):
         self._entry.text = '<failure>Error:</failure><br>%s' % text
