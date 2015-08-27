@@ -146,14 +146,6 @@ class DagGraphList(Genlist):
         self._group_item = self.item_append(self._itcg, None,
                                             flags=ELM_GENLIST_ITEM_GROUP)
 
-        # create the first fake commit (local changes)
-        if not self.app.repo.status.is_clean:
-            c = Commit()
-            c.special = 'local'
-            c.tags = ['Local changes']
-            self._commit_append(c, 1).selected = True
-            self._head_found = True
-
         # show stash items (if requested)
         if options.show_stash_in_dag:
             for si in self.app.repo.stash:
@@ -405,5 +397,5 @@ class DagGraphList(Genlist):
                     StashDialog(self.parent, self.app, si)
                     return
         else:
-            self.app.win.show_commit(commit)
+            self.app.action_show_commit(commit)
 

@@ -163,6 +163,13 @@ class EgituApp(object):
         if self.repo is not None:
             CompareDialog(self.win, self, **kargs)
 
+    def action_show_commit(self, commit):
+        self.win.diff_view.show_commit(commit)
+        self.win.tree.unselect()
+
+    def action_show_local_status(self):
+        self.win.diff_view.show_local_status()
+
 def main():
 
     # load config and create necessary folders

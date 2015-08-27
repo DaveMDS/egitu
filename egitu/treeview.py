@@ -20,7 +20,6 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-# import os
 
 from efl import elementary as elm
 from efl.elementary.box import Box
@@ -41,7 +40,7 @@ class WorkingCopyItemClass(GenlistItemClass):
         GenlistItemClass.__init__(self, item_style='default')
 
     def text_get(self, gl, part, item_data):
-        return 'Local changes'
+        return 'Local status'
 
     def content_get(self, gl, part, item_data):
         if part == 'elm.swallow.icon':
@@ -173,13 +172,15 @@ class RepoTree(Genlist):
         self._itc_remote = RemoteItemClass(app)
         self._itc_remote_branch = RemoteBranchItemClass(app)
 
-        Genlist.__init__(self, parent, homogeneous=False)
+        Genlist.__init__(self, parent, homogeneous=False,
+                         select_mode=elm.ELM_OBJECT_SELECT_MODE_ALWAYS)
         self.callback_expand_request_add(self._expand_request_cb)
         self.callback_contract_request_add(self._contract_request_cb)
+        self.callback_selected_add(self._selected_cb)
 
     def populate(self):
         self.clear()
-        self.item_append(self._itc_wcopy, None)
+        self.item_append(self._itc_wcopy, 'LOCAL')
         self.item_append(self._itc_history, None)
         self.item_append(self._itc_tree, 'STASHES', flags=ELM_GENLIST_ITEM_TREE) \
                         .select_mode = elm.ELM_OBJECT_SELECT_MODE_NONE
@@ -189,6 +190,11 @@ class RepoTree(Genlist):
                         .select_mode = elm.ELM_OBJECT_SELECT_MODE_NONE
         self.item_append(self._itc_tree, 'REMOTES', flags=ELM_GENLIST_ITEM_TREE) \
                         .select_mode = elm.ELM_OBJECT_SELECT_MODE_NONE
+
+    def unselect(self):
+        item = self.selected_item
+        if item:
+            item.selected = False
 
     def _expand_request_cb(self, gl, item):
         c = 0
@@ -223,3 +229,8 @@ class RepoTree(Genlist):
     def _contract_request_cb(self, gl, item):
         item.subitems_clear()
         item.expanded = False
+
+    def _selected_cb(self, gl, item):
+        if item.data == 'LOCAL':
+            self.app.action_show_local_status()
+        

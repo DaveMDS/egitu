@@ -631,9 +631,6 @@ class EgituWin(StandardWindow):
     def branch_selected_cb(self, hoversel, item):
         self.app.checkout_ref(item.text)
 
-    def show_commit(self, commit):
-        self.diff_view.commit_set(commit)
-
     def _binds_cb_refresh(self, src, key, event):
         self.refresh()
         return True
