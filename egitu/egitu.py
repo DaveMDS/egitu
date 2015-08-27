@@ -177,6 +177,9 @@ class EgituApp(object):
     def action_show_branch(self, branch):
         self.win.graph.populate(branch.name, hilight_ref=branch.name)
 
+    def action_show_tag(self, tag):
+        self.win.graph.populate(tag.ref, hilight_ref=tag.name)
+
 
 
 def main():

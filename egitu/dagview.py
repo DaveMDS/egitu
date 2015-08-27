@@ -215,10 +215,11 @@ class DagGraphList(Genlist):
             commit.dag_data.childs = self._open_childs.pop(commit.sha)
 
         # 6. search a ref to hilight (if requested)
-        if self._hilight_ref and self._hilight_ref in commit.heads:
-            item.selected = True
-            item.show()
-            self._hilight_ref = None
+        if self._hilight_ref:
+            if self._hilight_ref in commit.heads or self._hilight_ref in commit.tags:
+                item.selected = True
+                item.show()
+                self._hilight_ref = None
 
     def _populate_done_cb(self, success):
         # store the last date information

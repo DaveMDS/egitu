@@ -124,6 +124,12 @@ class Branch(object):
         return True if self.remote_branch else False
 
 
+class Tag(object):
+    def __init__(self, ref):
+        self.ref = ref       # 'ref/tags/vX.X.X'
+        self.name = ref[10:] # 'vX.X.X'
+
+
 class Remote(object):
     def __init__(self, name, url=None, fetch=None):
         self.name = name
@@ -295,7 +301,7 @@ class Repository(object):
     @property
     def tags(self):
         """
-        The list of tags name present in the repository.
+        The list of tags present in the repository (Tag instances).
 
         NOTE: This property is cached, you need to call the refresh() function
         to actually read the list from the repo.
@@ -1065,7 +1071,7 @@ class GitBackend(Repository):
             objtype, head, refname, upstream = line.split('|')
             # tags
             if refname.startswith('refs/tags/'):
-                self._tags.append(refname[10:]) # remove 'ref/tags/'
+                self._tags.append(Tag(refname))
             # local branches
             elif refname.startswith('refs/heads/'):
                 bname = refname[11:] # remove 'refs/heads/'

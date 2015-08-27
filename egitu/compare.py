@@ -117,8 +117,8 @@ class CompareDialog(DialogWindow):
             cb1.item_append(branch, 'git-branch')
             cb2.item_append(branch, 'git-branch')
         for tag in app.repo.tags:
-            cb1.item_append(tag, 'git-tag')
-            cb2.item_append(tag, 'git-tag')
+            cb1.item_append(tag.name, 'git-tag')
+            cb2.item_append(tag.name, 'git-tag')
 
         # vertical panes
         panes = Panes(self, horizontal=True, content_left_size=0.25,

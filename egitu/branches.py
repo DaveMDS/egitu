@@ -361,7 +361,7 @@ class CreateBranchPopup(Popup):
         # tags
         if not only_tracking:
             for tag in self.app.repo.tags:
-                item_data = (tag, 'git-tag')
+                item_data = (tag.name, 'git-tag')
                 self.rev_list.item_append(self.itc, item_data)
 
     def _gl_text_get(self, li, part, item_data):

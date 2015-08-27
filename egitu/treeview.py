@@ -29,7 +29,7 @@ from efl.elementary.label import Label
 from efl.elementary.genlist import Genlist, GenlistItemClass, \
     ELM_GENLIST_ITEM_GROUP, ELM_GENLIST_ITEM_TREE
 
-from egitu.vcs import Branch
+from egitu.vcs import Branch, Tag
 from egitu.utils import options, \
     EXPAND_BOTH, EXPAND_HORIZ, EXPAND_VERT, FILL_BOTH, FILL_HORIZ, FILL_VERT
 
@@ -131,7 +131,7 @@ class TagItemClass(GenlistItemClass):
         GenlistItemClass.__init__(self, item_style='one_icon')
 
     def text_get(self, gl, part, tag):
-        return tag
+        return tag.name
 
     def content_get(self, gl, part, tag):
         return Icon(gl, standard='git-tag')
@@ -237,4 +237,6 @@ class RepoTree(Genlist):
             self.app.action_show_full_history()
         elif isinstance(item.data, Branch):
             self.app.action_show_branch(item.data)
+        elif isinstance(item.data, Tag):
+            self.app.action_show_tag(item.data)
         
