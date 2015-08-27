@@ -407,6 +407,8 @@ collections {
    IC("git-compare", "compare.png")
    IC("git-tag", "tag.png")
    IC("git-stash", "stash.png")
+   IC("git-history", "history.png")
+   IC("git-head", "graph_head.png")
    IC("git-mod-A", "mod_a.png")
    IC("git-mod-D", "mod_d.png")
    IC("git-mod-M", "mod_m.png")

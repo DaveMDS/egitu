@@ -47,6 +47,7 @@ from egitu.utils import options, GravatarPict, ErrorPopup, ConfirmPupup, \
     EXPAND_BOTH, EXPAND_HORIZ, EXPAND_VERT, FILL_BOTH, FILL_HORIZ, FILL_VERT
 from egitu.dagview import DagGraph
 from egitu.diffview import DiffViewer
+from egitu.treeview import RepoTree
 from egitu.remotes import RemotesDialog
 from egitu.branches import BranchesDialog
 from egitu.pushpull import PullPopup, PushPopup
@@ -469,7 +470,7 @@ class EgituWin(StandardWindow):
         self.diff_view = None
 
         StandardWindow.__init__(self, 'egitu', 'Efl GIT gUi - Egitu',
-                                size=(800,600), autodel=True)
+                                size=(1000,600), autodel=True)
         self.callback_delete_request_add(lambda o: elm.exit())
 
     def populate(self):
@@ -529,32 +530,39 @@ class EgituWin(StandardWindow):
         bt.show()
         self.push_btn = bt
 
-        ### Main content (left + right panes)
-        panes = Panes(self, content_left_size = 0.5,
-                       size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
-        box.pack_end(panes)
-        panes.show()
+        ### Tree panes
+        panes1 = Panes(self, content_left_min_size=200, content_left_size=0.0,
+                      size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
+        box.pack_end(panes1)
+        panes1.show()
 
-        # the dag graph inside a scroller on the left
+        # the repo main tree on the left
+        self.tree = RepoTree(self, self.app)
+        panes1.part_content_set('left', self.tree)
+        
+
+        ### Main content (left + right panes)
+        panes2 = Panes(self, content_left_size=0.5,
+                       size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
+        panes1.part_content_set('right', panes2)
+        panes2.show()
+
+        # the dag graph in the center
         self.graph = DagGraph(self, self.app)
-        # fr = Frame(self, style='pad_medium', content=self.graph)
-        # scr = Scroller(self, content=fr,
-                       # size_hint_weight=EXPAND_BOTH, size_hint_align=FILL_BOTH)
-        # scr.bounce_set(0, 1)
-        # panes.part_content_set('left', scr)
-        panes.part_content_set('left', self.graph)
+        panes2.part_content_set('left', self.graph)
 
         # the diff viewer on the right
         self.diff_view = DiffViewer(self, self.app)
         self.diff_view.size_hint_weight = EXPAND_BOTH
         self.diff_view.size_hint_align = 0.0, 0.0
-        panes.part_content_set('right', self.diff_view)
+        panes2.part_content_set('right', self.diff_view)
 
         #
         self.show()
 
     def update_all(self):
         self.update_header()
+        self.tree.populate()
         self.graph.populate()
 
     def update_header(self):
