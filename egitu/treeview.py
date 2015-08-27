@@ -29,9 +29,9 @@ from efl.elementary.label import Label
 from efl.elementary.genlist import Genlist, GenlistItemClass, \
     ELM_GENLIST_ITEM_GROUP, ELM_GENLIST_ITEM_TREE
 
+from egitu.vcs import Branch
 from egitu.utils import options, \
     EXPAND_BOTH, EXPAND_HORIZ, EXPAND_VERT, FILL_BOTH, FILL_HORIZ, FILL_VERT
-# from egitu.vcs import git_clone, Branch, Remote
 
 
 class WorkingCopyItemClass(GenlistItemClass):
@@ -181,7 +181,7 @@ class RepoTree(Genlist):
     def populate(self):
         self.clear()
         self.item_append(self._itc_wcopy, 'LOCAL')
-        self.item_append(self._itc_history, None)
+        self.item_append(self._itc_history, 'FULLHIST')
         self.item_append(self._itc_tree, 'STASHES', flags=ELM_GENLIST_ITEM_TREE) \
                         .select_mode = elm.ELM_OBJECT_SELECT_MODE_NONE
         self.item_append(self._itc_tree, 'BRANCHES', flags=ELM_GENLIST_ITEM_TREE) \
@@ -191,9 +191,9 @@ class RepoTree(Genlist):
         self.item_append(self._itc_tree, 'REMOTES', flags=ELM_GENLIST_ITEM_TREE) \
                         .select_mode = elm.ELM_OBJECT_SELECT_MODE_NONE
 
-    def unselect(self):
+    def unselect_local(self):
         item = self.selected_item
-        if item:
+        if item and item.data == 'LOCAL':
             item.selected = False
 
     def _expand_request_cb(self, gl, item):
@@ -233,4 +233,8 @@ class RepoTree(Genlist):
     def _selected_cb(self, gl, item):
         if item.data == 'LOCAL':
             self.app.action_show_local_status()
+        elif item.data == 'FULLHIST':
+            self.app.action_show_full_history()
+        elif isinstance(item.data, Branch):
+            self.app.action_show_branch(item.data)
         

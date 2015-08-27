@@ -1223,6 +1223,8 @@ class GitBackend(Repository):
         cmd = "log --pretty='tformat:%s' --decorate=full" % (fmt)
         if ref1 and ref2:
             cmd += ' %s..%s' % (ref1, ref2)
+        elif ref1:
+            cmd += ' %s' % ref1
         else:
             cmd += ' --all'
             

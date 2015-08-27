@@ -165,10 +165,19 @@ class EgituApp(object):
 
     def action_show_commit(self, commit):
         self.win.diff_view.show_commit(commit)
-        self.win.tree.unselect()
+        self.win.tree.unselect_local()
 
     def action_show_local_status(self):
+        self.win.graph.populate('HEAD')
         self.win.diff_view.show_local_status()
+
+    def action_show_full_history(self):
+        self.win.graph.populate(hilight_ref='HEAD')
+
+    def action_show_branch(self, branch):
+        self.win.graph.populate(branch.name, hilight_ref=branch.name)
+
+
 
 def main():
 

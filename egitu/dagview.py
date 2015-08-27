@@ -63,8 +63,8 @@ class DagGraph(Box):
 
         self.show()
 
-    def populate(self):
-        self.genlist.populate()
+    def populate(self, *args, **kargs):
+        self.genlist.populate(*args, **kargs)
 
     def info_label_set(self, text):
         self.label.text = '  ' + text
@@ -127,14 +127,14 @@ class DagGraphList(Genlist):
         self._COMMITS[commit.sha] = commit
         return self.item_append(self._itc, commit, self._group_item)
 
-    def populate(self):
+    def populate(self, start_ref=None, hilight_ref=None):
         self._current_row = 0
         self._COMMITS = dict()           # 'sha': Commit instance
         self._used_columns = set()       # contain the indexes of used columns
         self._open_connections = dict()  # 'sha':[child1_col, child2_col, child3_col, ...]
         self._open_childs = dict()       # 'sha':[child1, child2, child3, ...]
         self._last_date_commit = None    # last commit that changed the date
-        self._head_found = False
+        self._hilight_ref = hilight_ref
 
         self.COLW = 20 # columns width (fixed)
         self.ROWH = 0  # raws height (fetched from genlist on first realize)
@@ -161,7 +161,8 @@ class DagGraphList(Genlist):
 
         self._startup_time = time.time()
         self.app.repo.request_commits(self._populate_done_cb,
-                                      self._populate_progress_cb)
+                                      self._populate_progress_cb,
+                                      ref1=start_ref)
 
     def _populate_progress_cb(self, commit):
 
@@ -213,10 +214,11 @@ class DagGraphList(Genlist):
         if commit.sha in self._open_childs:
             commit.dag_data.childs = self._open_childs.pop(commit.sha)
 
-        # 6. search for the HEAD (and select+show if necessary)
-        if not self._head_found and 'HEAD' in commit.heads:
+        # 6. search a ref to hilight (if requested)
+        if self._hilight_ref and self._hilight_ref in commit.heads:
             item.selected = True
             item.show()
+            self._hilight_ref = None
 
     def _populate_done_cb(self, success):
         # store the last date information
