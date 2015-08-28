@@ -47,7 +47,7 @@ from egitu.utils import options, GravatarPict, ErrorPopup, ConfirmPupup, \
     EXPAND_BOTH, EXPAND_HORIZ, EXPAND_VERT, FILL_BOTH, FILL_HORIZ, FILL_VERT
 from egitu.dagview import DagGraph
 from egitu.diffview import DiffViewer
-from egitu.treeview import Sidebar
+from egitu.sidebar import Sidebar
 from egitu.remotes import RemotesDialog
 from egitu.branches import BranchesDialog
 from egitu.pushpull import PullPopup, PushPopup
