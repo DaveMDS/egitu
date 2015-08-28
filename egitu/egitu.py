@@ -32,7 +32,7 @@ from egitu.gui import EgituWin, RepoSelector
 from egitu.vcs import repo_factory
 from egitu.utils  import recent_history_push, app_instance_set, \
     AboutWin, ErrorPopup, RequestPopup, ConfirmPupup
-from egitu.branches import BranchesDialog
+from egitu.branches import BranchesDialog, DeleteBranchPopup, MergeBranchPopup
 from egitu.tags import TagsDialog
 from egitu.remotes import RemotesDialog
 from egitu.pushpull import PullPopup, PushPopup
@@ -101,7 +101,7 @@ class EgituApp(object):
 
     def _checkout_done_cb(self, success, err_msg=None):
         if success:
-            self.win.update_all()
+            self.action_update_all()
         else:
             ErrorPopup(self.win, 'Operation Failed', utf8_to_markup(err_msg))
 
@@ -114,8 +114,7 @@ class EgituApp(object):
 
     # gui update utils
     def action_update_all(self, *args):
-        self.action_update_header()
-        self.action_update_dag()
+        self.win.update_all()
         
     def action_update_dag(self, *args):
         if self.repo is not None:
@@ -148,6 +147,17 @@ class EgituApp(object):
     def action_branches(self, *args):
         if self.repo is not None:
             BranchesDialog(self)
+
+    def action_branch_delete(self, branch):
+        DeleteBranchPopup(self.win, self, branch)
+
+    def action_branch_merge(self, branch):
+        MergeBranchPopup(self.win, self, branch)
+
+    # compare actions
+    def action_compare(self, *args, **kargs):
+        if self.repo is not None:
+            CompareDialog(self.win, self, **kargs)
 
     # tag actions
     def action_tags(self, *args):
@@ -234,11 +244,6 @@ class EgituApp(object):
                      msg='This will delete the stash item:<br><br>' \
                          '<hilight>{0.ref}</hilight><br>' \
                          '<b>{0.desc}</b>'.format(stash_item))
-
-    # compare actions
-    def action_compare(self, *args, **kargs):
-        if self.repo is not None:
-            CompareDialog(self.win, self, **kargs)
 
 
 

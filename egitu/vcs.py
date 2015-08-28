@@ -46,7 +46,6 @@ def repo_factory(url):
 
 class Commit(object):
     def __init__(self):
-        self.special = None  # "None" for real commits, or "local" or "stash"
         self.sha = ''
         self.author = ''
         self.author_email = ''

@@ -251,31 +251,71 @@ class RepoTree(Genlist):
 
     def _clicked_right_cb(self, gl, item):
         if isinstance(item.data, StashItem):
-            if not item.selected:
-                self._ignore_next_selection = True
-                item.selected = True
             SidebarStashMenu(self.app, item.data)
+        elif isinstance(item.data, Branch):
+            SidebarBranchMenu(self.app, item.data)
+        else:
+            return
 
+        if not item.selected:
+            self._ignore_next_selection = True
+            item.selected = True
 
 
 class SidebarStashMenu(Menu):
     def __init__(self, app, stash_item):
         self.app = app
-        self.stash_item = stash_item
-        
+
         Menu.__init__(self, app.win)
         self.item_add(None, stash_item.desc, 'git-stash').disabled = True
         self.item_separator_add()
         self.item_add(None, 'Show', None,
-                      lambda m,i: self.app.action_stash_show_item(self.stash_item))
+                      lambda m,i: self.app.action_stash_show_item(stash_item))
         self.item_add(None, 'Apply', None,
-                      lambda m,i: self.app.action_stash_apply(self.stash_item))
+                      lambda m,i: self.app.action_stash_apply(stash_item))
         self.item_add(None, 'Pop (apply & delete)', None,
-                      lambda m,i: self.app.action_stash_pop(self.stash_item))
+                      lambda m,i: self.app.action_stash_pop(stash_item))
         self.item_add(None, 'Branch & Delete', 'git-branch',
-                      lambda m,i: self.app.action_stash_branch(self.stash_item))
+                      lambda m,i: self.app.action_stash_branch(stash_item))
         self.item_add(None, 'Delete', 'user-trash',
-                      lambda m,i: self.app.action_stash_drop(self.stash_item))
+                      lambda m,i: self.app.action_stash_drop(stash_item))
+
+        # show the menu at mouse position
+        x, y = self.evas.pointer_canvas_xy_get()
+        self.move(x + 2, y)
+        self.show()
+
+
+class SidebarBranchMenu(Menu):
+    def __init__(self, app, branch):
+        self.app = app
+
+        if branch.name == app.repo.status.current_branch.name:
+            on_head = True
+        else:
+            on_head = False
+
+        Menu.__init__(self, app.win)
+        label = '{} {}'.format(branch.name, '(HEAD)' if on_head else '')
+        self.item_add(None, label, 'git-branch').disabled = True
+        self.item_separator_add()
+
+        self.item_add(None, 'Checkout', None,
+                      lambda m,i: self.app.checkout_ref(branch.name)) \
+                      .disabled = on_head
+
+        label = 'Merge in {}'.format(app.repo.status.current_branch.name)
+        self.item_add(None, label, 'git-merge',
+                      lambda m,i: self.app.action_branch_merge(branch)) \
+                      .disabled = on_head
+
+        self.item_add(None, 'Compare & Merge', 'git-compare',
+                      lambda m,i: self.app.action_compare(target=branch.name)) \
+                      .disabled = on_head
+
+        self.item_add(None, 'Delete', 'user-trash',
+                      lambda m,i: self.app.action_branch_delete(branch)) \
+                      .disabled = on_head
 
         # show the menu at mouse position
         x, y = self.evas.pointer_canvas_xy_get()
