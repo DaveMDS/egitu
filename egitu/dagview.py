@@ -146,19 +146,6 @@ class DagGraphList(Genlist):
         self._group_item = self.item_append(self._itcg, None,
                                             flags=ELM_GENLIST_ITEM_GROUP)
 
-        # show stash items (if requested)
-        if options.show_stash_in_dag:
-            for si in self.app.repo.stash:
-                c = Commit()
-                c.special = 'stash'
-                c.sha = si.sha
-                c.tags = ['Stash']
-                c.title = si.desc
-                c.author = si.aut
-                c.author_email = si.amail
-                c.commit_date = datetime.fromtimestamp(si.ts)
-                self._commit_append(c, 1)
-
         self._startup_time = time.time()
         self.app.repo.request_commits(self._populate_done_cb,
                                       self._populate_progress_cb,
@@ -393,12 +380,5 @@ class DagGraphList(Genlist):
         line.show()
 
     def _gl_item_selected(self, gl, item):
-        commit = item.data
-        if commit.special == 'stash':
-            for si in self.app.repo.stash:
-                if si.sha == commit.sha:
-                    StashDialog(self.parent, self.app, si)
-                    return
-        else:
-            self.app.action_show_commit(commit)
+        self.app.action_show_commit(item.data)
 

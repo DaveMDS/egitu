@@ -51,7 +51,6 @@ from egitu.treeview import RepoTree
 from egitu.remotes import RemotesDialog
 from egitu.branches import BranchesDialog
 from egitu.pushpull import PullPopup, PushPopup
-from egitu.stash import StashMenu
 from egitu.vcs import git_clone
 
 
@@ -309,9 +308,8 @@ class MainMenuButton(Button):
                    self.app.action_compare).disabled = disabled
         m.item_add(None, 'Remotes...', 'git-remote', 
                    self.app.action_remotes).disabled = disabled
-
-        # stash menu
-        StashMenu(m, self.app)
+        m.item_add(None, 'Stashes...', 'git-stash', 
+                   self.app.action_stash_show).disabled = disabled
 
         # general options
         m.item_separator_add()

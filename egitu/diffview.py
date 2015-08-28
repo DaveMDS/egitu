@@ -136,6 +136,12 @@ class DiffViewer(Table):
                 CommitDialog(self.app))
             self.action_box.pack_end(bt)
             bt.show()
+        if 'stash' in buttons:
+            bt = Button(self, text='Stash',
+                        content=Icon(self, standard='git-stash'))
+            bt.callback_clicked_add(lambda b: self.app.action_stash_save())
+            self.action_box.pack_end(bt)
+            bt.show()
         if 'discard' in buttons:
             bt = Button(self, text='Discard',
                         content=Icon(self, standard='user-trash'))
@@ -171,7 +177,7 @@ class DiffViewer(Table):
         self.entry.text = '<bigger><b>Local status</b></bigger>'
         self.diff_entry.text = ''
         self.picture.email_set(None)
-        self.update_action_buttons(['commit', 'discard'])
+        self.update_action_buttons(['commit', 'stash', 'discard'])
         self.diff_list.clear()
         for path in sorted(self.app.repo.status.changes):
             self.diff_list.item_append(self.itc, path)

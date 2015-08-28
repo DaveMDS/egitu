@@ -31,7 +31,7 @@ from egitu.gui import EgituWin, RepoSelector
 
 from egitu.vcs import repo_factory
 from egitu.utils  import recent_history_push, app_instance_set, \
-    AboutWin, ErrorPopup
+    AboutWin, ErrorPopup, RequestPopup, ConfirmPupup
 from egitu.branches import BranchesDialog
 from egitu.tags import TagsDialog
 from egitu.remotes import RemotesDialog
@@ -65,6 +65,17 @@ class EgituApp(object):
         # try to load a repo, from command-line or cwd (else show the RepoSelector)
         if not self.try_to_load(os.path.abspath(args[0]) if args else os.getcwd()):
             RepoSelector(self)
+
+    # generic actions    
+    def action_quit(self, *args):
+        elm.exit()
+
+    def action_about(self, *args):
+        AboutWin(self.win)
+
+    # repo actions
+    def action_open(self, *args):
+        RepoSelector(self)
 
     def try_to_load(self, path):
         repo = repo_factory(path)
@@ -101,6 +112,7 @@ class EgituApp(object):
     def _reload_done_cb(self, success, err_msg=None):
         self.win.update_all()
 
+    # gui update utils
     def action_update_all(self, *args):
         self.action_update_header()
         self.action_update_dag()
@@ -114,54 +126,6 @@ class EgituApp(object):
 
     def action_update_diffview(self, *args):
         self.win.diff_view.refresh_diff()
-
-    def action_open(self, *args):
-        RepoSelector(self)
-
-    def action_quit(self, *args):
-        elm.exit()
-
-    def action_about(self, *args):
-        AboutWin(self.win)
-
-    def action_branches(self, *args):
-        if self.repo is not None:
-            BranchesDialog(self)
-
-    def action_tags(self, *args):
-        if self.repo is not None:
-            TagsDialog(self.win, self)
-
-    def action_remotes(self, *args):
-        if self.repo is not None:
-            RemotesDialog(self)
-    
-    def action_pull(self, *args):
-        if self.repo is not None:
-            PullPopup(self.win, self)
-    
-    def action_push(self, *args):
-        if self.repo is not None:
-            PushPopup(self.win, self)
-
-    def action_clone(self, *args):
-        ClonePopup(self.win, self)
-
-    def action_stash_save(self, *args):
-        # TODO: check if repo is clean
-        if self.repo is not None:
-            StashSavePopup(self.win, self)
-
-    def action_stash_show(self, *args):
-        if self.repo is not None:
-            if self.repo.stash:
-                StashDialog(self.win, self)
-            else:
-                ErrorPopup(self.win, 'The stash is empty', 'Nothing to show')
-
-    def action_compare(self, *args, **kargs):
-        if self.repo is not None:
-            CompareDialog(self.win, self, **kargs)
 
     def action_show_commit(self, commit):
         self.win.diff_view.show_commit(commit)
@@ -179,6 +143,103 @@ class EgituApp(object):
 
     def action_show_tag(self, tag):
         self.win.graph.populate(tag.ref, hilight_ref=tag.name)
+
+    # branch actions
+    def action_branches(self, *args):
+        if self.repo is not None:
+            BranchesDialog(self)
+
+    # tag actions
+    def action_tags(self, *args):
+        if self.repo is not None:
+            TagsDialog(self.win, self)
+
+    # remote actions
+    def action_remotes(self, *args):
+        if self.repo is not None:
+            RemotesDialog(self)
+    
+    def action_pull(self, *args):
+        if self.repo is not None:
+            PullPopup(self.win, self)
+    
+    def action_push(self, *args):
+        if self.repo is not None:
+            PushPopup(self.win, self)
+
+    def action_clone(self, *args):
+        ClonePopup(self.win, self)
+
+    # stash actions
+    def action_stash_save(self, *args):
+        # TODO: check if repo is clean
+        if self.repo is not None:
+            StashSavePopup(self.win, self)
+
+    def action_stash_show(self, *args):
+        if self.repo is not None:
+            if self.repo.stash:
+                StashDialog(self.win, self)
+            else:
+                ErrorPopup(self.win, 'The stash is empty', 'Nothing to show')
+
+    def action_stash_show_item(self, stash_item):
+        StashDialog(self.win, self, stash_item)
+        
+
+    def action_stash_apply(self, stash_item):
+        def _done_cb(success, err_msg=None):
+            if success:
+                self.action_update_all()
+            else:
+                ErrorPopup(self.win, msg=utf8_to_markup(err_msg))
+
+        self.repo.stash_apply(_done_cb, stash_item)
+
+    def action_stash_pop(self, stash_item):
+        def _done_cb(success, err_msg=None):
+            if success:
+                self.action_update_all()
+            else:
+                ErrorPopup(self.win, msg=utf8_to_markup(err_msg))
+
+        self.repo.stash_pop(_done_cb, stash_item)
+
+    def action_stash_branch(self, stash_item):
+        def _confirmed_cb(branch_name):
+            self.repo.stash_branch(_done_cb, stash_item, branch_name)
+
+        def _done_cb(success, err_msg=None):
+            if success:
+                self.action_update_all()
+            else:
+                ErrorPopup(self.win, msg=utf8_to_markup(err_msg))
+
+        RequestPopup(self.win, _confirmed_cb,
+                     'Stash -> branch',
+                     'Pop the stash in a newly created branch',
+                     'Type the name for the new branch', not_empty=True)
+
+    def action_stash_drop(self, stash_item):
+        def _confirmed_cb():
+            self.repo.stash_drop(_done_cb, stash_item)
+
+        def _done_cb(success, err_msg=None):
+            if success:
+                self.action_update_all()
+            else:
+                ErrorPopup(self.win, msg=utf8_to_markup(err_msg))
+
+        ConfirmPupup(self.win, ok_cb=_confirmed_cb,
+                     msg='This will delete the stash item:<br><br>' \
+                         '<hilight>{0.ref}</hilight><br>' \
+                         '<b>{0.desc}</b>'.format(stash_item))
+
+    # compare actions
+    def action_compare(self, *args, **kargs):
+        if self.repo is not None:
+            CompareDialog(self.win, self, **kargs)
+
 
 
 

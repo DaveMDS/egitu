@@ -26,11 +26,12 @@ from efl.elementary.box import Box
 from efl.elementary.entry import Entry
 from efl.elementary.icon import Icon
 from efl.elementary.label import Label
+from efl.elementary.menu import Menu
 from efl.elementary.genlist import Genlist, GenlistItemClass, \
     ELM_GENLIST_ITEM_GROUP, ELM_GENLIST_ITEM_TREE
 
-from egitu.vcs import Branch, Tag
-from egitu.utils import options, \
+from egitu.vcs import Branch, Tag, StashItem
+from egitu.utils import \
     EXPAND_BOTH, EXPAND_HORIZ, EXPAND_VERT, FILL_BOTH, FILL_HORIZ, FILL_VERT
 
 
@@ -162,6 +163,7 @@ class RemoteBranchItemClass(GenlistItemClass):
 class RepoTree(Genlist):
     def __init__(self, parent, app):
         self.app = app
+        self._ignore_next_selection = False
         self._itc_wcopy = WorkingCopyItemClass(app)
         self._itc_history = HistoryItemClass(app)
         self._itc_empty = EmptyItemClass(app)
@@ -177,6 +179,7 @@ class RepoTree(Genlist):
         self.callback_expand_request_add(self._expand_request_cb)
         self.callback_contract_request_add(self._contract_request_cb)
         self.callback_selected_add(self._selected_cb)
+        self.callback_clicked_right_add(self._clicked_right_cb)
 
     def populate(self):
         self.clear()
@@ -231,6 +234,10 @@ class RepoTree(Genlist):
         item.expanded = False
 
     def _selected_cb(self, gl, item):
+        if self._ignore_next_selection is True:
+            self._ignore_next_selection = False
+            return
+
         if item.data == 'LOCAL':
             self.app.action_show_local_status()
         elif item.data == 'FULLHIST':
@@ -239,4 +246,38 @@ class RepoTree(Genlist):
             self.app.action_show_branch(item.data)
         elif isinstance(item.data, Tag):
             self.app.action_show_tag(item.data)
+        elif isinstance(item.data, StashItem):
+            self.app.action_stash_show(item.data)
+
+    def _clicked_right_cb(self, gl, item):
+        if isinstance(item.data, StashItem):
+            if not item.selected:
+                self._ignore_next_selection = True
+                item.selected = True
+            SidebarStashMenu(self.app, item.data)
+
+
+
+class SidebarStashMenu(Menu):
+    def __init__(self, app, stash_item):
+        self.app = app
+        self.stash_item = stash_item
         
+        Menu.__init__(self, app.win)
+        self.item_add(None, stash_item.desc, 'git-stash').disabled = True
+        self.item_separator_add()
+        self.item_add(None, 'Show', None,
+                      lambda m,i: self.app.action_stash_show_item(self.stash_item))
+        self.item_add(None, 'Apply', None,
+                      lambda m,i: self.app.action_stash_apply(self.stash_item))
+        self.item_add(None, 'Pop (apply & delete)', None,
+                      lambda m,i: self.app.action_stash_pop(self.stash_item))
+        self.item_add(None, 'Branch & Delete', 'git-branch',
+                      lambda m,i: self.app.action_stash_branch(self.stash_item))
+        self.item_add(None, 'Delete', 'user-trash',
+                      lambda m,i: self.app.action_stash_drop(self.stash_item))
+
+        # show the menu at mouse position
+        x, y = self.evas.pointer_canvas_xy_get()
+        self.move(x + 2, y)
+        self.show()

@@ -182,7 +182,7 @@ class StashDialog(DialogWindow):
         hbox.pack_end(bt)
         bt.show()
 
-        bt = Button(self, text='Apply & Delete (pop)')
+        bt = Button(self, text='Pop (apply & delete)')
         bt.callback_clicked_add(self._pop_clicked_cb)
         hbox.pack_end(bt)
         bt.show()
@@ -242,103 +242,19 @@ class StashDialog(DialogWindow):
     def _diff_done_cb(self, lines, success):
         self.diff_entry.lines_set(lines)
 
-    # drop
     def _drop_clicked_cb(self, btn):
-        ConfirmPupup(self, ok_cb=self._drop_confirmed_cb,
-                     msg='This will delete the stash item:<br><br>' \
-                         '<hilight>{0.ref}</hilight><br>' \
-                         '<b>{0.desc}</b>'.format(self.stash))
+        self.app.action_stash_drop(self.stash)
+        self.delete()
 
-    def _drop_confirmed_cb(self):
-        self.app.repo.stash_drop(self._drop_done_cb, self.stash)
-
-    def _drop_done_cb(self, success, err_msg=None):
-        # TODO: reload the dialog instead of deleting
-        self.app.action_update_all()
-        if self.idx >= len(self.app.repo.stash):
-            self.idx -= 1
-        if self.idx < 0:
-            self.delete()
-        else:
-            self.update(self.idx)
-
-    # apply
     def _apply_clicked_cb(self, btn):
-        self.app.repo.stash_apply(self._apply_done_cb, self.stash)
+        self.app.action_stash_apply(self.stash)
+        self.delete()
 
-    def _apply_done_cb(self, success, err_msg=None):
-        if success:
-            self.app.action_update_all()
-            self.delete()
-        else:
-            ErrorPopup(self, msg=err_msg)
-
-    # pop
     def _pop_clicked_cb(self, btn):
-        self.app.repo.stash_pop(self._pop_done_cb, self.stash)
+        self.app.action_stash_pop(self.stash)
+        self.delete()
 
-    def _pop_done_cb(self, success, err_msg=None):
-        if success:
-            self.app.action_update_all()
-            self.delete()
-        else:
-            ErrorPopup(self, msg=err_msg)
-
-    # branch
     def _branch_clicked_cb(self, btn):
-        RequestPopup(self, self._branch_confirmed_cb,
-                     'Stash -> branch',
-                     'Pop the stash in a newly created branch',
-                     'Type the name for the new branch', not_empty=True)
+        self.app.action_stash_branch(self.stash)
+        self.delete()
 
-    def _branch_confirmed_cb(self, branch_name):
-        self.app.repo.stash_branch(self._branch_done_cb, self.stash, branch_name)
-
-    def _branch_done_cb(self, success, err_msg=None):
-        if success:
-            self.app.action_update_all()
-            self.delete()
-        else:
-            ErrorPopup(self, msg=err_msg)
-
-
-class StashMenu(object):
-    def __init__(self, parent_menu, app):
-        self.app = app
-
-        m = parent_menu
-        it_stash = m.item_add(None, 'Stash...', 'git-stash')
-        if app.repo is None:
-            it_stash.disabled = True
-        else:
-            if app.repo.status.is_clean:
-                m.item_add(it_stash, 'Nothing to save, status is clean',
-                           'git-stash').disabled = True
-            else:
-                m.item_add(it_stash, 'Save', 'git-stash',
-                           app.action_stash_save)
-            m.item_separator_add(it_stash)
-            if len(app.repo.stash) > 0:
-                for si in app.repo.stash:
-                    m.item_add(it_stash, si.desc, None, self._stash_show_cb, si)
-                m.item_separator_add(it_stash)
-                m.item_add(it_stash, 'Clear', 'user-trash', self._stash_clear_cb)
-            else:
-                m.item_add(it_stash, 'Nothing stashed so far').disabled = True
-
-    def _stash_clear_cb(self, menu, item):
-        t = 'This will delete ALL your stashed stuff<br>' \
-            '<warning>WARNING: this operation is irreversible!</warning>'
-        ConfirmPupup(self.app.win, msg=t, ok_cb=self._stash_clear_confirmed_cb)
-
-    def _stash_clear_confirmed_cb(self):
-        self.app.repo.stash_clear(self._stash_clear_done_cb)
-
-    def _stash_clear_done_cb(self, success, err_msg=None):
-        if success:
-            self.app.action_update_all()
-        else:
-            ErrorPopup(self.app.win, msg=err_msg)
-
-    def _stash_show_cb(self, menu, item, stash_item):
-        StashDialog(self.app.win, self.app, stash_item)
