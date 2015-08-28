@@ -160,7 +160,7 @@ class RemoteBranchItemClass(GenlistItemClass):
         return Icon(gl, standard='git-branch')
 
 
-class RepoTree(Genlist):
+class Sidebar(Genlist):
     def __init__(self, parent, app):
         self.app = app
         self._ignore_next_selection = False
