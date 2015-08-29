@@ -163,6 +163,7 @@ class RemoteBranchItemClass(GenlistItemClass):
 class Sidebar(Genlist):
     def __init__(self, parent, app):
         self.app = app
+        self._populated = False
         self._ignore_next_selection = False
         self._itc_wcopy = WorkingCopyItemClass(app)
         self._itc_history = HistoryItemClass(app)
@@ -182,17 +183,55 @@ class Sidebar(Genlist):
         self.callback_clicked_right_add(self._clicked_right_cb)
 
     def populate(self):
-        self.clear()
-        self.item_append(self._itc_wcopy, 'LOCAL')
-        self.item_append(self._itc_history, 'FULLHIST')
-        self.item_append(self._itc_tree, 'STASHES', flags=ELM_GENLIST_ITEM_TREE) \
-                        .select_mode = elm.ELM_OBJECT_SELECT_MODE_NONE
-        self.item_append(self._itc_tree, 'BRANCHES', flags=ELM_GENLIST_ITEM_TREE) \
-                        .select_mode = elm.ELM_OBJECT_SELECT_MODE_NONE
-        self.item_append(self._itc_tree, 'TAGS', flags=ELM_GENLIST_ITEM_TREE) \
-                        .select_mode = elm.ELM_OBJECT_SELECT_MODE_NONE
-        self.item_append(self._itc_tree, 'REMOTES', flags=ELM_GENLIST_ITEM_TREE) \
-                        .select_mode = elm.ELM_OBJECT_SELECT_MODE_NONE
+        self._it_local = self.item_append(self._itc_wcopy, 'LOCAL')
+        self._it_histo = self.item_append(self._itc_history, 'FULLHIST')
+        self._it_stash = self.item_append(self._itc_tree, 'STASHES',
+                                          flags=ELM_GENLIST_ITEM_TREE)
+        self._it_stash.select_mode = elm.ELM_OBJECT_SELECT_MODE_NONE
+        self._it_branch = self.item_append(self._itc_tree, 'BRANCHES',
+                                           flags=ELM_GENLIST_ITEM_TREE)
+        self._it_branch.select_mode = elm.ELM_OBJECT_SELECT_MODE_NONE
+        self._it_tags = self.item_append(self._itc_tree, 'TAGS',
+                                         flags=ELM_GENLIST_ITEM_TREE)
+        self._it_tags.select_mode = elm.ELM_OBJECT_SELECT_MODE_NONE
+        self._it_remote = self.item_append(self._itc_tree, 'REMOTES',
+                                           flags=ELM_GENLIST_ITEM_TREE)
+        self._it_remote.select_mode = elm.ELM_OBJECT_SELECT_MODE_NONE
+        self._populated = True
+
+    def update(self):
+        # populate / clear as needed
+        if self.app.repo is None:
+            self.clear()
+            self._populated = False
+            return
+
+        if not self._populated:
+            self.populate()
+
+        # update first 2 fixed items
+        self._it_local.update()
+        self._it_histo.update()
+
+        # remember the selected item representation
+        selected_item = self.selected_item
+        if selected_item:
+            sel_item_repr = repr(selected_item.data)
+
+        # repopulate expanded tree items
+        for it in (self._it_stash, self._it_branch, self._it_tags, self._it_remote):
+            it.update()
+            if it.expanded:
+                it.subitems_clear()
+                self._expand_request_cb(self, it)
+
+        # select again the item that was selected
+        if selected_item:
+            for it in self:
+                if repr(it.data) == sel_item_repr:
+                    self._ignore_next_selection = True
+                    it.selected = True
+                    break
 
     def unselect_local(self):
         item = self.selected_item

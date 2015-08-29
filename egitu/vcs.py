@@ -112,11 +112,15 @@ class Status(object):
 
 
 class Branch(object):
-    def __init__(self, name, remote=None, remote_branch=None, is_current=False):
+    def __init__(self, ref, name, remote=None, remote_branch=None, is_current=False):
+        self.ref = ref
         self.name = name
         self.remote = remote
         self.remote_branch = remote_branch
         self.is_current = is_current
+
+    def __repr__(self):
+        return '<Branch %s>' % self.ref
 
     @property
     def is_tracking(self):
@@ -128,6 +132,9 @@ class Tag(object):
         self.ref = ref       # 'ref/tags/vX.X.X'
         self.name = ref[10:] # 'vX.X.X'
 
+    def __repr__(self):
+        return '<Tag %s>' % self.ref
+
 
 class Remote(object):
     def __init__(self, name, url=None, fetch=None):
@@ -135,6 +142,8 @@ class Remote(object):
         self.url = url
         self.fetch = fetch
 
+    def __repr__(self):
+        return '<Remote %s>' % self.name
 
 class StashItem(object):
     def __init__(self, sha, ref, desc, ts, aut, amail):
@@ -144,6 +153,9 @@ class StashItem(object):
         self.ts = int(ts)  # timestamp
         self.aut = aut     # author
         self.amail = amail # author email
+
+    def __repr__(self):
+        return '<StashItem %s>' % self.ref
 
 
 ### Base class for backends ###################################################
@@ -1074,7 +1086,7 @@ class GitBackend(Repository):
             # local branches
             elif refname.startswith('refs/heads/'):
                 bname = refname[11:] # remove 'refs/heads/'
-                b = Branch(bname, is_current=(head == '*'))
+                b = Branch(refname, bname, is_current=(head == '*'))
                 if upstream:
                     split = upstream.split('/')
                     b.remote = split[2]

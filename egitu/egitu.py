@@ -128,7 +128,7 @@ class EgituApp(object):
 
     def action_show_commit(self, commit):
         self.win.diff_view.show_commit(commit)
-        self.win.tree.unselect_local()
+        self.win.sidebar.unselect_local()
 
     def action_show_local_status(self):
         self.win.graph.populate('HEAD')

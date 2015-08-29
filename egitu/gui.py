@@ -534,10 +534,9 @@ class EgituWin(StandardWindow):
         box.pack_end(panes1)
         panes1.show()
 
-        # the repo main tree on the left
-        self.tree = Sidebar(self, self.app)
-        panes1.part_content_set('left', self.tree)
-        
+        # the sidebar on the left
+        self.sidebar = Sidebar(self, self.app)
+        panes1.part_content_set('left', self.sidebar)
 
         ### Main content (left + right panes)
         panes2 = Panes(self, content_left_size=0.5,
@@ -560,7 +559,7 @@ class EgituWin(StandardWindow):
 
     def update_all(self):
         self.update_header()
-        self.tree.populate()
+        self.sidebar.update()
         self.graph.populate()
 
     def update_header(self):
