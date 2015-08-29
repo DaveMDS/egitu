@@ -164,6 +164,15 @@ class EgituApp(object):
         if self.repo is not None:
             TagsDialog(self.win, self)
 
+    def action_tag_delete(self, tag):
+        def _done_cb(success, err_msg=None):
+            if success:
+                self.action_update_all()
+            else:
+                ErrorPopup(self.win, 'Delete Failed', utf8_to_markup(err_msg))    
+
+        self.repo.tag_delete(_done_cb, tag.name)
+
     # remote actions
     def action_remotes(self, *args):
         if self.repo is not None:

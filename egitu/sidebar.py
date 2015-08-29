@@ -293,6 +293,8 @@ class Sidebar(Genlist):
             SidebarStashMenu(self.app, item.data)
         elif isinstance(item.data, Branch):
             SidebarBranchMenu(self.app, item.data)
+        elif isinstance(item.data, Tag):
+            SidebarTagMenu(self.app, item.data)
         else:
             return
 
@@ -329,10 +331,8 @@ class SidebarBranchMenu(Menu):
     def __init__(self, app, branch):
         self.app = app
 
-        if branch.name == app.repo.status.current_branch.name:
-            on_head = True
-        else:
-            on_head = False
+        on_head = (branch == app.repo.status.current_branch)
+        disable = (on_head or app.repo.status.head_detached)
 
         Menu.__init__(self, app.win)
         label = '{} {}'.format(branch.name, '(HEAD)' if on_head else '')
@@ -341,20 +341,38 @@ class SidebarBranchMenu(Menu):
 
         self.item_add(None, 'Checkout', None,
                       lambda m,i: self.app.checkout_ref(branch.name)) \
-                      .disabled = on_head
+                      .disabled = disable
 
-        label = 'Merge in {}'.format(app.repo.status.current_branch.name)
-        self.item_add(None, label, 'git-merge',
+        self.item_add(None, 'Merge in current branch', 'git-merge',
                       lambda m,i: self.app.action_branch_merge(branch)) \
-                      .disabled = on_head
+                      .disabled = disable
 
         self.item_add(None, 'Compare & Merge', 'git-compare',
                       lambda m,i: self.app.action_compare(target=branch.name)) \
-                      .disabled = on_head
+                      .disabled = disable
 
         self.item_add(None, 'Delete', 'user-trash',
                       lambda m,i: self.app.action_branch_delete(branch)) \
-                      .disabled = on_head
+                      .disabled = disable
+
+        # show the menu at mouse position
+        x, y = self.evas.pointer_canvas_xy_get()
+        self.move(x + 2, y)
+        self.show()
+
+
+class SidebarTagMenu(Menu):
+    def __init__(self, app, tag):
+        self.app = app
+
+        Menu.__init__(self, app.win)
+        self.item_add(None, tag.name, 'git-tag').disabled = True
+        self.item_separator_add()
+
+        self.item_add(None, 'Checkout', None,
+                      lambda m,i: self.app.checkout_ref(tag.ref))
+        self.item_add(None, 'Delete', 'user-trash',
+                      lambda m,i: self.app.action_tag_delete(tag))
 
         # show the menu at mouse position
         x, y = self.evas.pointer_canvas_xy_get()
