@@ -92,7 +92,7 @@ class EgituApp(object):
 
             # show the new loaded repo
             self.repo = repo
-            self.win.update_all()
+            self.action_update_all()
         else:
             RepoSelector(self)
 
@@ -110,7 +110,7 @@ class EgituApp(object):
             self.repo.refresh(self._reload_done_cb)
     
     def _reload_done_cb(self, success, err_msg=None):
-        self.win.update_all()
+        self.action_update_all()
 
     # gui update utils
     def action_update_all(self, *args):
@@ -253,8 +253,6 @@ class EgituApp(object):
                      msg='This will delete the stash item:<br><br>' \
                          '<hilight>{0.ref}</hilight><br>' \
                          '<b>{0.desc}</b>'.format(stash_item))
-
-
 
 
 def main():

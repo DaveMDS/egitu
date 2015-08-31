@@ -66,6 +66,9 @@ class DagGraph(Box):
     def populate(self, *args, **kargs):
         self.genlist.populate(*args, **kargs)
 
+    def update(self):
+        self.genlist.update()
+
     def info_label_set(self, text):
         self.label.text = '  ' + text
 
@@ -100,6 +103,8 @@ class DagGraphList(Genlist):
         self.callback_unrealized_add(self._gl_item_unrealized)
         self.callback_selected_add(self._gl_item_selected)
 
+        self._start_ref = None
+
     def _find_a_free_column(self):
         # set is empty, add and return "1"
         if len(self._used_columns) == 0:
@@ -127,7 +132,15 @@ class DagGraphList(Genlist):
         self._COMMITS[commit.sha] = commit
         return self.item_append(self._itc, commit, self._group_item)
 
+    def update(self):
+        selected_item = self.selected_item
+        if selected_item:
+            self.populate(self._start_ref, selected_item.data.sha)
+        else:
+            self.populate(self._start_ref)
+
     def populate(self, start_ref=None, hilight_ref=None):
+        self._start_ref = start_ref
         self._current_row = 0
         self._COMMITS = dict()           # 'sha': Commit instance
         self._used_columns = set()       # contain the indexes of used columns
@@ -203,7 +216,9 @@ class DagGraphList(Genlist):
 
         # 6. search a ref to hilight (if requested)
         if self._hilight_ref:
-            if self._hilight_ref in commit.heads or self._hilight_ref in commit.tags:
+            if self._hilight_ref in commit.heads or \
+               self._hilight_ref in commit.tags or \
+               self._hilight_ref == commit.sha:
                 item.selected = True
                 item.show()
                 self._hilight_ref = None
