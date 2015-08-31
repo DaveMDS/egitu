@@ -140,6 +140,8 @@ class DagGraphList(Genlist):
             self.populate(self._start_ref)
 
     def populate(self, start_ref=None, hilight_ref=None):
+        if self.app.repo is None:
+            return
         self._start_ref = start_ref
         self._current_row = 0
         self._COMMITS = dict()           # 'sha': Commit instance

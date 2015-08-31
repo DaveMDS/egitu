@@ -557,11 +557,6 @@ class EgituWin(StandardWindow):
         #
         self.show()
 
-    def update_all(self):
-        self.update_header()
-        self.sidebar.update()
-        self.graph.update()
-
     def update_header(self):
         repo = self.app.repo
 

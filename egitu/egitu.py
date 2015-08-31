@@ -92,7 +92,12 @@ class EgituApp(object):
 
             # show the new loaded repo
             self.repo = repo
-            self.action_update_all()
+            self.action_update_header()
+            self.action_clear_sidebar()
+            if repo.status.is_clean:
+                self.action_show_ref('HEAD')
+            else:
+                self.action_show_local_status()
         else:
             RepoSelector(self)
 
@@ -114,11 +119,12 @@ class EgituApp(object):
 
     # gui update utils
     def action_update_all(self, *args):
-        self.win.update_all()
+        self.win.update_header()
+        self.win.sidebar.update()
+        self.win.graph.update()
         
     def action_update_dag(self, *args):
-        if self.repo is not None:
-            self.win.graph.populate()
+        self.win.graph.update()
     
     def action_update_header(self, *args):
         self.win.update_header()
@@ -126,11 +132,15 @@ class EgituApp(object):
     def action_update_diffview(self, *args):
         self.win.diff_view.refresh_diff()
 
+    def action_clear_sidebar(self, *args):
+        self.win.sidebar.populate()
+
     def action_show_commit(self, commit):
         self.win.diff_view.show_commit(commit)
         self.win.sidebar.unselect_local()
 
     def action_show_local_status(self):
+        self.win.sidebar.select_local()
         self.win.graph.populate('HEAD')
         self.win.diff_view.show_local_status()
 
@@ -142,6 +152,9 @@ class EgituApp(object):
 
     def action_show_tag(self, tag):
         self.win.graph.populate(tag.ref, hilight_ref=tag.name)
+
+    def action_show_ref(self, ref):
+        self.win.graph.populate(ref, hilight_ref=ref)
 
     # branch actions
     def action_branches(self, *args):

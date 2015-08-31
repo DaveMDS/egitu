@@ -35,7 +35,7 @@ from egitu.utils import \
     EXPAND_BOTH, EXPAND_HORIZ, EXPAND_VERT, FILL_BOTH, FILL_HORIZ, FILL_VERT
 
 
-class WorkingCopyItemClass(GenlistItemClass):
+class LocalStatusItemClass(GenlistItemClass):
     def __init__(self, app):
         self.app = app
         GenlistItemClass.__init__(self, item_style='default')
@@ -46,9 +46,10 @@ class WorkingCopyItemClass(GenlistItemClass):
     def content_get(self, gl, part, item_data):
         if part == 'elm.swallow.icon':
             return Icon(gl, standard='git-commit')
-        elif self.app.repo.status.changes and part == 'elm.swallow.end':
-            return Label(gl, #editable=False, single_line=True,
-                    text='<name>{}</name>'.format(len(self.app.repo.status.changes)))
+        elif part == 'elm.swallow.end':
+            st = self.app.repo.status
+            txt = '({})'.format('clean' if st.is_clean else len(st.changes))
+            return Label(gl, text=txt)
 
 class HistoryItemClass(GenlistItemClass):
     def __init__(self, app):
@@ -165,7 +166,7 @@ class Sidebar(Genlist):
         self.app = app
         self._populated = False
         self._ignore_next_selection = False
-        self._itc_wcopy = WorkingCopyItemClass(app)
+        self._itc_local = LocalStatusItemClass(app)
         self._itc_history = HistoryItemClass(app)
         self._itc_empty = EmptyItemClass(app)
         self._itc_tree = TreeItemClass(app)
@@ -183,7 +184,8 @@ class Sidebar(Genlist):
         self.callback_clicked_right_add(self._clicked_right_cb)
 
     def populate(self):
-        self._it_local = self.item_append(self._itc_wcopy, 'LOCAL')
+        self.clear()
+        self._it_local = self.item_append(self._itc_local, 'LOCAL')
         self._it_histo = self.item_append(self._itc_history, 'FULLHIST')
         self._it_stash = self.item_append(self._itc_tree, 'STASHES',
                                           flags=ELM_GENLIST_ITEM_TREE)
@@ -234,9 +236,13 @@ class Sidebar(Genlist):
                     break
 
     def unselect_local(self):
-        item = self.selected_item
-        if item and item.data == 'LOCAL':
-            item.selected = False
+        if self._it_local.selected:
+            self._it_local.selected = False
+
+    def select_local(self):
+        if not self._it_local.selected:
+            self._ignore_next_selection = True
+            self._it_local.selected = True
 
     def _expand_request_cb(self, gl, item):
         c = 0
