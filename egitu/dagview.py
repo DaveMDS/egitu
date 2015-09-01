@@ -63,8 +63,11 @@ class DagGraph(Box):
 
         self.show()
 
-    def populate(self):
-        self.genlist.populate()
+    def populate(self, *args, **kargs):
+        self.genlist.populate(*args, **kargs)
+
+    def update(self):
+        self.genlist.update()
 
     def info_label_set(self, text):
         self.label.text = '  ' + text
@@ -100,6 +103,8 @@ class DagGraphList(Genlist):
         self.callback_unrealized_add(self._gl_item_unrealized)
         self.callback_selected_add(self._gl_item_selected)
 
+        self._start_ref = None
+
     def _find_a_free_column(self):
         # set is empty, add and return "1"
         if len(self._used_columns) == 0:
@@ -127,14 +132,24 @@ class DagGraphList(Genlist):
         self._COMMITS[commit.sha] = commit
         return self.item_append(self._itc, commit, self._group_item)
 
-    def populate(self):
+    def update(self):
+        selected_item = self.selected_item
+        if selected_item:
+            self.populate(self._start_ref, selected_item.data.sha)
+        else:
+            self.populate(self._start_ref)
+
+    def populate(self, start_ref=None, hilight_ref=None):
+        if self.app.repo is None:
+            return
+        self._start_ref = start_ref
         self._current_row = 0
         self._COMMITS = dict()           # 'sha': Commit instance
         self._used_columns = set()       # contain the indexes of used columns
         self._open_connections = dict()  # 'sha':[child1_col, child2_col, child3_col, ...]
         self._open_childs = dict()       # 'sha':[child1, child2, child3, ...]
         self._last_date_commit = None    # last commit that changed the date
-        self._head_found = False
+        self._hilight_ref = hilight_ref
 
         self.COLW = 20 # columns width (fixed)
         self.ROWH = 0  # raws height (fetched from genlist on first realize)
@@ -146,30 +161,10 @@ class DagGraphList(Genlist):
         self._group_item = self.item_append(self._itcg, None,
                                             flags=ELM_GENLIST_ITEM_GROUP)
 
-        # create the first fake commit (local changes)
-        if not self.app.repo.status.is_clean:
-            c = Commit()
-            c.special = 'local'
-            c.tags = ['Local changes']
-            self._commit_append(c, 1).selected = True
-            self._head_found = True
-
-        # show stash items (if requested)
-        if options.show_stash_in_dag:
-            for si in self.app.repo.stash:
-                c = Commit()
-                c.special = 'stash'
-                c.sha = si.sha
-                c.tags = ['Stash']
-                c.title = si.desc
-                c.author = si.aut
-                c.author_email = si.amail
-                c.commit_date = datetime.fromtimestamp(si.ts)
-                self._commit_append(c, 1)
-
         self._startup_time = time.time()
         self.app.repo.request_commits(self._populate_done_cb,
-                                      self._populate_progress_cb)
+                                      self._populate_progress_cb,
+                                      ref1=start_ref)
 
     def _populate_progress_cb(self, commit):
 
@@ -221,10 +216,14 @@ class DagGraphList(Genlist):
         if commit.sha in self._open_childs:
             commit.dag_data.childs = self._open_childs.pop(commit.sha)
 
-        # 6. search for the HEAD (and select+show if necessary)
-        if not self._head_found and 'HEAD' in commit.heads:
-            item.selected = True
-            item.show()
+        # 6. search a ref to hilight (if requested)
+        if self._hilight_ref:
+            if self._hilight_ref in commit.heads or \
+               self._hilight_ref in commit.tags or \
+               self._hilight_ref == commit.sha:
+                item.selected = True
+                item.show()
+                self._hilight_ref = None
 
     def _populate_done_cb(self, success):
         # store the last date information
@@ -398,12 +397,5 @@ class DagGraphList(Genlist):
         line.show()
 
     def _gl_item_selected(self, gl, item):
-        commit = item.data
-        if commit.special == 'stash':
-            for si in self.app.repo.stash:
-                if si.sha == commit.sha:
-                    StashDialog(self.parent, self.app, si)
-                    return
-        else:
-            self.app.win.show_commit(commit)
+        self.app.action_show_commit(item.data)
 

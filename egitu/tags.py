@@ -123,14 +123,14 @@ class TagsDialog(DialogWindow):
         self.checkout_btn.disabled = False
 
     def _gl_text_get(self, li, part, tag):
-        return tag or 'No tags present'
+        return tag.name if tag else 'No tags present'
 
     def _gl_content_get(self, li, part, tag):
         return Icon(li, standard='git-tag') if tag else None
 
     def _checkout_clicked_cb(self, btn):
         tag = self.tags_list.selected_item.data
-        self.app.repo.checkout(self._checkout_done_cb, tag)
+        self.app.repo.checkout(self._checkout_done_cb, tag.ref)
 
     def _checkout_done_cb(self, success, err_msg=None):
         if success:
@@ -141,7 +141,7 @@ class TagsDialog(DialogWindow):
 
     def _delete_clicked_cb(self, btn):
         tag = self.tags_list.selected_item.data
-        self.app.repo.tag_delete(self._delete_done_cb, tag)
+        self.app.repo.tag_delete(self._delete_done_cb, tag.name)
 
     def _delete_done_cb(self, success, err_msg=None):
         if success:

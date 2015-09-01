@@ -86,7 +86,7 @@ class BranchesDialog(DialogWindow):
         ic = Icon(self, standard='user-trash')
         bt = Button(self, text='Delete', content=ic)
         bt.callback_clicked_add(lambda b: DeleteBranchPopup(self, self.app,
-                                                    self.selected_branch.name))
+                                                        self.selected_branch))
         hbox.pack_end(bt)
         bt.show()
         self.delete_btn = bt
@@ -235,7 +235,7 @@ class MergeBranchPopup(Popup):
         self.app.action_update_header()
         if success:
             self.delete()
-            self.app.action_update_dag()
+            self.app.action_update_all()
         else:
             ErrorPopup(self.parent, msg=utf8_to_markup(err_msg))
 
@@ -361,7 +361,7 @@ class CreateBranchPopup(Popup):
         # tags
         if not only_tracking:
             for tag in self.app.repo.tags:
-                item_data = (tag, 'git-tag')
+                item_data = (tag.name, 'git-tag')
                 self.rev_list.item_append(self.itc, item_data)
 
     def _gl_text_get(self, li, part, item_data):
@@ -426,7 +426,7 @@ class DeleteBranchPopup(Popup):
         # label
         en = Entry(self, editable=False,
                    text='%s<br><br><hilight>%s</hilight><br>' % (
-                        'Are you sure you want to delete this branch?', branch),
+                        'Are you sure you want to delete this branch?', branch.name),
                    size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
         box.pack_end(en)
         en.show()
@@ -457,13 +457,14 @@ class DeleteBranchPopup(Popup):
         self.show()
 
     def _delete_btn_cb(self, btn):
-        self.app.repo.branch_delete(self._branch_deleted_cb, self.branch,
+        self.app.repo.branch_delete(self._branch_deleted_cb, self.branch.name,
                                     force=self.force_chk.state)
 
     def _branch_deleted_cb(self, success, err_msg=None):
         if success:
-            self.parent.populate() # update branches dialog list
-            self.app.action_update_header() # update main win header
+            if isinstance(self.parent, BranchesDialog):
+                self.parent.populate() # update branches dialog list
+            self.app.action_update_all() # update main win
             self.delete()
         else:
             ErrorPopup(self, msg=err_msg)

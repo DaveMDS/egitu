@@ -291,8 +291,6 @@ class CommitDialog(DialogWindow):
     def commit_done_cb(self, success, err_msg=None):
         if success:
             self.delete()
-            self.app.action_update_header()
-            self.app.action_update_dag()
+            self.app.action_update_all()
         else:
-            self.app.action_reload_repo()
             ErrorPopup(self, 'Operation Failed', utf8_to_markup(err_msg))

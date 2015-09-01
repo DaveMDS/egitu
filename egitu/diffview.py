@@ -46,25 +46,25 @@ class DiffViewer(Table):
         Table.__init__(self, parent,  padding=(5,5))
         self.show()
 
-        # gravatar picture
-        self.picture = GravatarPict(self)
-        self.picture.size_hint_align = 0.0, 0.0
-        self.picture.show()
-        self.pack(self.picture, 0, 0, 1, 2)
-
         # description entry
         self.entry = Entry(self, text='Unknown', line_wrap=ELM_WRAP_MIXED,
                            size_hint_weight=EXPAND_BOTH,
                            size_hint_align=FILL_BOTH,
                            editable=False)
-        self.pack(self.entry, 1, 0, 1, 1)
+        self.pack(self.entry, 0, 0, 1, 1)
         self.entry.show()
+
+        # gravatar picture
+        self.picture = GravatarPict(self)
+        self.picture.size_hint_align = 1.0, 0.0
+        self.picture.show()
+        self.pack(self.picture, 1, 0, 1, 1)
 
         # action buttons box
         self.action_box = Box(self, horizontal=True,
                               size_hint_weight=EXPAND_HORIZ,
-                              size_hint_align=(0.98, 0.98))
-        self.pack(self.action_box, 1, 1, 1, 1)
+                              size_hint_align=(1.0, 1.0))
+        self.pack(self.action_box, 0, 1, 2, 1)
         self.action_box.show()
 
         # panes
@@ -136,6 +136,12 @@ class DiffViewer(Table):
                 CommitDialog(self.app))
             self.action_box.pack_end(bt)
             bt.show()
+        if 'stash' in buttons:
+            bt = Button(self, text='Stash',
+                        content=Icon(self, standard='git-stash'))
+            bt.callback_clicked_add(lambda b: self.app.action_stash_save())
+            self.action_box.pack_end(bt)
+            bt.show()
         if 'discard' in buttons:
             bt = Button(self, text='Discard',
                         content=Icon(self, standard='user-trash'))
@@ -143,38 +149,36 @@ class DiffViewer(Table):
             self.action_box.pack_end(bt)
             bt.show()
 
-    def commit_set(self, commit):
+    def show_commit(self, commit):
         self.commit = commit
 
-        self.diff_list.clear()
-        self.diff_entry.text = ''
-
-        if commit.special == 'local':
-            # the special 'local changes' commit
-            text = '<bigger><b>Local changes</b></bigger>'
-            self.show_local_status()
-            self.update_action_buttons(['commit', 'discard'])
-        else:
-            # or a real commit
-            line1 = '<name>{}</name>  <b>{}</b>  {}<br>'.format(commit.sha[:9],
-                     commit.author, format_date(commit.commit_date))
-            line2 = line3 = line4 = ''
-            if commit.committer and commit.committer != commit.author:
-                line2 = '<name>Committed by:</name> <b>{}</b><br>'.format(
-                         commit.committer)
-            if commit.title:
-                line3 = '<bigger><b>{}</b></bigger><br>'.format(
-                        utf8_to_markup(commit.title.strip()))
-            if commit.message:
-                line4 = '<br>{}'.format(utf8_to_markup(commit.message.strip()))
-            text = line1 + line2 + line3 + line4
-            self.app.repo.request_changes(self._changes_done_cb, commit1=commit)
-            self.update_action_buttons(['checkout', 'revert', 'cherrypick'])
-
-        self.entry.text = text
         self.picture.email_set(commit.author_email)
+        line1 = '<name>{}</name>  <b>{}</b>  {}<br>'.format(commit.sha[:9],
+                 commit.author, format_date(commit.commit_date))
+        line2 = line3 = line4 = ''
+        if commit.committer and commit.committer != commit.author:
+            line2 = '<name>Committed by:</name> <b>{}</b><br>'.format(
+                     commit.committer)
+        if commit.title:
+            line3 = '<bigger><b>{}</b></bigger><br>'.format(
+                    utf8_to_markup(commit.title.strip()))
+        if commit.message:
+            line4 = '<br>{}'.format(utf8_to_markup(commit.message.strip()))
+        text = line1 + line2 + line3 + line4
+        self.entry.text = text
+
+        self.update_action_buttons(['checkout', 'revert', 'cherrypick'])
+        self.diff_entry.text = ''
+        self.diff_list.clear()
+        self.app.repo.request_changes(self._changes_done_cb, commit1=commit)
 
     def show_local_status(self):
+        self.commit = None
+        self.entry.text = '<bigger><b>Local status</b></bigger>'
+        self.diff_entry.text = ''
+        self.picture.email_set(None)
+        self.update_action_buttons(['commit', 'stash', 'discard'])
+        self.diff_list.clear()
         for path in sorted(self.app.repo.status.changes):
             self.diff_list.item_append(self.itc, path)
 
@@ -206,7 +210,8 @@ class DiffViewer(Table):
             mod, staged, name, new = self.app.repo.status.changes[item.data]
 
         self.app.repo.request_diff(self._diff_done_cb,
-                                   ref1=self.commit.sha, path=name)
+                                   ref1=self.commit.sha if self.commit else None,
+                                   path=name)
         self.diff_entry.line_wrap = \
             ELM_WRAP_MIXED if options.diff_text_wrap else ELM_WRAP_NONE
         self.diff_entry.loading_set()
