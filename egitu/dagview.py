@@ -37,7 +37,7 @@ from efl.elementary.genlist import Genlist, GenlistItemClass, \
     ELM_LIST_COMPRESS, ELM_GENLIST_ITEM_GROUP
 
 from egitu.utils import options, theme_file_get, format_date, \
-    GravatarPict, CommitTooltip, \
+    GravatarPict, CommitTooltip, ErrorPopup, \
     EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ, FILL_HORIZ
 from egitu.stash import StashDialog
 from egitu.vcs import Commit
@@ -225,7 +225,12 @@ class DagGraphList(Genlist):
                 item.show()
                 self._hilight_ref = None
 
-    def _populate_done_cb(self, success):
+    def _populate_done_cb(self, success, err_msg=None):
+        if not success:
+            ErrorPopup(self, msg=err_msg)
+            self.parent.info_label_set('Error fetching revisions')
+            return
+
         # store the last date information
         if self._last_date_commit:
             self._last_date_commit.dag_data.date_span = \
