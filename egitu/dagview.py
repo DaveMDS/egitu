@@ -320,9 +320,9 @@ class DagGraphList(Genlist):
                 self.ROWH = track.size[1]
                 item.untrack()
 
-        # setup item tooltip
-        if commit.title is not None:
-            item.tooltip_content_cb_set(lambda o,i,t: CommitTooltip(t, i.data))
+        # setup item tooltip (DISABLED for now, quite broken)
+        # if commit.title is not None:
+            # item.tooltip_content_cb_set(lambda o,i,t: CommitTooltip(t, i.data))
 
         # draw connection lines with parents (downwards)
         for parent_sha in commit.parents:
