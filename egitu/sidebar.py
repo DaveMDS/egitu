@@ -176,7 +176,7 @@ class Sidebar(Genlist):
         self._itc_remote = RemoteItemClass(app)
         self._itc_remote_branch = RemoteBranchItemClass(app)
 
-        Genlist.__init__(self, parent, homogeneous=False,
+        Genlist.__init__(self, parent, homogeneous=True,
                          select_mode=elm.ELM_OBJECT_SELECT_MODE_ALWAYS)
         self.callback_expand_request_add(self._expand_request_cb)
         self.callback_contract_request_add(self._contract_request_cb)
