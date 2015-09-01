@@ -257,6 +257,7 @@ class DagGraphList(Genlist):
         elif part == 'egitu.swallow.icon':
             # the icon object (+ swallows for the connection lines)
             icon = Layout(gl, file=(self.themef,'egitu/graph/icon'))
+            icon.tooltip_content_cb_set(lambda o,t: CommitTooltip(t, commit))
             commit.dag_data.icon_obj = icon
             if 'HEAD' in commit.heads:
                 icon.signal_emit('head,show', 'egitu')
@@ -324,10 +325,6 @@ class DagGraphList(Genlist):
             if track:
                 self.ROWH = track.size[1]
                 item.untrack()
-
-        # setup item tooltip (DISABLED for now, quite broken)
-        # if commit.title is not None:
-            # item.tooltip_content_cb_set(lambda o,i,t: CommitTooltip(t, i.data))
 
         # draw connection lines with parents (downwards)
         for parent_sha in commit.parents:
