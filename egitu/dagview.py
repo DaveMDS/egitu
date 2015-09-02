@@ -47,20 +47,26 @@ class DagGraph(Box):
     def __init__(self, parent, app):
         Box.__init__(self, parent)
 
+        # header
+        self.label_top = Label(self, ellipsis=True,
+                               size_hint_expand=EXPAND_HORIZ,
+                               size_hint_fill=FILL_HORIZ)
+        self.pack_end(self.label_top)
+        self.label_top.show()
+
+        # genlist
         self.genlist = DagGraphList(self, app)
         self.pack_end(self.genlist)
         self.genlist.show()
 
-        hbox = Box(self, horizontal=True,
-                   size_hint_expand=EXPAND_HORIZ, size_hint_fill=FILL_HORIZ)
-        self.pack_end(hbox)
-        hbox.show()
-
-        self.label = Label(self, size_hint_expand=EXPAND_BOTH,
-                           size_hint_align=(0.0,0.5))
-        hbox.pack_end(self.label)
+        # footer
+        self.label = Label(self, ellipsis=True,
+                           size_hint_expand=EXPAND_HORIZ,
+                           size_hint_fill=FILL_HORIZ)
+        self.pack_end(self.label)
         self.label.show()
 
+        #
         self.show()
 
     def populate(self, *args, **kargs):
@@ -69,8 +75,11 @@ class DagGraph(Box):
     def update(self):
         self.genlist.update()
 
+    def header_label_set(self, text):
+        self.label_top.text = '<align=left><big>' + text + '</big></align>'
+
     def info_label_set(self, text):
-        self.label.text = '  ' + text
+        self.label.text = '<align=left>' + text + '</align>'
 
 
 class CommitDagData(object):
@@ -142,6 +151,9 @@ class DagGraphList(Genlist):
     def populate(self, start_ref=None, hilight_ref=None):
         if self.app.repo is None:
             return
+
+        # TODO check start_ref is a valid ref !!
+
         self._start_ref = start_ref
         self._current_row = 0
         self._COMMITS = dict()           # 'sha': Commit instance
@@ -156,6 +168,13 @@ class DagGraphList(Genlist):
 
         self.parent.info_label_set('Reading repository...')
         self.clear()
+
+        # update header label
+        if self._start_ref is None:
+            txt = 'Showing ALL revisions'
+        else:
+            txt = 'Showing revisions from <hilight>{}</>'.format(self._start_ref)
+        self.parent.header_label_set(txt)
 
         # add the invisible group item
         self._group_item = self.item_append(self._itcg, None,
@@ -236,7 +255,7 @@ class DagGraphList(Genlist):
             self._last_date_commit.dag_data.date_span = \
                 self._current_row - self._last_date_commit.dag_data.row
 
-        # update the status bar
+        # update the footer bar
         self.parent.info_label_set('%d revisions loaded in %.2f seconds' % (
                         self._current_row, time.time() - self._startup_time))
 
