@@ -40,9 +40,8 @@ class PushPullBase(Popup):
         Popup.__init__(self, parent)
         self.part_text_set('title,text', title)
         self.part_content_set('title,icon', Icon(self, standard=icon_name))
-        
-        # TODO padding should be (4,4) but it seems buggy for the big entry
-        tb = Table(self, padding=(0,4), size_hint_expand=EXPAND_BOTH)
+
+        tb = Table(self, padding=(4,4), size_hint_expand=EXPAND_BOTH)
         self.content = tb
         tb.show()
         self.table = tb

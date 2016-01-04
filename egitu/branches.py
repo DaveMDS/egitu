@@ -249,8 +249,7 @@ class CreateBranchPopup(Popup):
         self.part_content_set('title,icon', Icon(self, standard='git-branch'))
 
         # main table
-        # TODO padding should be (4,4) but it seems buggy for colspan > 1
-        tb = Table(self, padding=(0,4),
+        tb = Table(self, padding=(4,4),
                    size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
         self.content = tb
         tb.show()
