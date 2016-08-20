@@ -126,7 +126,7 @@ class BranchesDialog(DialogWindow):
             else:
                 label = b.name
             if b.is_current:
-                end = SafeIcon(self, 'arrow-left')
+                end = SafeIcon(self, 'user-bookmarks')
                 selected = True
             else:
                 end = None

@@ -296,9 +296,9 @@ class MainMenuButton(Button):
 
         # main actions
         disabled = self.app.repo is None
-        m.item_add(None, 'Refresh', 'refresh', 
+        m.item_add(None, 'Refresh', 'view-refresh', 
                    self.app.action_reload_repo).disabled = disabled
-        m.item_add(None, 'Open...', 'folder',
+        m.item_add(None, 'Open...', 'document-open',
                    self.app.action_open)
         m.item_add(None, 'Branches...', 'git-branch', 
                    self.app.action_branches).disabled = disabled
@@ -325,10 +325,10 @@ class MainMenuButton(Button):
 
         it_gravatar = m.item_add(it_gen, 'Gravatar')
         for name in ('mm', 'identicon', 'monsterid', 'wavatar', 'retro'):
-            icon = 'arrow_right' if name == options.gravatar_default else None
+            icon = 'user-bookmarks' if name == options.gravatar_default else None
             m.item_add(it_gravatar, name, icon,  self._item_gravatar_cb)
         m.item_separator_add(it_gravatar)
-        m.item_add(it_gravatar, 'Clear icons cache', 'delete',
+        m.item_add(it_gravatar, 'Clear icons cache', 'user-trash',
                    lambda m,i: GravatarPict.clear_icon_cache())
 
         # dag options
@@ -352,7 +352,7 @@ class MainMenuButton(Button):
 
         it_numb = m.item_add(it_dag, 'Number of commits to load')
         for num in (100, 200, 500, 1000):
-            icon = 'arrow_right' if num == options.number_of_commits_to_load else None
+            icon = 'user-bookmarks' if num == options.number_of_commits_to_load else None
             m.item_add(it_numb, str(num), icon, self._item_num_commits_cb)
 
         # diff options
@@ -364,18 +364,18 @@ class MainMenuButton(Button):
 
         it_font = m.item_add(it_diff, 'Font face')
         for face in ('Sans', 'Mono'):
-            icon = 'arrow_right' if face == options.diff_font_face else None
+            icon = 'user-bookmarks' if face == options.diff_font_face else None
             m.item_add(it_font, face, icon, self._item_font_face_cb)
 
         it_font = m.item_add(it_diff, 'Font size')
         for size in (8, 9, 10, 11, 12, 13, 14):
-            icon = 'arrow_right' if size == options.diff_font_size else None
+            icon = 'user-bookmarks' if size == options.diff_font_size else None
             m.item_add(it_font, str(size), icon, self._item_font_size_cb)
 
         # quit item
         m.item_separator_add()
-        m.item_add(None, 'About', 'info', self.app.action_about)
-        m.item_add(None, 'Quit', 'close', self.app.action_quit)
+        m.item_add(None, 'About', 'help-about', self.app.action_about)
+        m.item_add(None, 'Quit', 'application-exit', self.app.action_quit)
 
 
         # show the menu
@@ -441,7 +441,7 @@ class EditableDescription(Entry):
         self.scrollable = True
         self.text_style_user_push("DEFAULT='font_size=18'")
         self.tooltip_unset()
-        ic = SafeIcon(self, 'close', size_hint_min=(20,20))
+        ic = SafeIcon(self, 'view-close', size_hint_min=(20,20))
         ic.callback_clicked_add(self._done_cb, False)
         self.part_content_set('end', ic)
         self.focus = True
@@ -646,3 +646,4 @@ class EgituWin(StandardWindow):
     def _binds_cb_pull(self, src, key, event):
         PullPopup(self, self.app)
         return True
+

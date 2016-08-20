@@ -147,14 +147,14 @@ class StashDialog(DialogWindow):
         lb.show()
         self.nav_label = lb
 
-        ic = SafeIcon(self, 'arrow-left')
+        ic = SafeIcon(self, 'go-previous')
         bt = Button(self, text='Prev', content=ic)
         bt.callback_clicked_add(self._prev_clicked_cb)
         tb.pack(bt, 0, 1, 1, 1)
         bt.show()
         self.prev_btn = bt
 
-        ic = SafeIcon(self, 'arrow-right')
+        ic = SafeIcon(self, 'go-next')
         bt = Button(self, text='Next', content=ic)
         bt.callback_clicked_add(self._next_clicked_cb)
         tb.pack(bt, 1, 1, 1, 1)

@@ -262,10 +262,13 @@ def parseint(string):
 class SafeIcon(Icon):
     def __init__(self, parent, icon_name, **kargs):
         Icon.__init__(self, parent, **kargs)
-        try:
-            self.standard = icon_name
-        except RuntimeWarning:
-            print("ERROR: Cannot find icon: '%s'" % icon_name)
+        if icon_name.startswith('git-'):
+            self.file = (theme_file_get(), 'elm/icon/%s/default' % icon_name)
+        else:
+            try:
+                self.standard = icon_name
+            except RuntimeWarning:
+                print("ERROR: Cannot find icon: '%s'" % icon_name)
 
 
 
@@ -523,8 +526,8 @@ class ComboBox(Entry):
         if text: self.text = text
         if icon: self.icon = icon
 
-        ic = SafeIcon(self, 'arrow-down')
-        ic.size_hint_min = 20, 20 # TODO file a bug for elm on phab
+        ic = SafeIcon(self, 'go-down')
+        ic.size_hint_min = 16, 16 # TODO file a bug for elm on phab
         ic.callback_clicked_add(self.activate)
         self.part_content_set('end', ic)
 
