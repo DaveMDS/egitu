@@ -22,7 +22,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 from efl.elementary.entry import Entry, utf8_to_markup, \
     ELM_WRAP_NONE, ELM_WRAP_MIXED
-from efl.elementary.icon import Icon
 from efl.elementary.image import Image
 from efl.elementary.panes import Panes
 from efl.elementary.table import Table
@@ -33,7 +32,7 @@ from efl.elementary.genlist import Genlist, GenlistItemClass, \
     ELM_OBJECT_SELECT_MODE_ALWAYS, ELM_LIST_COMPRESS
 
 from egitu.utils import options, format_date, GravatarPict, DiffedEntry, \
-    EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ, FILL_HORIZ
+    SafeIcon, EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ, FILL_HORIZ
 from egitu.commit import CommitDialog, DiscardDialog
 
 
@@ -102,7 +101,7 @@ class DiffViewer(Table):
             mod, staged, name, new = self.app.repo.status.changes[item_data]
 
         if part == 'elm.swallow.icon':
-            return Icon(self, standard='git-mod-'+mod)
+            return SafeIcon(self, 'git-mod-'+mod)
         elif part == 'elm.swallow.end' and staged is not None:
             ck = Check(self, state=staged, propagate_events=False)
             ck.callback_changed_add(self._stage_unstage_check_cb)
@@ -131,20 +130,20 @@ class DiffViewer(Table):
             bt.show()
         if 'commit' in buttons:
             bt = Button(self, text='Commit',
-                        content=Icon(self, standard='git-commit'))
+                        content=SafeIcon(self, 'git-commit'))
             bt.callback_clicked_add(lambda b: \
                 CommitDialog(self.app))
             self.action_box.pack_end(bt)
             bt.show()
         if 'stash' in buttons:
             bt = Button(self, text='Stash',
-                        content=Icon(self, standard='git-stash'))
+                        content=SafeIcon(self, 'git-stash'))
             bt.callback_clicked_add(lambda b: self.app.action_stash_save())
             self.action_box.pack_end(bt)
             bt.show()
         if 'discard' in buttons:
             bt = Button(self, text='Discard',
-                        content=Icon(self, standard='user-trash'))
+                        content=SafeIcon(self, 'user-trash'))
             bt.callback_clicked_add(lambda b: DiscardDialog(self.app))
             self.action_box.pack_end(bt)
             bt.show()

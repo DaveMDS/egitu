@@ -29,11 +29,10 @@ from efl.elementary.button import Button
 from efl.elementary.separator import Separator
 from efl.elementary.frame import Frame
 from efl.elementary.genlist import Genlist, GenlistItemClass
-from efl.elementary.icon import Icon
 from efl.elementary.popup import Popup
 from efl.elementary.radio import Radio
 
-from egitu.utils import ErrorPopup, \
+from egitu.utils import ErrorPopup, SafeIcon, \
     EXPAND_BOTH, EXPAND_HORIZ, EXPAND_VERT, FILL_BOTH, FILL_HORIZ, FILL_VERT
 
 
@@ -78,12 +77,12 @@ class TagsDialog(DialogWindow):
         hbox.show()
 
 
-        bt = Button(self, text='Create', content=Icon(self, standard='git-tag'))
+        bt = Button(self, text='Create', content=SafeIcon(self, 'git-tag'))
         bt.callback_clicked_add(lambda b: CreateTagPopup(self, self.app))
         hbox.pack_end(bt)
         bt.show()
 
-        bt = Button(self, text='Delete', content=Icon(self, standard='user-trash'))
+        bt = Button(self, text='Delete', content=SafeIcon(self, 'user-trash'))
         bt.callback_clicked_add(self._delete_clicked_cb)
         hbox.pack_end(bt)
         bt.show()
@@ -126,7 +125,7 @@ class TagsDialog(DialogWindow):
         return tag.name if tag else 'No tags present'
 
     def _gl_content_get(self, li, part, tag):
-        return Icon(li, standard='git-tag') if tag else None
+        return SafeIcon(li, 'git-tag') if tag else None
 
     def _checkout_clicked_cb(self, btn):
         tag = self.tags_list.selected_item.data
@@ -157,7 +156,7 @@ class CreateTagPopup(Popup):
 
         Popup.__init__(self, parent)
         self.part_text_set('title,text', 'Create tag')
-        self.part_content_set('title,icon', Icon(self, standard='git-tag'))
+        self.part_content_set('title,icon', SafeIcon(self, 'git-tag'))
 
         # main vertical box
         tb = Table(self, padding=(4,4),
@@ -220,7 +219,7 @@ class CreateTagPopup(Popup):
         bt.show()
 
         bt = Button(self, text='Create', disabled=True,
-                    content=Icon(self, standard='git-tag'))
+                    content=SafeIcon(self, 'git-tag'))
         bt.callback_clicked_add(self._create_clicked_cb)
         self.part_content_set('button2', bt)
         bt.show()

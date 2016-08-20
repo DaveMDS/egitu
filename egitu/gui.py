@@ -30,7 +30,7 @@ from efl.elementary.button import Button
 from efl.elementary.check import Check
 from efl.elementary.entry import Entry, ELM_WRAP_NONE, utf8_to_markup
 from efl.elementary.hoversel import Hoversel
-from efl.elementary.icon import Icon, ELM_ICON_STANDARD
+from efl.elementary.icon import ELM_ICON_STANDARD
 from efl.elementary.label import Label
 from efl.elementary.genlist import Genlist, GenlistItemClass
 from efl.elementary.menu import Menu
@@ -42,7 +42,7 @@ from efl.elementary.frame import Frame
 from efl.elementary.separator import Separator
 
 from egitu.utils import options, GravatarPict, ErrorPopup, ConfirmPupup, \
-    FolderSelector, CommandOutputEntry, DiffedEntry, format_date, \
+    FolderSelector, CommandOutputEntry, DiffedEntry, SafeIcon, format_date, \
     recent_history_get, recent_history_push, \
     EXPAND_BOTH, EXPAND_HORIZ, EXPAND_VERT, FILL_BOTH, FILL_HORIZ, FILL_VERT
 from egitu.dagview import DagGraph
@@ -62,7 +62,7 @@ class RepoSelector(Popup):
 
         # title
         self.part_text_set('title,text', 'Recent Repositories')
-        self.part_content_set('title,icon', Icon(self, standard='egitu'))
+        self.part_content_set('title,icon', SafeIcon(self, 'egitu'))
 
         # main table
         tb = Table(self, padding=(0,4), 
@@ -152,7 +152,7 @@ class ClonePopup(Popup):
 
         # title
         self.part_text_set('title,text', 'Clone')
-        self.part_content_set('title,icon', Icon(self, standard='egitu'))
+        self.part_content_set('title,icon', SafeIcon(self, 'egitu'))
 
         # main table
         tb = Table(self, padding=(0,4),
@@ -180,7 +180,7 @@ class ClonePopup(Popup):
         tb.pack(en, 0, 2, 1, 1)
         en.show()
 
-        bt = Button(self, text='', content=Icon(self, standard='folder'))
+        bt = Button(self, text='', content=SafeIcon(self, 'folder'))
         bt.callback_clicked_add(self._folder_clicked_cb)
         tb.pack(bt, 1, 2, 1, 1)
         bt.show()
@@ -280,7 +280,7 @@ class MainMenuButton(Button):
         self.app = app
         self._menu = None
         Button.__init__(self, app.win, text='Menu',
-                        content=Icon(app.win, standard='home'))
+                        content=SafeIcon(app.win, 'user-home'))
         self.callback_pressed_add(self._button_pressed_cb)
 
     def _button_pressed_cb(self, btn):
@@ -441,7 +441,7 @@ class EditableDescription(Entry):
         self.scrollable = True
         self.text_style_user_push("DEFAULT='font_size=18'")
         self.tooltip_unset()
-        ic = Icon(self, standard='close', size_hint_min=(20,20))
+        ic = SafeIcon(self, 'close', size_hint_min=(20,20))
         ic.callback_clicked_add(self._done_cb, False)
         self.part_content_set('end', ic)
         self.focus = True
@@ -507,14 +507,14 @@ class EgituWin(StandardWindow):
 
         # branch selector
         self.branch_selector = Hoversel(self, text='HEAD', disabled=True,
-                                      content=Icon(self, standard='git-branch'))
+                                        content=SafeIcon(self, 'git-branch'))
         self.branch_selector.callback_selected_add(self.branch_selected_cb)
         tb.pack(self.branch_selector, 3, 0, 1, 1)
         self.branch_selector.show()
 
         # pull button
         bt = Button(self, text='Pull', disabled=True,
-                    content=Icon(self, standard='git-pull'))
+                    content=SafeIcon(self, 'git-pull'))
         bt.callback_clicked_add(self.app.action_pull)
         tb.pack(bt, 4, 0, 1, 1)
         bt.show()
@@ -522,7 +522,7 @@ class EgituWin(StandardWindow):
 
         # push button
         bt = Button(self, text='Push', disabled=True,
-                    content=Icon(self, standard='git-push'))
+                    content=SafeIcon(self, 'git-push'))
         bt.callback_clicked_add(self.app.action_push)
         tb.pack(bt, 5, 0, 1, 1)
         bt.show()
@@ -584,11 +584,11 @@ class EgituWin(StandardWindow):
                 self.branch_selector.item_add(branch.name, ic, ELM_ICON_STANDARD)
             if repo.status.head_detached:
                 if repo.status.head_to_tag:
-                    ic = Icon(self.branch_selector, standard='git-tag')
+                    ic = SafeIcon(self.branch_selector, 'git-tag')
                 else:
-                    ic = Icon(self.branch_selector, standard='git-commit')
+                    ic = SafeIcon(self.branch_selector, 'git-commit')
             else:
-                ic = Icon(self.branch_selector, standard='git-branch')
+                ic = SafeIcon(self.branch_selector, 'git-branch')
             self.branch_selector.content = ic
             self.branch_selector.text = repo.status.head_describe
 

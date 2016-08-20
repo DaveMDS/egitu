@@ -31,9 +31,8 @@ from efl.elementary.frame import Frame
 from efl.elementary.popup import Popup
 from efl.elementary.table import Table
 from efl.elementary.label import Label
-from efl.elementary.icon import Icon
 
-from egitu.utils import WaitPopup, ErrorPopup, \
+from egitu.utils import WaitPopup, ErrorPopup, SafeIcon, \
     EXPAND_BOTH, EXPAND_HORIZ, EXPAND_VERT, FILL_BOTH, FILL_HORIZ, FILL_VERT
 
 
@@ -154,7 +153,7 @@ class RemotesDialog(DialogWindow):
         self.remotes_list.clear()
         for remote in self.app.repo.remotes:
             self.remotes_list.item_append(remote.name,
-                                          Icon(self, standard='git-remote'))
+                                          SafeIcon(self, 'git-remote'))
         self.remotes_list.go()
 
     @property

@@ -26,10 +26,9 @@ from efl.elementary.separator import Separator
 from efl.elementary.popup import Popup
 from efl.elementary.table import Table
 from efl.elementary.label import Label
-from efl.elementary.icon import Icon
 from efl.elementary.check import Check
 
-from egitu.utils import ComboBox, CommandOutputEntry, \
+from egitu.utils import ComboBox, CommandOutputEntry, SafeIcon, \
     EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ, FILL_HORIZ
 
 
@@ -39,7 +38,7 @@ class PushPullBase(Popup):
 
         Popup.__init__(self, parent)
         self.part_text_set('title,text', title)
-        self.part_content_set('title,icon', Icon(self, standard=icon_name))
+        self.part_content_set('title,icon', SafeIcon(self, icon_name))
 
         tb = Table(self, padding=(4,4), size_hint_expand=EXPAND_BOTH)
         self.content = tb
@@ -56,7 +55,7 @@ class PushPullBase(Popup):
         tb.pack(lb, 0, 1, 1, 1)
         lb.show()
 
-        cb = ComboBox(self, icon=Icon(self, standard='git-remote'))
+        cb = ComboBox(self, icon=SafeIcon(self, 'git-remote'))
         cb.callback_selected_add(self.rbranch_populate)
         for remote in app.repo.remotes:
             cb.item_append(remote.name, 'git-remote')
@@ -69,7 +68,7 @@ class PushPullBase(Popup):
         tb.pack(lb, 0, 2, 1, 1)
         lb.show()
 
-        cb = ComboBox(self, icon=Icon(cb, standard='git-branch'))
+        cb = ComboBox(self, icon=SafeIcon(cb, 'git-branch'))
         tb.pack(cb, 1, 2, 1, 1)
         cb.show()
         self.rbranch_combo = cb

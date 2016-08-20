@@ -30,13 +30,12 @@ from efl.elementary.genlist import Genlist, GenlistItemClass
 from efl.elementary.separator import Separator
 from efl.elementary.frame import Frame
 from efl.elementary.popup import Popup
-from efl.elementary.icon import Icon
 from efl.elementary.label import Label
 from efl.elementary.radio import Radio
 from efl.elementary.table import Table
 from efl.elementary.check import Check
 
-from egitu.utils import ErrorPopup, \
+from egitu.utils import ErrorPopup, SafeIcon, \
     EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ, FILL_HORIZ
 
 
@@ -77,13 +76,13 @@ class BranchesDialog(DialogWindow):
         vbox.pack_end(hbox)
         hbox.show()
 
-        ic = Icon(self, standard='git-branch')
+        ic = SafeIcon(self, 'git-branch')
         bt = Button(self, text='Create', content=ic)
         bt.callback_clicked_add(lambda b: CreateBranchPopup(self, app))
         hbox.pack_end(bt)
         bt.show()
 
-        ic = Icon(self, standard='user-trash')
+        ic = SafeIcon(self, 'user-trash')
         bt = Button(self, text='Delete', content=ic)
         bt.callback_clicked_add(lambda b: DeleteBranchPopup(self, self.app,
                                                         self.selected_branch))
@@ -91,7 +90,7 @@ class BranchesDialog(DialogWindow):
         bt.show()
         self.delete_btn = bt
 
-        ic = Icon(self, standard='git-merge')
+        ic = SafeIcon(self, 'git-merge')
         bt = Button(self, text='Merge', content=ic)
         bt.callback_clicked_add(lambda b: MergeBranchPopup(self, app,
                                                     self.selected_branch.name))
@@ -99,7 +98,7 @@ class BranchesDialog(DialogWindow):
         bt.show()
         self.merge_btn = bt
         
-        ic = Icon(self, standard='git-compare')
+        ic = SafeIcon(self, 'git-compare')
         bt = Button(self, text='Compare & Merge', content=ic)
         bt.callback_clicked_add(lambda b: \
             self.app.action_compare(target=self.selected_branch.name))
@@ -127,12 +126,12 @@ class BranchesDialog(DialogWindow):
             else:
                 label = b.name
             if b.is_current:
-                end = Icon(self, standard='arrow-left')
+                end = SafeIcon(self, 'arrow-left')
                 selected = True
             else:
                 end = None
                 selected = False
-            icon = Icon(self, standard='git-branch')
+            icon = SafeIcon(self, 'git-branch')
             it = self.branches_list.item_append(label, icon, end)
             it.data['Branch'] = b
             it.selected = selected
@@ -158,7 +157,7 @@ class MergeBranchPopup(Popup):
 
         Popup.__init__(self, parent)
         self.part_text_set('title,text', 'Merge branch')
-        self.part_content_set('title,icon', Icon(self, standard='git-merge'))
+        self.part_content_set('title,icon', SafeIcon(self, 'git-merge'))
 
         box = Box(self)
         self.content = box
@@ -213,7 +212,7 @@ class MergeBranchPopup(Popup):
         self.part_content_set('button1', bt)
         bt.show()
 
-        ic = Icon(self, standard='git-merge')
+        ic = SafeIcon(self, 'git-merge')
         bt = Button(self, text='Merge', content=ic)
         bt.callback_clicked_add(self._merge_clicked_cb)
         self.part_content_set('button2', bt)
@@ -246,7 +245,7 @@ class CreateBranchPopup(Popup):
 
         Popup.__init__(self, parent)
         self.part_text_set('title,text', 'Create a new local branch')
-        self.part_content_set('title,icon', Icon(self, standard='git-branch'))
+        self.part_content_set('title,icon', SafeIcon(self, 'git-branch'))
 
         # main table
         tb = Table(self, padding=(4,4),
@@ -369,7 +368,7 @@ class CreateBranchPopup(Popup):
 
     def _gl_content_get(self, li, part, item_data):
         label, icon = item_data
-        return Icon(li, standard=icon)
+        return SafeIcon(li, icon)
 
     def _type_radio_changed_cb(self, chk):
         self.populate(only_tracking=True if chk.state_value else False)
@@ -410,7 +409,7 @@ class DeleteBranchPopup(Popup):
         Popup.__init__(self, parent)
         self.part_text_set('title,text', 'Delete branch')
         self.part_content_set('title,icon',
-                              Icon(self, standard='user-trash'))
+                              SafeIcon(self, 'user-trash'))
 
         # main vertical box
         box = Box(self)

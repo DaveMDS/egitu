@@ -29,12 +29,11 @@ from efl.elementary.button import Button
 from efl.elementary.check import Check
 from efl.elementary.label import Label
 from efl.elementary.entry import Entry, ELM_WRAP_NONE, utf8_to_markup
-from efl.elementary.icon import Icon
 from efl.elementary.popup import Popup
 from efl.elementary.separator import Separator
 
 from egitu.utils import ErrorPopup, ConfirmPupup, RequestPopup, \
-    DiffedEntry, format_date, parseint, \
+    DiffedEntry, SafeIcon, format_date, parseint, \
     EXPAND_BOTH, EXPAND_HORIZ, EXPAND_VERT, FILL_BOTH, FILL_HORIZ, FILL_VERT
 
 
@@ -44,7 +43,7 @@ class StashSavePopup(Popup):
 
         Popup.__init__(self, parent)
         self.part_text_set('title,text', 'Save current status')
-        self.part_content_set('title,icon', Icon(self, standard='git-stash'))
+        self.part_content_set('title,icon', SafeIcon(self, 'git-stash'))
 
         # main vertical box
         box = Box(self, size_hint_expand=EXPAND_BOTH, size_hint_fill=FILL_BOTH)
@@ -81,7 +80,7 @@ class StashSavePopup(Popup):
         self.part_content_set('button1', bt)
         bt.show()
 
-        bt = Button(self, text='Stash', content=Icon(self, standard='git-stash'))
+        bt = Button(self, text='Stash', content=SafeIcon(self, 'git-stash'))
         bt.callback_clicked_add(self._stash_clicked_cb, en, ck)
         self.part_content_set('button2', bt)
         bt.show()
@@ -148,14 +147,14 @@ class StashDialog(DialogWindow):
         lb.show()
         self.nav_label = lb
 
-        ic = Icon(self, standard='arrow-left')
+        ic = SafeIcon(self, 'arrow-left')
         bt = Button(self, text='Prev', content=ic)
         bt.callback_clicked_add(self._prev_clicked_cb)
         tb.pack(bt, 0, 1, 1, 1)
         bt.show()
         self.prev_btn = bt
 
-        ic = Icon(self, standard='arrow-right')
+        ic = SafeIcon(self, 'arrow-right')
         bt = Button(self, text='Next', content=ic)
         bt.callback_clicked_add(self._next_clicked_cb)
         tb.pack(bt, 1, 1, 1, 1)
@@ -188,13 +187,13 @@ class StashDialog(DialogWindow):
         bt.show()
 
         bt = Button(self, text='Branch & Delete',
-                    content=Icon(self, standard='git-branch'))
+                    content=SafeIcon(self, 'git-branch'))
         bt.callback_clicked_add(self._branch_clicked_cb)
         hbox.pack_end(bt)
         bt.show()
 
         bt = Button(self, text='Delete',
-                    content=Icon(self, standard='user-trash'))
+                    content=SafeIcon(self, 'user-trash'))
         bt.callback_clicked_add(self._drop_clicked_cb)
         hbox.pack_end(bt)
         bt.show()

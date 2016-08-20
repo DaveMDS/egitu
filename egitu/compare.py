@@ -25,7 +25,6 @@ from efl.elementary.box import Box
 from efl.elementary.button import Button
 from efl.elementary.separator import Separator
 from efl.elementary.frame import Frame
-from efl.elementary.icon import Icon
 from efl.elementary.label import Label
 from efl.elementary.entry import Entry, utf8_to_markup
 from efl.elementary.panes import Panes
@@ -34,7 +33,7 @@ from efl.elementary.genlist import Genlist, GenlistItemClass, \
 
 from egitu.gui import DiffedEntry
 from egitu.branches import MergeBranchPopup
-from egitu.utils import ComboBox, ErrorPopup, CommitTooltip, \
+from egitu.utils import ComboBox, ErrorPopup, CommitTooltip, SafeIcon, \
     EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ, FILL_HORIZ
 
 
@@ -56,7 +55,7 @@ class CommitsList(Genlist):
 
     def _gl_content_get(self, gl, part, commit):
         if part == 'elm.swallow.icon':
-            return Icon(gl, standard='git-commit')
+            return SafeIcon(gl, 'git-commit')
         else:
             en = Entry(gl, editable=False, single_line=True,
                        text='<name>{}</>'.format(commit.sha_short))
@@ -93,7 +92,7 @@ class CompareDialog(DialogWindow):
         hbox.show()
 
         cb1 = ComboBox(self, text=app.repo.status.current_branch.name)
-        cb1.icon = Icon(cb1, standard='git-branch')
+        cb1.icon = SafeIcon(cb1, 'git-branch')
         cb1.callback_selected_add(lambda c: self.compare())
         hbox.pack_end(cb1)
         cb1.show()
@@ -104,7 +103,7 @@ class CompareDialog(DialogWindow):
         lb.show()
 
         cb2 = ComboBox(self, text=target or app.repo.status.current_branch.name)
-        cb2.icon = Icon(cb1, standard='git-branch')
+        cb2.icon = SafeIcon(cb1, 'git-branch')
         cb2.callback_selected_add(lambda c: self.compare())
         hbox.pack_end(cb2)
         cb2.show()
@@ -149,7 +148,7 @@ class CompareDialog(DialogWindow):
         vbox.pack_end(hbox)
         hbox.show()
 
-        bt = Button(self, text='Merge', content=Icon(self, standard='git-merge'))
+        bt = Button(self, text='Merge', content=SafeIcon(self, 'git-merge'))
         bt.callback_clicked_add(lambda b: MergeBranchPopup(self, self.app,
                                                     self.compare_combo.text))
         hbox.pack_end(bt)

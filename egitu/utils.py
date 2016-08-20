@@ -259,6 +259,16 @@ def parseint(string):
     return int(''.join([x for x in string if x.isdigit()]))
 
 
+class SafeIcon(Icon):
+    def __init__(self, parent, icon_name, **kargs):
+        Icon.__init__(self, parent, **kargs)
+        try:
+            self.standard = icon_name
+        except RuntimeWarning:
+            print("ERROR: Cannot find icon: '%s'" % icon_name)
+
+
+
 class CommitTooltip(Table):
     def __init__(self, parent, commit, show_full_msg=False):
         self.commit = commit
@@ -513,7 +523,7 @@ class ComboBox(Entry):
         if text: self.text = text
         if icon: self.icon = icon
 
-        ic = Icon(self, standard='arrow-down')
+        ic = SafeIcon(self, 'arrow-down')
         ic.size_hint_min = 20, 20 # TODO file a bug for elm on phab
         ic.callback_clicked_add(self.activate)
         self.part_content_set('end', ic)
@@ -587,7 +597,7 @@ class ComboBox(Entry):
         label, icon, end = item.data
         self.text = label
         if icon:
-            self.icon = Icon(self, standard=icon)
+            self.icon = SafeIcon(self, icon)
         item.selected = False
         self.dismiss()
         if callable(self._selected_func):
@@ -600,9 +610,9 @@ class ComboBox(Entry):
     def _gl_content_get(self, gl, part, item_data):
         label, icon, end = item_data
         if icon and part == 'elm.swallow.icon':
-            return Icon(gl, standard=icon)
+            return SafeIcon(gl, icon)
         elif end and part == 'elm.swallow.end':
-            return Icon(gl, standard=end)
+            return SafeIcon(gl, end)
 
 
 class FolderSelector(Fileselector):
@@ -761,7 +771,7 @@ class AboutWin(DialogWindow):
         vbox.show()
 
         # icon + version
-        ic = Icon(self, standard='egitu', size_hint_min=(64,64))
+        ic = SafeIcon(self, 'egitu', size_hint_min=(64,64))
         vbox.pack_end(ic)
         ic.show()
 

@@ -24,14 +24,13 @@ from __future__ import absolute_import, print_function, unicode_literals
 from efl import elementary as elm
 from efl.elementary.box import Box
 from efl.elementary.entry import Entry
-from efl.elementary.icon import Icon
 from efl.elementary.label import Label
 from efl.elementary.menu import Menu
 from efl.elementary.genlist import Genlist, GenlistItemClass, \
     ELM_GENLIST_ITEM_GROUP, ELM_GENLIST_ITEM_TREE
 
 from egitu.vcs import Branch, Tag, StashItem
-from egitu.utils import \
+from egitu.utils import SafeIcon, \
     EXPAND_BOTH, EXPAND_HORIZ, EXPAND_VERT, FILL_BOTH, FILL_HORIZ, FILL_VERT
 
 
@@ -45,7 +44,7 @@ class LocalStatusItemClass(GenlistItemClass):
 
     def content_get(self, gl, part, item_data):
         if part == 'elm.swallow.icon':
-            return Icon(gl, standard='git-commit')
+            return SafeIcon(gl, 'git-commit')
         elif part == 'elm.swallow.end':
             st = self.app.repo.status
             txt = '({})'.format('clean' if st.is_clean else len(st.changes))
@@ -61,7 +60,7 @@ class HistoryItemClass(GenlistItemClass):
 
     def content_get(self, gl, part, item_data):
         if part == 'elm.swallow.icon':
-            return Icon(gl, standard='git-history')
+            return SafeIcon(gl, 'git-history')
 
 class EmptyItemClass(GenlistItemClass):
     def __init__(self, app):
@@ -110,7 +109,7 @@ class StashItemClass(GenlistItemClass):
         return si.desc
 
     def content_get(self, gl, part, branch):
-        return Icon(gl, standard='git-stash')
+        return SafeIcon(gl, 'git-stash')
 
 class BranchItemClass(GenlistItemClass):
     def __init__(self, app):
@@ -122,10 +121,10 @@ class BranchItemClass(GenlistItemClass):
 
     def content_get(self, gl, part, branch):
         if part == 'elm.swallow.icon':
-            return Icon(gl, standard='git-branch')
+            return SafeIcon(gl, 'git-branch')
 
         if branch == self.app.repo.status.current_branch:
-            return Icon(gl, standard='git-head')
+            return SafeIcon(gl, 'git-head')
 
 class TagItemClass(GenlistItemClass):
     def __init__(self, app):
@@ -136,7 +135,7 @@ class TagItemClass(GenlistItemClass):
         return tag.name
 
     def content_get(self, gl, part, tag):
-        return Icon(gl, standard='git-tag')
+        return SafeIcon(gl, 'git-tag')
 
 class RemoteItemClass(GenlistItemClass):
     def __init__(self, app):
@@ -147,7 +146,7 @@ class RemoteItemClass(GenlistItemClass):
         return remote.name
 
     def content_get(self, gl, part, remote):
-        return Icon(gl, standard='git-remote')
+        return SafeIcon(gl, 'git-remote')
 
 class RemoteBranchItemClass(GenlistItemClass):
     def __init__(self, app):
@@ -158,7 +157,7 @@ class RemoteBranchItemClass(GenlistItemClass):
         return '/'.join(remote_branch.split('/')[1:])
 
     def content_get(self, gl, part, remote_branch):
-        return Icon(gl, standard='git-branch')
+        return SafeIcon(gl, 'git-branch')
 
 
 class Sidebar(Genlist):

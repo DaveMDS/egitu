@@ -29,14 +29,13 @@ from efl.elementary.panes import Panes
 from efl.elementary.button import Button
 from efl.elementary.check import Check
 from efl.elementary.popup import Popup
-from efl.elementary.icon import Icon
 from efl.elementary.table import Table
 from efl.elementary.separator import Separator
 from efl.elementary.list import List
 from efl.elementary.entry import Entry, markup_to_utf8, utf8_to_markup, \
     ELM_WRAP_NONE, ELM_WRAP_MIXED
 
-from egitu.utils import DiffedEntry, ErrorPopup, \
+from egitu.utils import DiffedEntry, ErrorPopup, SafeIcon, \
     EXPAND_BOTH, FILL_BOTH, EXPAND_HORIZ, FILL_HORIZ
 
 
@@ -46,7 +45,7 @@ class DiscardDialog(Popup):
 
         Popup.__init__(self, app.win)
         self.part_text_set('title,text', 'Discard local changes')
-        self.part_content_set('title,icon', Icon(self, standard='user-trash'))
+        self.part_content_set('title,icon', SafeIcon(self, 'user-trash'))
 
         # main table
         tb = Table(self, padding=(0,4),
@@ -80,7 +79,7 @@ class DiscardDialog(Popup):
 
         for path in sorted(self.app.repo.status.changes):
             mod, staged, name, new_name = self.app.repo.status.changes[path]
-            icon = Icon(self, standard='git-mod-'+mod)
+            icon = SafeIcon(self, 'git-mod-'+mod)
             check = Check(self, text='', state=staged, disabled=True)
             label = '{} → {}'.format(name, new_name) if new_name else name
             it = li.item_append(label, icon, check)
@@ -109,7 +108,7 @@ class DiscardDialog(Popup):
         bt.show()
 
         bt = Button(self, text="Discard EVERYTHING!",
-                    content=Icon(self, standard='user-trash'))
+                    content=SafeIcon(self, 'user-trash'))
         bt.callback_clicked_add(self._confirm_clicked_cb)
         self.part_content_set('button2', bt)
         bt.show()
