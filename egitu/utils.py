@@ -58,12 +58,15 @@ FILL_HORIZ = EVAS_HINT_FILL, 0.5
 FILL_VERT = 0.5, EVAS_HINT_FILL
 
 
-script_path = os.path.dirname(__file__)
+script_path = os.path.dirname(os.path.abspath(__file__))
+# install_prefix is not really portable, but I cannot find a better way...
+install_prefix = script_path[0:script_path.find('/python')]
+install_prefix = install_prefix[0:install_prefix.rfind('/')]
 config_path = os.path.join(xdg_config_home, 'egitu')
 config_file = os.path.join(config_path, 'config.pickle')
 recent_file = os.path.join(config_path, 'recent.history')
-install_prefix = script_path[0:script_path.find('/lib/python')]
 data_path = os.path.join(install_prefix, 'share', 'egitu')
+
 
 # A really ugly way to retrive the main EgituApp instance
 # only used in the 2 GitCmd classes to show the review popup
